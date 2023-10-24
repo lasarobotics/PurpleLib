@@ -2,13 +2,13 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the MIT license file in the root directory of this project.
 
-package org.usfirst.frc418.drive;
+package org.lasarobotics.drive;
 
 import java.util.HashMap;
 
 import org.apache.commons.math3.analysis.polynomials.PolynomialSplineFunction;
-import org.usfirst.frc418.utils.GlobalConstants;
-import org.usfirst.frc418.utils.PIDConstants;
+import org.lasarobotics.utils.GlobalConstants;
+import org.lasarobotics.utils.PIDConstants;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;

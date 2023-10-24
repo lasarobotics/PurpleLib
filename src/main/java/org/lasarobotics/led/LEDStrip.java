@@ -2,7 +2,7 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the MIT license file in the root directory of this project.
 
-package org.usfirst.frc418.led;
+package org.lasarobotics.led;
 
 import java.util.Arrays;
 import java.util.Collections;

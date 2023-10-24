@@ -2,14 +2,14 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the MIT license file in the root directory of this project.
 
-package org.usfirst.frc418.drive;
+package org.lasarobotics.drive;
 
 import static edu.wpi.first.math.Nat.N1;
 import static edu.wpi.first.math.Nat.N2;
 import static edu.wpi.first.math.Nat.N3;
 import static edu.wpi.first.math.Nat.N4;
 
-import org.usfirst.frc418.utils.GlobalConstants;
+import org.lasarobotics.utils.GlobalConstants;
 
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Pose2d;

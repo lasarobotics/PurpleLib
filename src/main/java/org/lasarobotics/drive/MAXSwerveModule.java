@@ -2,11 +2,11 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the MIT license file in the root directory of this project.
 
-package org.usfirst.frc418.drive;
+package org.lasarobotics.drive;
 
-import org.usfirst.frc418.utils.GlobalConstants;
-import org.usfirst.frc418.utils.SparkMax;
-import org.usfirst.frc418.utils.SparkPIDConfig;
+import org.lasarobotics.utils.GlobalConstants;
+import org.lasarobotics.utils.SparkMax;
+import org.lasarobotics.utils.SparkPIDConfig;
 
 import com.revrobotics.CANSparkMax.ControlType;
 import com.revrobotics.CANSparkMax.IdleMode;
