@@ -147,6 +147,11 @@ public class LEDStrip implements AutoCloseable {
     TEAM_COLOR_STROBE(PatternType.STROBE, TEAM_COLOR),
     TEAM_COLOR_BREATHE(PatternType.BREATHE, TEAM_COLOR),
     TEAM_COLOR_WAVE(PatternType.WAVE, TEAM_COLOR),
+    // White patterns
+    WHITE_SOLID(PatternType.SOLID, Color.kWhite),
+    WHITE_STROBE(PatternType.STROBE, Color.kWhite),
+    WHITE_BREATHE(PatternType.BREATHE, Color.kWhite),
+    WHITE_WAVE(PatternType.WAVE, Color.kWhite),
     // Red patterns
     RED_SOLID(PatternType.SOLID, Color.kRed),
     RED_STROBE(PatternType.STROBE, Color.kRed),
