@@ -88,41 +88,81 @@ public class JSONObject {
     }
   }
 
+  /**
+   * Convert JSON pose to object
+   * @param json JSON strin containing 2D pose
+   * @return Object representing pose
+   */
   public static Pose2d readPose(String json) {
-    try { return OBJECT_MAPPER.readValue(json, JSONPose.class).toJavaType(); } 
+    try { return OBJECT_MAPPER.readValue(json, JSONPose.class).toJavaType(); }
     catch (Exception e) { return null; }
   }
 
+  /**
+   * Convert JSON point to object
+   * @param json JSON string containing point
+   * @return Object representing point
+   */
   public static Translation2d readPoint(String json) {
-    try { return OBJECT_MAPPER.readValue(json, JSONPoint.class).toJavaType(); } 
+    try { return OBJECT_MAPPER.readValue(json, JSONPoint.class).toJavaType(); }
     catch (Exception e) { return null; }
   }
 
+  /**
+   * Convert JSON pose list to object list
+   * @param json JSON string of poses
+   * @return Object list of poses
+   */
   public static List<Pose2d> readPoseList(String json) {
     try { return JSONPoseList.toJavaType(OBJECT_MAPPER.readValue(json, new TypeReference<List<JSONPose>>(){})); }
     catch (Exception e) { return null; }
   }
 
+  /**
+   * Convert JSON point list to object list
+   * @param json JSON string of points
+   * @return Object list of points
+   */
   public static List<Translation2d> readPointList(String json) {
     try { return JSONPointList.toJavaType(OBJECT_MAPPER.readValue(json, new TypeReference<List<JSONPoint>>(){})); }
     catch (Exception e) { return null; }
   }
 
+  /**
+   * Convert pose object to JSON string
+   * @param pose Pose object
+   * @return JSON string representing pose
+   */
   public static String writePose(Pose2d pose) {
     try { return OBJECT_MAPPER.writeValueAsString(JSONPose.toJSON(pose)); }
     catch (Exception e) { return null; }
   }
 
+  /**
+   * Convert point object to JSON string
+   * @param point Point object
+   * @return JSON string representing point
+   */
   public static String writePoint(Translation2d point) {
     try { return OBJECT_MAPPER.writeValueAsString(JSONPoint.toJSON(point)); }
     catch (Exception e) { return null; }
   }
 
+  /**
+   * Convert list of pose objects to JSON string
+   * @param poseList List of pose objects
+   * @return JSON string representing pose list
+   */
   public static String writePoseList(List<Pose2d> poseList) {
     try { return OBJECT_MAPPER.writeValueAsString(JSONPoseList.toJSON(poseList)); }
     catch (Exception e) { return null; }
   }
 
+  /**
+   * Convert list of point objects to JSON string
+   * @param pointList List of point objects
+   * @return JSON string representing point list
+   */
   public static String writePointList(List<Translation2d> pointList) {
     try { return OBJECT_MAPPER.writeValueAsString(JSONPointList.toJSON(pointList)); }
     catch (Exception e) { return null; }

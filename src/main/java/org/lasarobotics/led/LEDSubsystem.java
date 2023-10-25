@@ -12,7 +12,6 @@ import org.lasarobotics.led.LEDStrip.Pattern;
 import org.lasarobotics.led.LEDStrip.Section;
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-
 public class LEDSubsystem extends SubsystemBase implements AutoCloseable {
   private static boolean m_override = false;
   private static Pattern m_overridePattern = Pattern.TEAM_COLOR_SOLID;

@@ -2,7 +2,7 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the MIT license file in the root directory of this project.
 
-package org.lasarobotics.utils;
+package org.lasarobotics.hardware;
 
 import org.littletonrobotics.junction.AutoLog;
 import org.littletonrobotics.junction.Logger;
@@ -22,7 +22,7 @@ public class NavX2 implements AutoCloseable {
     }
   }
 
-  @AutoLog 
+  @AutoLog
   public static class NavX2Inputs {
     public double pitchAngle = 0.0;
     public double yawAngle = 0.0;
@@ -48,6 +48,7 @@ public class NavX2 implements AutoCloseable {
     this.m_navx = new AHRS(SPI.Port.kMXP, (byte)updateRate);
     this.m_inputs = new NavX2InputsAutoLogged();
     this.m_simNavXYaw = new SimDouble(SimDeviceDataJNI.getSimValueHandle(SimDeviceDataJNI.getSimDeviceHandle("navX-Sensor[0]"), "Yaw"));
+    System.out.println();
   }
 
   /**
@@ -65,15 +66,15 @@ public class NavX2 implements AutoCloseable {
    * reported by the sensor.
    *<p>
    * NOTE: The angle is continuous, meaning it's range is beyond 360 degrees.
-   * This ensures that algorithms that wouldn't want to see a discontinuity 
+   * This ensures that algorithms that wouldn't want to see a discontinuity
    * in the gyro output as it sweeps past 0 on the second time around.
    *<p>
    * Note that the returned yaw value will be offset by a user-specified
-   * offset value; this user-specified offset value is set by 
+   * offset value; this user-specified offset value is set by
    * invoking the zeroYaw() method.
    *<p>
-   * @return The current total accumulated yaw angle (Z axis) of the robot 
-   * in degrees. This heading is based on integration of the returned rate 
+   * @return The current total accumulated yaw angle (Z axis) of the robot
+   * in degrees. This heading is based on integration of the returned rate
    * from the Z-axis (yaw) gyro.
    */
   private double getAngle() {
@@ -113,7 +114,7 @@ public class NavX2 implements AutoCloseable {
   private float getVelocityY() {
     return m_navx.getVelocityY();
   }
-  
+
   /**
    * Return the rate of rotation of the yaw (Z-axis) gyro, in degrees per second.
    *<p>
@@ -144,7 +145,7 @@ public class NavX2 implements AutoCloseable {
     updateInputs();
     Logger.getInstance().processInputs(m_name, m_inputs);
   }
-  
+
   /**
    * Get latest sensor input data
    * @return Latest NavX data
@@ -152,11 +153,11 @@ public class NavX2 implements AutoCloseable {
   public NavX2Inputs getInputs() {
     return m_inputs;
   }
-  
+
   /**
-   * Calibrate the gyro. It's important to make sure that the robot is 
-   * not moving while the calibration is in progress, this is typically done 
-   * when the robot is first turned on while it's sitting at rest before the 
+   * Calibrate the gyro. It's important to make sure that the robot is
+   * not moving while the calibration is in progress, this is typically done
+   * when the robot is first turned on while it's sitting at rest before the
    * match starts.
    */
   public void calibrate() {
@@ -164,15 +165,15 @@ public class NavX2 implements AutoCloseable {
   }
 
   /**
-   * Returns true if the sensor is currently performing automatic 
-   * gyro/accelerometer calibration. Automatic calibration occurs when the 
-   * sensor is initially powered on, during which time the sensor should be 
+   * Returns true if the sensor is currently performing automatic
+   * gyro/accelerometer calibration. Automatic calibration occurs when the
+   * sensor is initially powered on, during which time the sensor should be
    * held still, with the Z-axis pointing up (perpendicular to the earth).
    * <p>
-   * NOTE: During this automatic calibration, the yaw, pitch and roll values 
+   * NOTE: During this automatic calibration, the yaw, pitch and roll values
    * returned may not be accurate.
    * <p>
-   * Once calibration is complete, the sensor will automatically remove an 
+   * Once calibration is complete, the sensor will automatically remove an
    * internal yaw offset value from all reported values.
    * @return Returns true if the sensor is currently automatically calibrating the gyro
    */
@@ -183,7 +184,7 @@ public class NavX2 implements AutoCloseable {
   /**
    * Reset the Yaw gyro.
    * <p>
-   * Resets the Gyro Z (Yaw) axis to a heading of zero. This can be used if 
+   * Resets the Gyro Z (Yaw) axis to a heading of zero. This can be used if
    * there is significant drift in the gyro and it needs to be recalibrated
    * after it has been running.
    */

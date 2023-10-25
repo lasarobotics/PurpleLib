@@ -4,8 +4,8 @@
 
 package org.lasarobotics.drive;
 
+import org.lasarobotics.hardware.SparkMax;
 import org.lasarobotics.utils.GlobalConstants;
-import org.lasarobotics.utils.SparkMax;
 import org.lasarobotics.utils.SparkPIDConfig;
 
 import com.revrobotics.CANSparkMax.ControlType;

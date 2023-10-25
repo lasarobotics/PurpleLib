@@ -58,14 +58,14 @@ public class LEDStrip implements AutoCloseable {
      */
     private static int start(AddressableLEDBuffer buffer, Section... sections) {
       return start(
-        buffer, 
+        buffer,
         Collections.min(
-          Arrays.asList(sections), 
+          Arrays.asList(sections),
           (a, b) -> Integer.compare(a.ordinal(), b.ordinal())
         )
       );
     }
-    
+
     /**
      * Get start index of LED strip section
      * @param buffer LED buffer
@@ -84,7 +84,7 @@ public class LEDStrip implements AutoCloseable {
           return 0;
       }
     }
-    
+
     /**
      * Get end index of LED strip sections
      * @param buffer LED buffer
@@ -93,14 +93,14 @@ public class LEDStrip implements AutoCloseable {
      */
     private static int end(AddressableLEDBuffer buffer, Section... sections) {
       return end(
-        buffer, 
+        buffer,
         Collections.max(
-          Arrays.asList(sections), 
+          Arrays.asList(sections),
           (a, b) -> Integer.compare(a.ordinal(), b.ordinal())
         )
       );
     }
-    
+
     /**
      * Get end index of LED strip section
      * @param buffer LED buffer
@@ -135,7 +135,7 @@ public class LEDStrip implements AutoCloseable {
       }
 
       return contains;
-    } 
+    }
   }
 
   /**
@@ -213,7 +213,7 @@ public class LEDStrip implements AutoCloseable {
       this.m_name = name;
       this.m_length = length;
 
-      if (length < Section.SMALL_SECTION_LENGTH * 2 + 1) 
+      if (length < Section.SMALL_SECTION_LENGTH * 2 + 1)
         throw new IllegalArgumentException("Length is too short, must be at least " + Section.SMALL_SECTION_LENGTH * 2 + 1);
 
       setLength(length);
@@ -251,7 +251,7 @@ public class LEDStrip implements AutoCloseable {
 
   /**
    * Initialize hardware devices for LED strip
-   * 
+   *
    * @param id LED strip ID
    * @return Hardware object containing all necessary devices
    */
@@ -424,7 +424,7 @@ public class LEDStrip implements AutoCloseable {
   }
 
   /**
-   * Turn off LED strip  
+   * Turn off LED strip
    */
   public void off() {
     set(Pattern.OFF, Section.FULL);

@@ -20,7 +20,7 @@ Features:
 Add the following to `build.gradle` where VERSION is the release tag, e.g. 2023.0.0
 ```
 repositories {
-  maven { url 'https://jitpack.io' }
+  maven { url "https://jitpack.io" }
 }
 dependencies {
   implementation 'com.github.lasarobotics:PurpleLib:VERSION'
