@@ -17,7 +17,7 @@ Features:
 
 
 # Installing
-Add the following to `build.gradle` where VERSION is the release tag, e.g. 2023.0.0
+Add the following to `build.gradle` where VERSION is the release tag, e.g. v2023.0.0
 ```
 repositories {
   maven { url "https://jitpack.io" }
