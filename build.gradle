@@ -20,14 +20,6 @@ repositories {
   }
 }
 
-sourceSets {
-  test {
-    resources {
-      srcDir "src/test"
-    }
-  }
-}
-
 dependencies {
   implementation wpi.java.deps.wpilib()
   implementation wpi.java.vendor.java()
