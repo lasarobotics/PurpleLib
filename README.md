@@ -17,6 +17,12 @@ Features:
 
 
 # Installing
+Add the following dependencies to your project
+* AdvantageKit - https://github.com/Mechanical-Advantage/AdvantageKit/blob/main/docs/INSTALLATION.md
+* NavX - https://dev.studica.com/releases/2023/NavX.json
+* REVLib - https://software-metadata.revrobotics.com/REVLib-2023.json
+* CTRE Phoenix5 - https://maven.ctr-electronics.com/release/com/ctre/phoenix/Phoenix5-frc2023-latest.json
+
 Add the following to `build.gradle` where VERSION is the release tag, e.g. v2023.0.0
 ```
 repositories {
