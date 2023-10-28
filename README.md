@@ -23,7 +23,7 @@ Add the following dependencies to your project
 * REVLib - https://software-metadata.revrobotics.com/REVLib-2023.json
 * CTRE Phoenix5 - https://maven.ctr-electronics.com/release/com/ctre/phoenix/Phoenix5-frc2023-latest.json
 
-Add the following to `build.gradle` where VERSION is the release tag, e.g. v2023.0.0
+Add the following to `build.gradle` where VERSION is the release version, e.g. 2023.0.0
 ```
 repositories {
   maven { url "https://jitpack.io" }
