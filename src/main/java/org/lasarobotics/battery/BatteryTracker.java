@@ -39,6 +39,14 @@ public class BatteryTracker {
   }
 
   /**
+   * Scan battery
+   * @return Current battery ID
+   */
+  public String scanBattery() {
+    return m_batteryScanner.scanBattery();
+  }
+
+  /**
    * Check if current battery is being reused
    * @return True if battery is the same as previous
    */

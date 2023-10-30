@@ -23,7 +23,7 @@ public class BatteryScanner {
    * This method is used by the BatteryTracker to scan the current battery
    * @return Battery ID
    */
-  public String scanBattery() {
+  protected String scanBattery() {
     String batteryID = "";
 
     try (SerialPort port = new SerialPort(BAUD_RATE, SerialPort.Port.kUSB)) {
