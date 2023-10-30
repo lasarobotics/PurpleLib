@@ -19,11 +19,11 @@ public class TurnPIDController extends PIDController {
   private final double FILTER_FACTOR = 1.0 / 3.0;
 
   private HashMap<Double, Double> m_turnInputMap = new HashMap<Double, Double>();
-  private double m_turnScalar = 0.0;
-  private double m_lookAhead = 0.0;
-  private double m_deadband = 0.0;
-  private double m_turnRequest = 0.0;
-  private boolean m_isTurning = false;
+  private double m_turnScalar;
+  private double m_lookAhead;
+  private double m_deadband;
+  private double m_turnRequest;
+  private boolean m_isTurning;
 
   /**
    * Create an instance of TurnPIDController
@@ -38,10 +38,11 @@ public class TurnPIDController extends PIDController {
     this.m_turnScalar = turnScalar;
     this.m_deadband = MathUtil.clamp(deadband, MIN_DEADBAND, MAX_DEADBAND);
     this.m_lookAhead = lookAhead;
+    this.m_isTurning = false;
 
     // Fill turn input hashmap
     for (int i = 0; i <= 1000; i++) {
-      double key = (double)i / 1000; 
+      double key = (double)i / 1000;
       double deadbandKey = MathUtil.applyDeadband(key, m_deadband);
       // Evaluate and clamp value between [0.0, +1.0]
       double value = MathUtil.clamp(turnInputCurve.value(deadbandKey), 0.0, +1.0);
@@ -56,7 +57,7 @@ public class TurnPIDController extends PIDController {
    * @param currentAngle current yaw angle of robot (degrees)
    * @param rotateRate current yaw rotate rate of robot (degrees/sec)
    * @param rotateRequest rotate request [-1.0, +1.0]
-   * 
+   *
    * @return optimal turn output [-1.0, +1.0]
    */
   public double calculate(double currentAngle, double rotateRate, double rotateRequest) {
@@ -71,7 +72,7 @@ public class TurnPIDController extends PIDController {
       // Add delta to setpoint scaled by factor
       super.setSetpoint(currentAngle + (scaledTurnRequest * m_turnScalar));
       m_isTurning = true;
-    } else { 
+    } else {
       // When turning is complete, set setpoint to current angle
       if (m_isTurning) {
         super.setSetpoint(currentAngle + (rotateRate * m_lookAhead * GlobalConstants.ROBOT_LOOP_PERIOD));

@@ -386,6 +386,14 @@ public class MAXSwerveModule implements AutoCloseable {
   }
 
   /**
+   * Get whether traction control is enabled
+   * @return True if enabled
+   */
+  public boolean isTractionControlEnabled() {
+    return m_tractionControlController.isEnabled();
+  }
+
+  /**
    * Get coordinate of module relative to the center of the robot
    * @return X, Y coordinate in meters
    */

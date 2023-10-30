@@ -11,9 +11,9 @@ public class BatteryScanner {
   private static final int BATTERY_ID_LENGTH = 8;
 
   // Scanner
-  private static final byte[] SCAN_COMMNAND = 
+  private static final byte[] SCAN_COMMNAND =
     new byte[] {0x7e, 0x00, 0x08, 0x01, 0x00, 0x02, 0x01, (byte) 0xab, (byte) 0xcd};
-  private static final byte[] RESPONSE_PREFIX = 
+  private static final byte[] RESPONSE_PREFIX =
     new byte[] {0x02, 0x00, 0x00, 0x01, 0x00, 0x33, 0x31};
   private static final int RESPONSE_LENGTH = RESPONSE_PREFIX.length + BATTERY_ID_LENGTH;
   private static final int BAUD_RATE = 9600;
@@ -23,7 +23,7 @@ public class BatteryScanner {
    * This method is used by the BatteryTracker to scan the current battery
    * @return Battery ID
    */
-  public static String scanBattery() {
+  public String scanBattery() {
     String batteryID = "";
 
     try (SerialPort port = new SerialPort(BAUD_RATE, SerialPort.Port.kUSB)) {

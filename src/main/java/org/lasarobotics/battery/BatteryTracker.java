@@ -12,17 +12,41 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 public class BatteryTracker {
-  private static final String PREVIOUS_BATTERY_PATH = "previous_battery.txt";
+  public static class Hardware {
+    public BatteryScanner scanner;
+
+    public Hardware(BatteryScanner scanner) {
+      this.scanner = scanner;
+    }
+  }
+
+  public static final String PREVIOUS_BATTERY_PATH = "previous_battery.txt";
+
+  private BatteryScanner m_batteryScanner;
+
+  /**
+   * Create battery tracker
+   * @param batteryHardware Hardware devices required by battery tracker
+   */
+  public BatteryTracker(Hardware batteryHardware) {
+    this.m_batteryScanner = batteryHardware.scanner;
+  }
+
+  public static Hardware initializeHardware() {
+    Hardware batteryHardware = new Hardware(new BatteryScanner());
+
+    return batteryHardware;
+  }
 
   /**
    * Check if current battery is being reused
    * @return True if battery is the same as previous
    */
-  public static boolean isBatteryReused() {
+  public boolean isBatteryReused() {
     File file = new File(PREVIOUS_BATTERY_PATH);
 
     if (!file.exists()) return false;
-    
+
     // Read previous battery name
     String previousBatteryID = "";
     try {
@@ -32,7 +56,7 @@ public class BatteryTracker {
       e.printStackTrace();
     }
 
-    if (previousBatteryID.equals(BatteryScanner.scanBattery())) {
+    if (previousBatteryID.equals(m_batteryScanner.scanBattery())) {
       return true;
     } else {
       // New battery, delete file
@@ -44,10 +68,10 @@ public class BatteryTracker {
   /**
    * Write current battery ID to file
    */
-  public static void writeCurrentBattery() {
+  public void writeCurrentBattery() {
     try {
       FileWriter fileWriter = new FileWriter(PREVIOUS_BATTERY_PATH);
-      fileWriter.write(BatteryScanner.scanBattery());
+      fileWriter.write(m_batteryScanner.scanBattery());
       fileWriter.close();
     } catch (IOException e) {
       e.printStackTrace();
