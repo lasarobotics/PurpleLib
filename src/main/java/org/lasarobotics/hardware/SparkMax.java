@@ -13,6 +13,7 @@ import org.littletonrobotics.junction.Logger;
 import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMax.ControlType;
+import com.revrobotics.CANSparkMax.ExternalFollower;
 import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.MotorFeedbackSensor;
@@ -61,10 +62,10 @@ public class SparkMax implements AutoCloseable {
   private static final String CURRENT_LOG_ENTRY = "/Current";
   private static final String MOTION_LOG_ENTRY = "/SmoothMotion";
   private static final String ENCODER_RESET_MESSAGE = "/EncoderReset";
-  
+
   private CANSparkMax m_spark;
 
-  private String m_name;
+  private ID m_id;
   private SparkMaxInputsAutoLogged m_inputs;
 
   private boolean m_isSmoothMotionEnabled = false;
@@ -83,7 +84,7 @@ public class SparkMax implements AutoCloseable {
    * @param motorType The motor type connected to the controller
    */
   public SparkMax(ID id, MotorType motorType) {
-    this.m_name = id.name;
+    this.m_id = id;
     this.m_spark = new CANSparkMax(id.deviceID, motorType);
     this.m_inputs = new SparkMaxInputsAutoLogged();
 
@@ -99,7 +100,7 @@ public class SparkMax implements AutoCloseable {
    * @param feedbackSensor Feedback device to use for Spark PID
    */
   public SparkMax(ID id, MotorType motorType, SparkPIDConfig config, FeedbackSensor feedbackSensor) {
-    this.m_name = id.name;
+    this.m_id = id;
     this.m_spark = new CANSparkMax(id.deviceID, motorType);
     this.m_inputs = new SparkMaxInputsAutoLogged();
 
@@ -117,10 +118,10 @@ public class SparkMax implements AutoCloseable {
    * @param ctrl Control mode that was used
    */
   private void logOutputs(double value, ControlType ctrl) {
-    Logger.getInstance().recordOutput(m_name + VALUE_LOG_ENTRY, value);
-    Logger.getInstance().recordOutput(m_name + MODE_LOG_ENTRY, ctrl.name());
-    Logger.getInstance().recordOutput(m_name + CURRENT_LOG_ENTRY, m_spark.getOutputCurrent());
-    Logger.getInstance().recordOutput(m_name + MOTION_LOG_ENTRY, m_isSmoothMotionEnabled);
+    Logger.getInstance().recordOutput(m_id.name + VALUE_LOG_ENTRY, value);
+    Logger.getInstance().recordOutput(m_id.name + MODE_LOG_ENTRY, ctrl.name());
+    Logger.getInstance().recordOutput(m_id.name + CURRENT_LOG_ENTRY, m_spark.getOutputCurrent());
+    Logger.getInstance().recordOutput(m_id.name + MOTION_LOG_ENTRY, m_isSmoothMotionEnabled);
   }
 
   /**
@@ -220,7 +221,7 @@ public class SparkMax implements AutoCloseable {
    */
   private void handleSmoothMotion() {
     if (!m_isSmoothMotionEnabled) return;
-    
+
     m_isSmoothMotionEnabled = !isSmoothMotionFinished();
     TrapezoidProfile.State motionProfileState = m_motionProfile.calculate(m_motionTimer.get());
     set(
@@ -240,7 +241,7 @@ public class SparkMax implements AutoCloseable {
    */
   public void periodic() {
     updateInputs();
-    Logger.getInstance().processInputs(m_name, m_inputs);
+    Logger.getInstance().processInputs(m_id.name, m_inputs);
 
     handleSmoothMotion();
   }
@@ -251,6 +252,14 @@ public class SparkMax implements AutoCloseable {
    */
   public SparkMaxInputs getInputs() {
     return m_inputs;
+  }
+
+  /**
+   * Get device ID
+   * @return Device ID
+   */
+  public ID getID() {
+    return m_id;
   }
 
   /**
@@ -285,12 +294,41 @@ public class SparkMax implements AutoCloseable {
   /**
    * Initializes Spark Max PID
    * <p>
-   * Calls {@link SparkMax#initializeSparkPID(SparkPIDConfig, FeedbackSensor, boolean, boolean)} with no limit switches 
+   * Calls {@link SparkMax#initializeSparkPID(SparkPIDConfig, FeedbackSensor, boolean, boolean)} with no limit switches
    * @param config Configuration to apply
    * @param feedbackSensor Feedback device to use for Spark PID
    */
   public void initializeSparkPID(SparkPIDConfig config, FeedbackSensor feedbackSensor) {
     initializeSparkPID(config, feedbackSensor, false, false);
+  }
+
+  /**
+   * Slave Spark Max to another
+   * @param master Spark Max to follow
+   * @param isInverted Whether or not to invert slave
+   */
+  public void follow(SparkMax master, boolean isInverted) {
+    m_spark.follow(ExternalFollower.kFollowerSparkMax, master.getID().deviceID, isInverted);
+  }
+
+  /**
+   * Slave Spark Max to another
+   * @param master Spark Max to follow
+   */
+  public void follow(SparkMax master) {
+    follow(master, false);
+  }
+
+  /**
+   * Common interface for inverting direction of a speed controller.
+   *
+   * <p>This call has no effect if the controller is a slave. To invert a slave, see the
+   * {@link SparkMax#follow(SparkMax, boolean)} method.
+   *
+   * @param isInverted The state of inversion, true is inverted.
+   */
+  public void setInverted(boolean isInverted) {
+    m_spark.setInverted(isInverted);
   }
 
   /**
@@ -414,7 +452,7 @@ public class SparkMax implements AutoCloseable {
    */
   public void resetEncoder() {
     m_spark.getEncoder().setPosition(0.0);
-    System.out.println(m_name + ENCODER_RESET_MESSAGE);
+    System.out.println(m_id.name + ENCODER_RESET_MESSAGE);
   }
 
   /**
@@ -454,7 +492,7 @@ public class SparkMax implements AutoCloseable {
    * that could be enough to cause damage to the motor and controller. This current limit provides a
    * smarter strategy to deal with high current draws and keep the motor and controller operating in
    * a safe region.
-   * 
+   *
    * @param limit The current limit in Amps.
    */
   public void setSmartCurrentLimit(int limit) {
