@@ -48,9 +48,9 @@ public class MAXSwerveModule implements AutoCloseable {
   }
 
   public enum GearRatio {
-    Low(5.50),
+    Low(4.71),
     Med(5.08),
-    High(4.71);
+    High(5.50);
 
     public final double value;
     private GearRatio(double value) {
