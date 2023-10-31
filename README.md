@@ -1,8 +1,6 @@
-![Release](https://jitpack.io/v/lasarobotics/PurpleLib.svg)
-(https://jitpack.io/#lasarobotics/PurpleLib)
 
-# PurpleLib
-Custom library for FRC team 418, Purple Haze
+# PurpleLib [![Release](https://jitpack.io/v/lasarobotics/PurpleLib.svg)](https://jitpack.io/#lasarobotics/PurpleLib)
+Custom library for 418 Purple Haze
 
 Features:
 * Spark Max wrapper with AdvantageKit logging and smooth motion
@@ -16,8 +14,8 @@ Features:
 * Battery scanning and tracking
 
 
-# Installing
-Add the following dependencies to your project
+## Installing
+Add the following dependencies to your project:
 * AdvantageKit - https://github.com/Mechanical-Advantage/AdvantageKit/blob/main/docs/INSTALLATION.md
 * NavX - https://dev.studica.com/releases/2023/NavX.json
 * REVLib - https://software-metadata.revrobotics.com/REVLib-2023.json
@@ -33,5 +31,5 @@ dependencies {
 }
 ```
 
-# Releasing
-* Create a release in GitHub. Jitpack does the rest.
+## Releasing
+* Create a release in GitHub. JitPack does the rest.
