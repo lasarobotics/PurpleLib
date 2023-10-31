@@ -46,20 +46,27 @@ public class TurnPIDControllerTest {
 
   @Test
   @Order(2)
+  @DisplayName("Test if turn PID controller ignores values within deadband")
+  public void deadband() {
+    assertEquals(0.0,m_turnPIDController.calculate(0.0, 0.0, 0.09), DELTA);
+  }
+
+  @Test
+  @Order(3)
   @DisplayName("Test if turn PID controller accepts negative input")
   public void negative() {
     assertTrue(m_turnPIDController.calculate(0.0, 0.0, -1.0) < 0.0);
   }
 
   @Test
-  @Order(3)
+  @Order(4)
   @DisplayName("Test if turn PID controller accepts positive input")
   public void positive() {
     assertTrue(m_turnPIDController.calculate(0.0, 0.0, +1.0) > 0.0);
   }
 
   @Test
-  @Order(3)
+  @Order(5)
   @DisplayName("Test if turn PID controller detects turns")
   public void isTurning() {
     m_turnPIDController.calculate(0.0, 0.0, +1.0);
