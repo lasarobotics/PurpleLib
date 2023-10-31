@@ -39,13 +39,13 @@ public class AdvancedSwerveKinematics {
   public AdvancedSwerveKinematics(boolean isFieldCentric, Translation2d... moduleLocations) {
     this.m_isFieldCentric = (isFieldCentric) ? 1 : 0;
     if (moduleLocations.length < 2) throw new IllegalArgumentException("A swerve drive requires at least two modules");
-    
+
     m_moduleLocations = moduleLocations;
   }
 
   /**
    * Obtain a new pose from a constant curvature velocity
-   * @param delta Velocity 
+   * @param delta Velocity
    * @return Pose
    */
   public static Pose2d exp(final Twist2d delta) {
@@ -149,15 +149,15 @@ public class AdvancedSwerveKinematics {
 
     for (int i = 0; i < m_moduleLocations.length; i++) {
       // Angle that the module location vector makes with respect to the robot
-      Rotation2d moduleAngle = new Rotation2d(Math.atan2(m_moduleLocations[i].getY(), m_moduleLocations[i].getX())); 
+      Rotation2d moduleAngle = new Rotation2d(Math.atan2(m_moduleLocations[i].getY(), m_moduleLocations[i].getX()));
       // Angle that the module location vector makes with respect to the field for field centric
       moduleAngle = Rotation2d.fromRadians(moduleAngle.getRadians() + robotHeading.getRadians() * m_isFieldCentric);
       double moduleX = m_moduleLocations[i].getNorm() * Math.cos(moduleAngle.getRadians());
       double moduleY = m_moduleLocations[i].getNorm() * Math.sin(moduleAngle.getRadians());
       // -r_y
       firstOrderMatrix.set(0, 2, -moduleY);
-      // +r_x 
-      firstOrderMatrix.set(1, 2, +moduleX); 
+      // +r_x
+      firstOrderMatrix.set(1, 2, +moduleX);
 
       Matrix<N2, N1> firstOrderOutput = firstOrderMatrix.times(firstOrderInputMatrix);
 

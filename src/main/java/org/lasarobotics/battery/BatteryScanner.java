@@ -6,7 +6,7 @@ package org.lasarobotics.battery;
 
 import edu.wpi.first.wpilibj.SerialPort;
 
-public class BatteryScanner {
+class BatteryScanner {
   // Battery name
   private static final int BATTERY_ID_LENGTH = 8;
 
@@ -23,7 +23,7 @@ public class BatteryScanner {
    * This method is used by the BatteryTracker to scan the current battery
    * @return Battery ID
    */
-  protected String scanBattery() {
+  String scanBattery() {
     String batteryID = "";
 
     try (SerialPort port = new SerialPort(BAUD_RATE, SerialPort.Port.kUSB)) {
