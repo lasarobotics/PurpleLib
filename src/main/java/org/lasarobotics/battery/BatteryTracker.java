@@ -32,6 +32,10 @@ public class BatteryTracker {
     this.m_batteryScanner = batteryHardware.scanner;
   }
 
+  /**
+   * Initialise hardware for battery tracker
+   * @return Hardware object containing all necessary devices for battery tracker
+   */
   public static Hardware initializeHardware() {
     Hardware batteryHardware = new Hardware(new BatteryScanner());
 
@@ -64,7 +68,7 @@ public class BatteryTracker {
       e.printStackTrace();
     }
 
-    if (previousBatteryID.equals(m_batteryScanner.scanBattery())) {
+    if (previousBatteryID.equals(scanBattery())) {
       return true;
     } else {
       // New battery, delete file
@@ -79,7 +83,7 @@ public class BatteryTracker {
   public void writeCurrentBattery() {
     try {
       FileWriter fileWriter = new FileWriter(PREVIOUS_BATTERY_PATH);
-      fileWriter.write(m_batteryScanner.scanBattery());
+      fileWriter.write(scanBattery());
       fileWriter.close();
     } catch (IOException e) {
       e.printStackTrace();

@@ -8,7 +8,7 @@ import edu.wpi.first.wpilibj.SerialPort;
 
 class BatteryScanner {
   // Battery name
-  private static final int BATTERY_ID_LENGTH = 8;
+  private static final int BATTERY_ID_LENGTH = 10;
 
   // Scanner
   private static final byte[] SCAN_COMMNAND =
