@@ -28,11 +28,16 @@ import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.Timer;
 
 public class SparkMax implements AutoCloseable {
-
+  /** Spark Max ID */
   public static class ID {
-    public final int deviceID;
     public final String name;
+    public final int deviceID;
 
+    /**
+     * Spark Max ID
+     * @param name Device name for logging
+     * @param deviceID CAN ID
+     */
     public ID(String name, int deviceID) {
       this.name = name;
       this.deviceID = deviceID;
@@ -195,14 +200,6 @@ public class SparkMax implements AutoCloseable {
   }
 
   /**
-   * Check if motion is complete
-   * @return True if smooth motion is complete
-   */
-  public boolean isSmoothMotionFinished() {
-    return m_motionProfile.isFinished(m_motionTimer.get());
-  }
-
-  /**
    * Update sensor input readings
    */
   private void updateInputs() {
@@ -217,7 +214,7 @@ public class SparkMax implements AutoCloseable {
   }
 
   /**
-   * Handle the smooth motion for the spark max
+   * Handle smooth motion
    */
   private void handleSmoothMotion() {
     if (!m_isSmoothMotionEnabled) return;
@@ -260,6 +257,14 @@ public class SparkMax implements AutoCloseable {
    */
   public ID getID() {
     return m_id;
+  }
+
+  /**
+   * Check if motion is complete
+   * @return True if smooth motion is complete
+   */
+  public boolean isSmoothMotionFinished() {
+    return m_motionProfile.isFinished(m_motionTimer.get());
   }
 
   /**
@@ -414,7 +419,7 @@ public class SparkMax implements AutoCloseable {
   }
 
   /**
-   * Enable smooth motion for the spark max
+   * Start smooth motion
    * @param value The target value for the motor
    * @param motionConstraint The constraints for the motor
    * @param feedforwardSupplier Lambda function to calculate feed forward

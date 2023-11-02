@@ -14,9 +14,14 @@ import edu.wpi.first.hal.simulation.SimDeviceDataJNI;
 import edu.wpi.first.wpilibj.SPI;
 
 public class NavX2 implements AutoCloseable {
+  /** NavX2 ID */
   public static class ID {
     public final String name;
 
+    /**
+     * NavX2 ID
+     * @param name Device name for logging
+     */
     public ID(String name) {
       this.name = name;
     }

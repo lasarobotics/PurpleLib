@@ -181,7 +181,7 @@ public class MAXSwerveModuleTest {
     // Hardcode sensor values
     SparkMaxInputs defaultInputs = new SparkMaxInputs();
     SparkMaxInputs lFrontRotateMotorInputs = new SparkMaxInputs();
-    lFrontRotateMotorInputs.absoluteEncoderPosition = ModuleLocation.LeftFront.offset;
+    lFrontRotateMotorInputs.absoluteEncoderPosition = ModuleLocation.LeftFront.offset.getRadians();
     when(m_lFrontDriveMotor.getInputs()).thenReturn(defaultInputs);
     when(m_lFrontRotateMotor.getInputs()).thenReturn(lFrontRotateMotorInputs);
 
