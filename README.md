@@ -27,6 +27,7 @@ repositories {
   maven { url "https://jitpack.io" }
 }
 dependencies {
+  implementation 'org.apache.commons:commons-math3:3.+'
   implementation 'com.github.lasarobotics:PurpleLib:VERSION'
 }
 ```
