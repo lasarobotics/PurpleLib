@@ -27,7 +27,7 @@ import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.Timer;
 
-public class SparkMax implements AutoCloseable {
+public class SparkMax implements LoggableHardware, AutoCloseable {
   /** Spark Max ID */
   public static class ID {
     public final String name;
@@ -247,7 +247,7 @@ public class SparkMax implements AutoCloseable {
    * Get latest sensor input data
    * @return Latest sensor data
    */
-  public SparkMaxInputs getInputs() {
+  public SparkMaxInputsAutoLogged getInputs() {
     return m_inputs;
   }
 

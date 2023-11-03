@@ -13,7 +13,7 @@ import edu.wpi.first.hal.SimDouble;
 import edu.wpi.first.hal.simulation.SimDeviceDataJNI;
 import edu.wpi.first.wpilibj.SPI;
 
-public class NavX2 implements AutoCloseable {
+public class NavX2 implements LoggableHardware, AutoCloseable {
   /** NavX2 ID */
   public static class ID {
     public final String name;
@@ -155,7 +155,7 @@ public class NavX2 implements AutoCloseable {
    * Get latest sensor input data
    * @return Latest NavX data
    */
-  public NavX2Inputs getInputs() {
+  public NavX2InputsAutoLogged getInputs() {
     return m_inputs;
   }
 

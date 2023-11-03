@@ -1,0 +1,73 @@
+// Copyright (c) LASA Robotics and other contributors
+// Open Source Software; you can modify and/or share it under the terms of
+// the MIT license file in the root directory of this project.
+
+package org.lasarobotics.hardware;
+
+import org.littletonrobotics.junction.AutoLog;
+import org.littletonrobotics.junction.Logger;
+
+import edu.wpi.first.wpilibj.AnalogInput;
+
+public class Analog implements LoggableHardware, AutoCloseable {
+  /** Analog sensor ID */
+  public static class ID {
+    public final String name;
+    public final int port;
+
+    /**
+     * Analog sensor ID
+     * @param name Device name for logging
+     * @param port Port number
+     */
+    public ID(String name, int port) {
+      this.name = name;
+      this.port = port;
+    }
+  }
+
+  @AutoLog
+  public static class AnalogInputs {
+    public double voltage;
+  }
+
+  private AnalogInput m_analogInput;
+
+  private ID m_id;
+  private AnalogInputsAutoLogged m_inputs;
+
+  public Analog(Analog.ID id) {
+    this.m_id = id;
+    this.m_analogInput = new AnalogInput(id.port);
+    this.m_inputs = new AnalogInputsAutoLogged();
+  }
+
+  /**
+   * Update sensor input readings
+   */
+  private void updateInputs() {
+    m_inputs.voltage = m_analogInput.getVoltage();
+  }
+
+  /**
+   * Call this method periodically
+   */
+  public void periodic() {
+    updateInputs();
+    Logger.getInstance().processInputs(m_id.name, m_inputs);
+  }
+
+  /**
+   * Get latest sensor input data
+   * @return Latest sensor data
+   */
+  public AnalogInputsAutoLogged getInputs() {
+    return m_inputs;
+  }
+
+  @Override
+  public void close() {
+    m_analogInput.close();
+  }
+
+}

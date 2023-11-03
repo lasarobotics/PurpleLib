@@ -19,7 +19,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.lasarobotics.drive.MAXSwerveModule.GearRatio;
 import org.lasarobotics.drive.MAXSwerveModule.ModuleLocation;
 import org.lasarobotics.hardware.SparkMax;
-import org.lasarobotics.hardware.SparkMax.SparkMaxInputs;
+import org.lasarobotics.hardware.SparkMaxInputsAutoLogged;
 import org.lasarobotics.utils.GlobalConstants;
 import org.mockito.AdditionalMatchers;
 import org.mockito.ArgumentMatchers;
@@ -121,7 +121,7 @@ public class MAXSwerveModuleTest {
   @DisplayName("Test if module can set state")
   public void set() {
     // Hardcode sensor values
-    SparkMaxInputs sparkMaxInputs = new SparkMaxInputs();
+    SparkMaxInputsAutoLogged sparkMaxInputs = new SparkMaxInputsAutoLogged();
     when(m_lFrontRotateMotor.getInputs()).thenReturn(sparkMaxInputs);
     when(m_rFrontRotateMotor.getInputs()).thenReturn(sparkMaxInputs);
     when(m_lRearRotateMotor.getInputs()).thenReturn(sparkMaxInputs);
@@ -150,7 +150,7 @@ public class MAXSwerveModuleTest {
   @DisplayName("Test if module will auto-lock")
   public void autoLock() {
     // Hardcode sensor values
-    SparkMaxInputs sparkMaxInputs = new SparkMaxInputs();
+    SparkMaxInputsAutoLogged sparkMaxInputs = new SparkMaxInputsAutoLogged();
     when(m_lFrontRotateMotor.getInputs()).thenReturn(sparkMaxInputs);
     when(m_rFrontRotateMotor.getInputs()).thenReturn(sparkMaxInputs);
     when(m_lRearRotateMotor.getInputs()).thenReturn(sparkMaxInputs);
@@ -179,8 +179,8 @@ public class MAXSwerveModuleTest {
   @DisplayName("Test if module works in simulation")
   public void simulation() {
     // Hardcode sensor values
-    SparkMaxInputs defaultInputs = new SparkMaxInputs();
-    SparkMaxInputs lFrontRotateMotorInputs = new SparkMaxInputs();
+    SparkMaxInputsAutoLogged defaultInputs = new SparkMaxInputsAutoLogged();
+    SparkMaxInputsAutoLogged lFrontRotateMotorInputs = new SparkMaxInputsAutoLogged();
     lFrontRotateMotorInputs.absoluteEncoderPosition = ModuleLocation.LeftFront.offset.getRadians();
     when(m_lFrontDriveMotor.getInputs()).thenReturn(defaultInputs);
     when(m_lFrontRotateMotor.getInputs()).thenReturn(lFrontRotateMotorInputs);
