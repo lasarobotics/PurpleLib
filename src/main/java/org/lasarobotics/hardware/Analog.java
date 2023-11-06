@@ -52,6 +52,7 @@ public class Analog implements LoggableHardware, AutoCloseable {
   /**
    * Call this method periodically
    */
+  @Override
   public void periodic() {
     updateInputs();
     Logger.getInstance().processInputs(m_id.name, m_inputs);
@@ -61,6 +62,7 @@ public class Analog implements LoggableHardware, AutoCloseable {
    * Get latest sensor input data
    * @return Latest sensor data
    */
+  @Override
   public AnalogInputsAutoLogged getInputs() {
     return m_inputs;
   }

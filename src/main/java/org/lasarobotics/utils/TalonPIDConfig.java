@@ -11,7 +11,7 @@ import com.ctre.phoenix.motorcontrol.can.BaseTalon;
 
 import edu.wpi.first.math.MathUtil;
 
-/** 
+/**
  * Automates the configuration of Talon PID and MotionMagic parameters
  */
 public class TalonPIDConfig {
@@ -93,7 +93,7 @@ public class TalonPIDConfig {
     this.m_lowerLimit = lowerLimit;
     this.m_upperLimit = upperLimit;
     this.m_enableSoftLimits = enableSoftLimits;
-    
+
     this.m_velocityRPM = velocity;
     this.m_accelerationRPMPerSec = acceleration;
     this.m_motionSmoothing = MathUtil.clamp(motionSmoothing, MIN_MOTION_SMOOTHING, MAX_MOTION_SMOOTHING);
@@ -108,14 +108,14 @@ public class TalonPIDConfig {
    * @param forwardLimitSwitch Enable forward limit switch
    * @param reverseLimitSwitch Enable reverse limit switch
    */
-  public void initializeTalonPID(BaseTalon talon, FeedbackDevice feedbackDevice, 
+  public void initializeTalonPID(BaseTalon talon, FeedbackDevice feedbackDevice,
                                  boolean forwardLimitSwitch, boolean reverseLimitSwitch) {
     // Reset Talon to default
     talon.configFactoryDefault();
 
     // Configure feedback sensor
     talon.configSelectedFeedbackSensor(feedbackDevice);
-    
+
     // Configure forward and reverse soft limits
     if (m_enableSoftLimits) {
       talon.configForwardSoftLimitThreshold(m_upperLimit);
@@ -153,17 +153,17 @@ public class TalonPIDConfig {
     talon.enableVoltageCompensation(true);
 
     // Configure MotionMagic values
-    if (m_motionMagic) {  
+    if (m_motionMagic) {
       talon.configMotionCruiseVelocity(rpmToTicksPer100ms(m_velocityRPM));
       talon.configMotionAcceleration(rpmToTicksPer100ms(m_accelerationRPMPerSec));
       talon.configMotionSCurveStrength(m_motionSmoothing);
-    } 
+    }
   }
 
   /**
    * Initializes Talon PID and MotionMagic parameters
    * <p>
-   * Calls {@link TalonPIDConfig#initializeTalonPID(BaseTalon, FeedbackDevice, boolean, boolean)} with no limit switches 
+   * Calls {@link TalonPIDConfig#initializeTalonPID(BaseTalon, FeedbackDevice, boolean, boolean)} with no limit switches
    * @param talon Talon motor controller to apply settings to
    * @param feedbackDevice Feedback device to use for Talon PID
    */

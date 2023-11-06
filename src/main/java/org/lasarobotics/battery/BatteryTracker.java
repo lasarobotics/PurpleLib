@@ -26,6 +26,8 @@ public class BatteryTracker {
 
   /**
    * Create battery tracker
+   * <p>
+   * Uses a Waveshare barcode scanner (https://a.co/d/ij6mFif)
    * @param batteryHardware Hardware devices required by battery tracker
    */
   public BatteryTracker(Hardware batteryHardware) {

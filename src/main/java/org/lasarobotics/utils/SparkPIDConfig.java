@@ -16,7 +16,7 @@ import com.revrobotics.SparkMaxPIDController;
 public class SparkPIDConfig {
   private static final double MAX_VOLTAGE = 12.0;
   private static final int PID_SLOT = 0;
-  
+
   private boolean m_enableSoftLimits = true;
 
   private boolean m_sensorPhase = false;
@@ -83,7 +83,7 @@ public class SparkPIDConfig {
    * @param forwardLimitSwitch Enable forward limit switch
    * @param reverseLimitSwitch Enable reverse limit switch
    */
-  public void initializeSparkPID(CANSparkMax spark, MotorFeedbackSensor feedbackSensor, 
+  public void initializeSparkPID(CANSparkMax spark, MotorFeedbackSensor feedbackSensor,
                                  boolean forwardLimitSwitch, boolean reverseLimitSwitch) {
     // Reset Spark to default
     spark.restoreFactoryDefaults();
@@ -96,7 +96,7 @@ public class SparkPIDConfig {
       pidController.setFeedbackDevice(feedbackSensor);
       feedbackSensor.setInverted(m_sensorPhase);
     } catch (IllegalArgumentException e) {}
-    
+
     // Configure forward and reverse soft limits
     if (m_enableSoftLimits) {
       spark.setSoftLimit(CANSparkMax.SoftLimitDirection.kForward, (float) m_upperLimit);
@@ -141,7 +141,7 @@ public class SparkPIDConfig {
   /**
    * Initializes Spark PID
    * <p>
-   * Calls {@link SparkPIDConfig#initializeSparkPID(CANSparkMax, MotorFeedbackSensor, boolean, boolean)} with no limit switches 
+   * Calls {@link SparkPIDConfig#initializeSparkPID(CANSparkMax, MotorFeedbackSensor, boolean, boolean)} with no limit switches
    * @param spark Spark motor controller to apply settings to
    * @param feedbackSensor Feedback device to use for Spark PID
    */

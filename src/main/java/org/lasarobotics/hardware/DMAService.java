@@ -1,3 +1,7 @@
+// Copyright (c) LASA Robotics and other contributors
+// Open Source Software; you can modify and/or share it under the terms of
+// the MIT license file in the root directory of this project
+
 package org.lasarobotics.hardware;
 
 import org.lasarobotics.utils.GlobalConstants;
@@ -5,9 +9,6 @@ import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.wpilibj.DMA;
 import edu.wpi.first.wpilibj.DMASample;
-// Copyright (c) LASA Robotics and other contributors
-// Open Source Software; you can modify and/or share it under the terms of
-// the MIT license file in the root directory of this project.
 
 import edu.wpi.first.wpilibj.DMASample.DMAReadStatus;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;

@@ -146,6 +146,7 @@ public class NavX2 implements LoggableHardware, AutoCloseable {
   /**
    * Call this method periodically
    */
+  @Override
   public void periodic() {
     updateInputs();
     Logger.getInstance().processInputs(m_name, m_inputs);
@@ -155,6 +156,7 @@ public class NavX2 implements LoggableHardware, AutoCloseable {
    * Get latest sensor input data
    * @return Latest NavX data
    */
+  @Override
   public NavX2InputsAutoLogged getInputs() {
     return m_inputs;
   }

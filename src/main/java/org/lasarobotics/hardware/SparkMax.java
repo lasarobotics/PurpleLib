@@ -200,6 +200,32 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
   }
 
   /**
+   * Returns an object for interfacing with the forward limit switch connected to the appropriate
+   * pins on the data port.
+   *
+   * <p>This call will disable support for the alternate encoder.
+   *
+   * @param switchType Whether the limit switch is normally open or normally closed.
+   * @return An object for interfacing with the forward limit switch.
+   */
+  private SparkMaxLimitSwitch getForwardLimitSwitch() {
+    return m_spark.getForwardLimitSwitch(m_limitSwitchType);
+  }
+
+  /**
+   * Returns an object for interfacing with the reverse limit switch connected to the appropriate
+   * pins on the data port.
+   *
+   * <p>This call will disable support for the alternate encoder.
+   *
+   * @param switchType Whether the limit switch is normally open or normally closed.
+   * @return An object for interfacing with the reverse limit switch.
+   */
+  private SparkMaxLimitSwitch getReverseLimitSwitch() {
+    return m_spark.getReverseLimitSwitch(m_limitSwitchType);
+  }
+
+  /**
    * Update sensor input readings
    */
   private void updateInputs() {
@@ -209,8 +235,8 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
     m_inputs.analogVelocity = getAnalogVelocity();
     m_inputs.absoluteEncoderPosition = getAbsoluteEncoderPosition();
     m_inputs.absoluteEncoderVelocity = getAbsoluteEncoderVelocity();
-    m_inputs.forwardLimitSwitch = m_spark.getForwardLimitSwitch(m_limitSwitchType).isPressed();
-    m_inputs.reverseLimitSwitch = m_spark.getReverseLimitSwitch(m_limitSwitchType).isPressed();
+    m_inputs.forwardLimitSwitch = getForwardLimitSwitch().isPressed();
+    m_inputs.reverseLimitSwitch = getReverseLimitSwitch().isPressed();
   }
 
   /**
@@ -236,6 +262,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
   /**
    * Call this method periodically
    */
+  @Override
   public void periodic() {
     updateInputs();
     Logger.getInstance().processInputs(m_id.name, m_inputs);
@@ -247,6 +274,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    * Get latest sensor input data
    * @return Latest sensor data
    */
+  @Override
   public SparkMaxInputsAutoLogged getInputs() {
     return m_inputs;
   }
