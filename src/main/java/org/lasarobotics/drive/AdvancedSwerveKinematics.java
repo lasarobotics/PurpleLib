@@ -25,19 +25,21 @@ import edu.wpi.first.math.numbers.N4;
 
 
 public class AdvancedSwerveKinematics {
+
+  public enum ControlCentricity {
+    ROBOT_CENTRIC, FIELD_CENTRIC;
+  }
+
   private static final double EPS = 1E-9;
-  private int m_isFieldCentric;
   private Translation2d[] m_moduleLocations;
 
   /**
     * Create a SecondOrderSwerveKinematics object
     * <p>
     * Corrects for path drift when the robot is rotating
-    * @param isFieldCentric True for field centric control
     * @param moduleLocations Location of all 4 swerve modules, LF/RF/LR/RR
     */
-  public AdvancedSwerveKinematics(boolean isFieldCentric, Translation2d... moduleLocations) {
-    this.m_isFieldCentric = (isFieldCentric) ? 1 : 0;
+  public AdvancedSwerveKinematics(Translation2d... moduleLocations) {
     if (moduleLocations.length < 2) throw new IllegalArgumentException("A swerve drive requires at least two modules");
 
     m_moduleLocations = moduleLocations;
@@ -107,29 +109,14 @@ public class AdvancedSwerveKinematics {
   }
 
   /**
-   * Set field centric control
-   * @param isFieldCentric True for field centric control
-   */
-  public void setFieldCentric(boolean isFieldCentric) {
-    m_isFieldCentric = (isFieldCentric) ? 1 : 0;
-  }
-
-  /**
-   * Get if kinematics are using field centric controls
-   * @return True if field centric
-   */
-  public boolean isFieldCentric() {
-    return (m_isFieldCentric == 1) ? true : false;
-  }
-
-  /**
     * Convert chassis speed to states of individual modules using second order kinematics
     *
     * @param desiredSpeed Desired translation and rotation speed of the robot
     * @param robotHeading Heading of the robot relative to the field
+    * @param controlCentricity Control centricity to use (field or robot centric)
     * @return Array of the speed direction of the swerve modules
     */
-  public SwerveModuleState[] toSwerveModuleStates(ChassisSpeeds desiredSpeed, Rotation2d robotHeading) {
+  public SwerveModuleState[] toSwerveModuleStates(ChassisSpeeds desiredSpeed, Rotation2d robotHeading, ControlCentricity controlCentricity) {
     Matrix<N3, N1> firstOrderInputMatrix = new Matrix<>(N3(),N1());
     Matrix<N2, N3> firstOrderMatrix = new Matrix<>(N2(),N3());
     Matrix<N4, N1> secondOrderInputMatrix = new Matrix<>(N4(),N1());
@@ -154,8 +141,8 @@ public class AdvancedSwerveKinematics {
     for (int i = 0; i < m_moduleLocations.length; i++) {
       // Angle that the module location vector makes with respect to the robot
       Rotation2d moduleAngle = new Rotation2d(Math.atan2(m_moduleLocations[i].getY(), m_moduleLocations[i].getX()));
-      // Angle that the module location vector makes with respect to the field for field centric
-      moduleAngle = Rotation2d.fromRadians(moduleAngle.getRadians() + robotHeading.getRadians() * m_isFieldCentric);
+      // Angle that the module location vector makes with respect to the field for field centric if applicable
+      moduleAngle = Rotation2d.fromRadians(moduleAngle.getRadians() + robotHeading.getRadians() * controlCentricity.ordinal());
       double moduleX = m_moduleLocations[i].getNorm() * Math.cos(moduleAngle.getRadians());
       double moduleY = m_moduleLocations[i].getNorm() * Math.sin(moduleAngle.getRadians());
       // -r_y
@@ -180,8 +167,8 @@ public class AdvancedSwerveKinematics {
 
       Matrix<N2,N1> secondOrderOutput = rotationMatrix.times(secondOrderMatrix.times(secondOrderInputMatrix));
 
-      // Correct module heading for field centric
-      moduleHeading -= robotHeading.getRadians() * m_isFieldCentric;
+      // Correct module heading for control centricity
+      moduleHeading -= robotHeading.getRadians() * controlCentricity.ordinal();
       swerveModuleStates[i] = new SwerveModuleState(moduleSpeed, Rotation2d.fromRadians(moduleHeading));
       moduleTurnSpeeds[i] = secondOrderOutput.get(1, 0) / moduleSpeed - desiredSpeed.omegaRadiansPerSecond;
     }
