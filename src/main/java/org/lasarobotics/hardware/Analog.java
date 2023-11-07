@@ -59,7 +59,7 @@ public class Analog implements LoggableHardware, AutoCloseable {
   @Override
   public void periodic() {
     updateInputs();
-    Logger.getInstance().processInputs(m_id.name, m_inputs);
+    Logger.processInputs(m_id.name, m_inputs);
   }
 
   /**

@@ -51,7 +51,7 @@ public class Servo implements LoggableHardware {
   }
 
   private void logOutputs(double value) {
-    Logger.getInstance().recordOutput(m_id.name + VALUE_LOG_ENTRY, value);
+    Logger.recordOutput(m_id.name + VALUE_LOG_ENTRY, value);
   }
 
   @Override

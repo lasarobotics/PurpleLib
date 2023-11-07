@@ -425,7 +425,7 @@ public class LEDStrip implements AutoCloseable {
 
     // Log patterns
     for (Section section : sections)
-      Logger.getInstance().recordOutput(String.join("/", m_leds.getName(), section.name()), pattern.name());
+      Logger.recordOutput(String.join("/", m_leds.getName(), section.name()), pattern.name());
   }
 
   /**

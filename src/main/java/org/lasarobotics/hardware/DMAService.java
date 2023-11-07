@@ -43,7 +43,7 @@ public class DMAService extends SubsystemBase {
 
   private void run() {
     m_readStatus = m_dmaSample.update(m_dma, TIMEOUT);
-    Logger.getInstance().recordOutput(READ_STATUS_ENTRY, m_readStatus.name());
+    Logger.recordOutput(READ_STATUS_ENTRY, m_readStatus.name());
   }
 
   public void start() {

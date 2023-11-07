@@ -75,6 +75,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
 
   private boolean m_isSmoothMotionEnabled = false;
   private Timer m_motionTimer;
+  private TrapezoidProfile.State m_desiredState;
   private Function<TrapezoidProfile.State, Double> m_feedforwardSupplier;
 
   private TrapezoidProfile m_motionProfile;
@@ -114,6 +115,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
 
     this.m_config = config;
     this.m_motionTimer = new Timer();
+    this.m_desiredState = new TrapezoidProfile.State();
     initializeSparkPID(m_config, feedbackSensor);
   }
 
@@ -123,10 +125,10 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    * @param ctrl Control mode that was used
    */
   private void logOutputs(double value, ControlType ctrl) {
-    Logger.getInstance().recordOutput(m_id.name + VALUE_LOG_ENTRY, value);
-    Logger.getInstance().recordOutput(m_id.name + MODE_LOG_ENTRY, ctrl.name());
-    Logger.getInstance().recordOutput(m_id.name + CURRENT_LOG_ENTRY, m_spark.getOutputCurrent());
-    Logger.getInstance().recordOutput(m_id.name + MOTION_LOG_ENTRY, m_isSmoothMotionEnabled);
+    Logger.recordOutput(m_id.name + VALUE_LOG_ENTRY, value);
+    Logger.recordOutput(m_id.name + MODE_LOG_ENTRY, ctrl.name());
+    Logger.recordOutput(m_id.name + CURRENT_LOG_ENTRY, m_spark.getOutputCurrent());
+    Logger.recordOutput(m_id.name + MOTION_LOG_ENTRY, m_isSmoothMotionEnabled);
   }
 
   /**
@@ -246,7 +248,23 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
     if (!m_isSmoothMotionEnabled) return;
 
     m_isSmoothMotionEnabled = !isSmoothMotionFinished();
-    TrapezoidProfile.State motionProfileState = m_motionProfile.calculate(m_motionTimer.get());
+    TrapezoidProfile.State currentState;
+    switch (m_feedbackSensor) {
+      case NEO_ENCODER:
+        currentState = new TrapezoidProfile.State(getInputs().encoderPosition, getInputs().encoderVelocity);
+        break;
+      case ANALOG:
+        currentState = new TrapezoidProfile.State(getInputs().analogPosition, getInputs().analogVelocity);
+        break;
+      case THROUGH_BORE_ENCODER:
+        currentState = new TrapezoidProfile.State(getInputs().absoluteEncoderPosition, getInputs().absoluteEncoderVelocity);
+        break;
+      default:
+        currentState = new TrapezoidProfile.State(getInputs().encoderPosition, getInputs().encoderVelocity);
+        break;
+    }
+
+    TrapezoidProfile.State motionProfileState = m_motionProfile.calculate(m_motionTimer.get(), m_desiredState, currentState);
     set(
       motionProfileState.position,
       ControlType.kPosition,
@@ -265,7 +283,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
   @Override
   public void periodic() {
     updateInputs();
-    Logger.getInstance().processInputs(m_id.name, m_inputs);
+    Logger.processInputs(m_id.name, m_inputs);
 
     handleSmoothMotion();
   }
@@ -447,37 +465,18 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
   }
 
   /**
-   * Start smooth motion
+   * Execute a smooth motion to desired position
    * @param value The target value for the motor
    * @param motionConstraint The constraints for the motor
    * @param feedforwardSupplier Lambda function to calculate feed forward
    */
-  public void setSmoothMotion(double value, TrapezoidProfile.Constraints motionConstraint, Function<TrapezoidProfile.State, Double> feedforwardSupplier) {
+  public void smoothMotion(double value, TrapezoidProfile.Constraints motionConstraint, Function<TrapezoidProfile.State, Double> feedforwardSupplier) {
     m_isSmoothMotionEnabled = true;
     m_feedforwardSupplier = feedforwardSupplier;
     m_motionConstraint = motionConstraint;
-
-    // Generate states
-    TrapezoidProfile.State desiredState = new TrapezoidProfile.State(value, 0.0);
-    TrapezoidProfile.State currentState;
-    switch (m_feedbackSensor) {
-      case NEO_ENCODER:
-        currentState = new TrapezoidProfile.State(getInputs().encoderPosition, getInputs().encoderVelocity);
-        break;
-      case ANALOG:
-        currentState = new TrapezoidProfile.State(getInputs().analogPosition, getInputs().analogVelocity);
-        break;
-      case THROUGH_BORE_ENCODER:
-        currentState = new TrapezoidProfile.State(getInputs().absoluteEncoderPosition, getInputs().absoluteEncoderVelocity);
-        break;
-      default:
-        currentState = new TrapezoidProfile.State(getInputs().encoderPosition, getInputs().encoderVelocity);
-        break;
-    }
-
-    // Generate motion profile
-    m_motionTimer.restart();
-    m_motionProfile = new TrapezoidProfile(m_motionConstraint, desiredState, currentState);
+    m_desiredState = new TrapezoidProfile.State(value, 0.0);
+    m_motionProfile = new TrapezoidProfile(m_motionConstraint);
+    m_motionTimer.reset();
   }
 
   /**

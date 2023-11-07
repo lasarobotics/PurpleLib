@@ -149,7 +149,7 @@ public class NavX2 implements LoggableHardware, AutoCloseable {
   @Override
   public void periodic() {
     updateInputs();
-    Logger.getInstance().processInputs(m_name, m_inputs);
+    Logger.processInputs(m_name, m_inputs);
   }
 
   /**
@@ -159,16 +159,6 @@ public class NavX2 implements LoggableHardware, AutoCloseable {
   @Override
   public NavX2InputsAutoLogged getInputs() {
     return m_inputs;
-  }
-
-  /**
-   * Calibrate the gyro. It's important to make sure that the robot is
-   * not moving while the calibration is in progress, this is typically done
-   * when the robot is first turned on while it's sitting at rest before the
-   * match starts.
-   */
-  public void calibrate() {
-    m_navx.calibrate();
   }
 
   /**
@@ -221,6 +211,6 @@ public class NavX2 implements LoggableHardware, AutoCloseable {
    */
   @Override
   public void close() {
-    m_navx.close();
+    m_navx = null;
   }
 }
