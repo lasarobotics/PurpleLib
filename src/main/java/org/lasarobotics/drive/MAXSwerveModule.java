@@ -394,6 +394,14 @@ public class MAXSwerveModule implements AutoCloseable {
   }
 
   /**
+   * Get maximum drive speed of module
+   * @return Max linear speed (m/s)
+   */
+  public double getMaxLinearSpeed() {
+    return DRIVE_MAX_LINEAR_SPEED;
+  }
+
+  /**
    * Get coordinate of module relative to the center of the robot
    * @return X, Y coordinate in meters
    */
