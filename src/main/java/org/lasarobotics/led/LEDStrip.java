@@ -46,7 +46,7 @@ public class LEDStrip implements AutoCloseable {
     MIDDLE,
     END;
 
-    public static final Section FULL[] = { START, MIDDLE, END };
+    public static final Section[] FULL = { START, MIDDLE, END };
 
     private static final int SMALL_SECTION_LENGTH = 10;
 

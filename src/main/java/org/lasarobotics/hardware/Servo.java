@@ -44,7 +44,7 @@ public class Servo implements LoggableHardware {
 
   /**
    * Create a servo object with built-in logging
-   * @param id
+   * @param id Servo ID
    */
   public Servo(Servo.ID id) {
     this(id, 1.0);

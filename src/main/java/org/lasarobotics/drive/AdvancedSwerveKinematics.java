@@ -114,8 +114,12 @@ public class AdvancedSwerveKinematics {
     m_isFieldCentric = (isFieldCentric) ? 1 : 0;
   }
 
-  public int isFieldCentric() {
-    return m_isFieldCentric;
+  /**
+   * Get if kinematics are using field centric controls
+   * @return True if field centric
+   */
+  public boolean isFieldCentric() {
+    return (m_isFieldCentric == 1) ? true : false;
   }
 
   /**

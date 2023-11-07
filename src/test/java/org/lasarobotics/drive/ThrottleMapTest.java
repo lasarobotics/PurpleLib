@@ -20,8 +20,8 @@ public class ThrottleMapTest {
   private final double DELTA = 1e-5;
   private final double ALT_DELTA = 0.15;
   private final double CONTROLLER_DEADBAND = 0.10;
-  private final double DRIVE_THROTTLE_INPUT_CURVE_X[] = { 0.0, 0.100, 0.200, 0.300, 0.400, 0.500, 0.600, 0.700, 0.800, 0.900, 1.000 };
-  private final double DRIVE_THROTTLE_INPUT_CURVE_Y[] = { 0.0, 0.200, 0.400, 0.600, 0.800, 1.000, 1.200, 1.400, 1.600, 1.800, 2.000 };
+  private final double[] DRIVE_THROTTLE_INPUT_CURVE_X = { 0.0, 0.100, 0.200, 0.300, 0.400, 0.500, 0.600, 0.700, 0.800, 0.900, 1.000 };
+  private final double[] DRIVE_THROTTLE_INPUT_CURVE_Y = { 0.0, 0.200, 0.400, 0.600, 0.800, 1.000, 1.200, 1.400, 1.600, 1.800, 2.000 };
   private final SplineInterpolator SPLINE_INTERPOLATOR = new SplineInterpolator();
   private final PolynomialSplineFunction DRIVE_THROTTLE_INPUT_CURVE = SPLINE_INTERPOLATOR.interpolate(DRIVE_THROTTLE_INPUT_CURVE_X, DRIVE_THROTTLE_INPUT_CURVE_Y);
 
