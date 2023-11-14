@@ -32,10 +32,8 @@ public class Compressor implements LoggableHardware, AutoCloseable {
     double analogPressure = 0.0;
   }
 
-  private static final String VALUE_LOG_ENTRY = "/OutputValue";
-
   private edu.wpi.first.wpilibj.Compressor m_compressor;
-  
+
   private ID m_id;
   private CompressorInputsAutoLogged m_inputs;
 
