@@ -28,7 +28,7 @@ public class Analog implements LoggableHardware, AutoCloseable {
 
   @AutoLog
   public static class AnalogInputs {
-    public double voltage;
+    public double voltage = 0.0;
   }
 
   private AnalogInput m_analogInput;

@@ -41,7 +41,7 @@ public class LimitSwitch implements LoggableHardware, AutoCloseable {
 
   @AutoLog
   public static class LimitSwitchInputs {
-    public boolean value;
+    public boolean value = false;
   }
 
   private DigitalInput m_limitSwitch;

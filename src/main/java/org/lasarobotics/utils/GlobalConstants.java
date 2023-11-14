@@ -4,6 +4,8 @@
 
 package org.lasarobotics.utils;
 
+import edu.wpi.first.math.geometry.Rotation2d;
+
 public class GlobalConstants {
   public static final int ROBOT_LOOP_HZ = 50;
   public static final double ROBOT_LOOP_PERIOD = 1.0 / ROBOT_LOOP_HZ;
@@ -14,4 +16,6 @@ public class GlobalConstants {
   public static final int REV_ENCODER_TICKS_PER_ROTATION = 8192;
 
   public static final String REPLAY_ENVIRONMENT_VAR = "ROBOT_REPLAY";
+
+  public static final Rotation2d ROTATION_PI = Rotation2d.fromRadians(Math.PI);
 }
