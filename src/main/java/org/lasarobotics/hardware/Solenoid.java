@@ -9,7 +9,7 @@ import org.littletonrobotics.junction.inputs.LoggableInputs;
 
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 
-public class Solenoid implements LoggableHardware {
+public class Solenoid implements LoggableHardware, AutoCloseable {
   /** Solenoid ID */
   public static class ID {
     public final String name;
@@ -87,6 +87,7 @@ public class Solenoid implements LoggableHardware {
     logOutputs(m_solenoid.get());
   }
 
+  @Override
   public void close() {
     m_solenoid.close();
   }

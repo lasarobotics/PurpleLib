@@ -5,11 +5,10 @@
 package org.lasarobotics.hardware;
 
 import org.littletonrobotics.junction.AutoLog;
-import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 
-public class Compressor implements LoggableHardware {
+public class Compressor implements LoggableHardware, AutoCloseable {
   /** Compressor ID */
   public static class ID {
     public final String name;
@@ -28,6 +27,8 @@ public class Compressor implements LoggableHardware {
 
   @AutoLog
   public static class CompressorInputs {
+    boolean isEnabled = false;
+    boolean digitalPressure = false;
     double analogPressure = 0.0;
   }
 
@@ -49,16 +50,12 @@ public class Compressor implements LoggableHardware {
   }
 
   /**
-   * Create a Solenoid object with built-in logging
-   * @param id Solenoid ID
+   * Create a Compressor object with built-in logging
+   * @param id Compressor ID
    */
   public Compressor(Compressor.ID id) {
     this.m_id = id;
     this.m_compressor = new edu.wpi.first.wpilibj.Compressor(m_id.moduleType);
-  }
-
-  private void logOutputs(boolean value) {
-    Logger.recordOutput(m_id.name + VALUE_LOG_ENTRY, value);
   }
 
   /**
@@ -75,9 +72,29 @@ public class Compressor implements LoggableHardware {
   }
 
   /**
+   * Returns the state of the pressure switch.
+   *
+   * @return True if pressure switch indicates that the system is not full, otherwise false.
+   */
+  public boolean getPressureSwitchValue() {
+    return m_compressor.getPressureSwitchValue();
+  }
+
+  /**
+   * Returns whether the compressor is active or not.
+   *
+   * @return true if the compressor is on - otherwise false.
+   */
+  public boolean isEnabled() {
+    return m_compressor.isEnabled();
+  }
+
+  /**
    * Update sensor input readings
    */
   private void updateInputs() {
+    m_inputs.isEnabled = isEnabled();
+    m_inputs.digitalPressure = getPressureSwitchValue();
     m_inputs.analogPressure = getPressure();
   }
 
@@ -105,7 +122,6 @@ public class Compressor implements LoggableHardware {
    */
   public void enableDigital() {
     m_compressor.enableDigital();
-    logOutputs(m_compressor.isEnabled());
   }
 
   /**
@@ -124,7 +140,6 @@ public class Compressor implements LoggableHardware {
    */
   public void enableAnalog(double minPressure, double maxPressure) {
     m_compressor.enableAnalog(minPressure, maxPressure);
-    logOutputs(m_compressor.isEnabled());
   }
 
   /**
@@ -141,17 +156,16 @@ public class Compressor implements LoggableHardware {
    *     reaches this value or the pressure switch is disconnected or indicates that the system is
    *     full.
    */
-  public void enableHybrid​(double minPressure, double maxPressure) {
+  public void enableHybrid(double minPressure, double maxPressure) {
     m_compressor.enableHybrid(minPressure, maxPressure);
-    logOutputs(m_compressor.isEnabled());
   }
 
   /** Disable the compressor. */
   public void disable() {
     m_compressor.disable();
-    logOutputs(m_compressor.isEnabled());
   }
 
+  @Override
   public void close() {
     m_compressor.close();
   }
