@@ -80,6 +80,10 @@ publishing {
   publications {
     mavenJava(MavenPublication) {
       from components.java
+      afterEvaluate {
+        artifact javadocJar
+        artifact sourcesJar
+      }
     }
   }
 }
