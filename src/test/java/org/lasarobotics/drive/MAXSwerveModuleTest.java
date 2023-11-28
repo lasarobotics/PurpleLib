@@ -36,7 +36,7 @@ public class MAXSwerveModuleTest {
   private final double DELTA = 1e-5;
   private final Rotation2d ROTATION_PI = Rotation2d.fromRadians(Math.PI);
 
-  private final GearRatio GEAR_RATIO = MAXSwerveModule.GearRatio.High;
+  private final GearRatio GEAR_RATIO = MAXSwerveModule.GearRatio.L3;
   private final double SLIP_RATIO = 0.08;
   private final double WHEELBASE = 0.6;
   private final double TRACK_WIDTH = 0.6;
