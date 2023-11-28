@@ -17,9 +17,10 @@ Features:
 ## Installing
 Add the following dependencies to your project:
 * AdvantageKit - https://github.com/Mechanical-Advantage/AdvantageKit/blob/main/docs/INSTALLATION.md
-* NavX - https://dev.studica.com/releases/2023/NavX.json
-* REVLib - https://software-metadata.revrobotics.com/REVLib-2023.json
-* CTRE Phoenix5 - https://maven.ctr-electronics.com/release/com/ctre/phoenix/Phoenix5-frc2023-latest.json
+* NavX - https://dev.studica.com/releases/2024/NavX.json
+* REVLib - https://software-metadata.revrobotics.com/REVLib-2024.json
+* CTRE Phoenix5 - https://maven.ctr-electronics.com/release/com/ctre/phoenix/Phoenix5-frc2024-beta-latest.json
+* CTRE Phoenix6 - https://maven.ctr-electronics.com/release/com/ctre/phoenix6/latest/Phoenix6-frc2024-beta-latest.json
 
 Add the following to `build.gradle` where VERSION is the release version, e.g. 2023.0.0
 ```
@@ -34,3 +35,6 @@ dependencies {
 
 ## Releasing
 * Create a release in GitHub. JitPack does the rest.
+
+## Documentation
+Javadocs available [here](https://jitpack.io/com/github/lasarobotics/PurpleLib/latest/javadoc/)
