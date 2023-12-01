@@ -15,6 +15,7 @@ import edu.wpi.first.hal.simulation.SimDeviceDataJNI;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.SPI;
 
+/** NavX2 */
 public class NavX2 implements LoggableHardware, AutoCloseable {
   /** NavX2 ID */
   public static class ID {

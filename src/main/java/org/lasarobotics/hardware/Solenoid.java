@@ -9,7 +9,7 @@ import org.littletonrobotics.junction.inputs.LoggableInputs;
 
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 
-/** Single solenoid */
+/** Solenoid */
 public class Solenoid implements LoggableHardware, AutoCloseable {
   /** Solenoid ID */
   public static class ID {

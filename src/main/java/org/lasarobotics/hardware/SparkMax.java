@@ -45,6 +45,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
     }
   }
 
+  /** Feedback sensor */
   public enum FeedbackSensor {
     NEO_ENCODER, ANALOG, THROUGH_BORE_ENCODER;
   }
