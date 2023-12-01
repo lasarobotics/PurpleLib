@@ -6,6 +6,7 @@ package org.lasarobotics.battery;
 
 import edu.wpi.first.wpilibj.SerialPort;
 
+/** Battery scanner */
 class BatteryScanner {
   // Battery name
   private static final int BATTERY_ID_LENGTH = 10;

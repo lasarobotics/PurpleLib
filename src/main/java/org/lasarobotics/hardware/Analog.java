@@ -9,6 +9,9 @@ import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.wpilibj.AnalogInput;
 
+/**
+ * Analog sensor
+ */
 public class Analog implements LoggableHardware, AutoCloseable {
   /** Analog sensor ID */
   public static class ID {
@@ -26,6 +29,9 @@ public class Analog implements LoggableHardware, AutoCloseable {
     }
   }
 
+  /**
+   * Analog sensor inputs
+   */
   @AutoLog
   public static class AnalogInputs {
     public double voltage = 0.0;

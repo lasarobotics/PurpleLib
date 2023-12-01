@@ -7,6 +7,14 @@ package org.lasarobotics.hardware;
 import org.littletonrobotics.junction.inputs.LoggableInputs;
 
 public interface LoggableHardware {
+  /**
+   * Call this method periodically
+   */
   public void periodic();
+
+  /**
+   * Get latest sensor input data
+   * @return Latest sensor data
+   */
   public LoggableInputs getInputs();
 }

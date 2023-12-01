@@ -9,6 +9,7 @@ import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.wpilibj.DigitalInput;
 
+/** Limit switch */
 public class LimitSwitch implements LoggableHardware, AutoCloseable {
   /** Limit switch ID */
   public static class ID {
@@ -26,11 +27,16 @@ public class LimitSwitch implements LoggableHardware, AutoCloseable {
     }
   }
 
+  /**
+   * Switch polarity
+   */
   public enum SwitchPolarity {
+    /** Normally open switch */
     NORMALLY_OPEN {
       @Override
       public boolean getValue(boolean value) { return value; }
     },
+    /** Normally closed switch */
     NORMALLY_CLOSED {
       @Override
       public boolean getValue(boolean value) { return !value; }
@@ -39,6 +45,9 @@ public class LimitSwitch implements LoggableHardware, AutoCloseable {
     public abstract boolean getValue(boolean value);
   }
 
+  /**
+   * Limit switch sensor inputs
+   */
   @AutoLog
   public static class LimitSwitchInputs {
     public boolean value = false;

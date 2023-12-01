@@ -1,17 +1,19 @@
 package org.lasarobotics.hardware;
 
-/**
- * Select CAN bus when using CTRE devices
- * <p>
- * Only a single CANivore is supported, and it MUST be named "canivore"
- */
+/** CTRE Phoenix CAN bus */
 public enum PhoenixCANBus {
+  /** roboRIO CAN bus */
   RIO("rio"),
+  /**
+   * CANivore CAN bus
+   * <p>
+   * Only a single CANivore is supported, and MUST be named "canivore"
+   */
   CANIVORE("canivore");
 
-  public final String busName;
-  private PhoenixCANBus(String busName) {
-    this.busName = busName;
+  /** CAN bus name */
+  public final String name;
+  private PhoenixCANBus(String name) {
+    this.name = name;
   }
-
 }

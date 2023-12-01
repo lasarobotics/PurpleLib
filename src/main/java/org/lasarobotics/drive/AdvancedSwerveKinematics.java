@@ -24,10 +24,23 @@ import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.numbers.N4;
 
 
+/**
+ * Advanced Swerve Kinematics
+ * <p>
+ * Provides functionality that can correct for second order kinematics
+ */
 public class AdvancedSwerveKinematics {
 
+  /** Control centricity */
   public enum ControlCentricity {
-    ROBOT_CENTRIC, FIELD_CENTRIC;
+    /**
+     * Robot centric control
+     */
+    ROBOT_CENTRIC,
+    /**
+     * Field centric control
+     */
+    FIELD_CENTRIC;
   }
 
   private static final double EPS = 1E-9;

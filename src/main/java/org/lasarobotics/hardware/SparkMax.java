@@ -27,6 +27,7 @@ import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.Timer;
 
+/** REV Spark Max */
 public class SparkMax implements LoggableHardware, AutoCloseable {
   /** Spark Max ID */
   public static class ID {
@@ -48,6 +49,9 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
     NEO_ENCODER, ANALOG, THROUGH_BORE_ENCODER;
   }
 
+  /**
+   * Spark Max sensor inputs
+   */
   @AutoLog
   public static class SparkMaxInputs {
     public double encoderPosition = 0.0;
@@ -85,7 +89,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
   private SparkMaxLimitSwitch.Type m_limitSwitchType = SparkMaxLimitSwitch.Type.kNormallyOpen;
 
   /**
-   * Create a Spark Max object that is unit-testing friendly and with built-in logging
+   * Create a Spark Max with built-in logging that is unit-testing friendly and
    * @param id Spark Max ID
    * @param motorType The motor type connected to the controller
    */
@@ -99,7 +103,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
   }
 
   /**
-   * Create a Spark Max object that is unit-testing friendly with built-in logging and PID config
+   * Create a Spark Max with built-in logging that is unit-testing friendly and configure PID
    * @param id Spark Max ID
    * @param motorType The motor type connected to the controller
    * @param config PID config for spark max

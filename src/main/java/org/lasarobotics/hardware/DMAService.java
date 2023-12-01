@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj.DMASample.DMAReadStatus;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj.Notifier;
 
+/** DMA Service */
 public class DMAService extends SubsystemBase {
   private static DMAService m_dmaService;
 
@@ -36,6 +37,10 @@ public class DMAService extends SubsystemBase {
     m_dma.setTimedTrigger(GlobalConstants.ROBOT_LOOP_PERIOD / 2);
   }
 
+  /**
+   * Get instance of DMA service
+   * @return DMA service instance
+   */
   public static DMAService getInstance() {
     if (m_dmaService == null) m_dmaService = new DMAService();
     return m_dmaService;
@@ -46,6 +51,9 @@ public class DMAService extends SubsystemBase {
     Logger.recordOutput(READ_STATUS_ENTRY, m_readStatus.name());
   }
 
+  /**
+   * Start DMA service
+   */
   public void start() {
     m_dma.start(QUEUE_DEPTH);
     m_dmaThread.startPeriodic(GlobalConstants.ROBOT_LOOP_PERIOD / 2);

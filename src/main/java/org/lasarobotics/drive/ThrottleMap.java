@@ -10,6 +10,7 @@ import org.apache.commons.math3.analysis.polynomials.PolynomialSplineFunction;
 
 import edu.wpi.first.math.MathUtil;
 
+/** Throttle map */
 public class ThrottleMap {
   private final double MIN_DEADBAND = 0.001;
   private final double MAX_DEADBAND = 0.2;
@@ -17,7 +18,7 @@ public class ThrottleMap {
   private double m_deadband = 0.0;
 
   private HashMap<Double, Double> m_throttleInputMap = new HashMap<Double, Double>();
-  
+
   /**
    * Create an instance of ThrottleMap
    * @param throttleInputCurve Spline function characterising throttle input curve
@@ -47,7 +48,7 @@ public class ThrottleMap {
   public double throttleLookup(double throttleLookup) {
     throttleLookup = Math.copySign(Math.floor(Math.abs(throttleLookup) * 1000) / 1000, throttleLookup) + 0.0;
     throttleLookup = MathUtil.clamp(throttleLookup, -1.0, +1.0);
-    
+
     return m_throttleInputMap.get(throttleLookup);
   }
 }

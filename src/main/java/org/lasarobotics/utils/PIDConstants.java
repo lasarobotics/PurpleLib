@@ -4,11 +4,17 @@
 
 package org.lasarobotics.utils;
 
+/** PID constants */
 public class PIDConstants {
+  /** Proprotional gain */
   public final double kP;
+  /** Integral gain */
   public final double kI;
+  /** Derivative gain */
   public final double kD;
+  /** Feed-forward gain */
   public final double kF;
+  /** Loop period */
   public final double period;
 
   /**

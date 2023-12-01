@@ -12,6 +12,7 @@ import com.ctre.phoenix.sensors.WPI_Pigeon2;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 
+/** CTRE Pidgeon 2.0 */
 public class Pidgeon2 implements LoggableHardware, AutoCloseable {
   /** Pidgeon ID */
   public static class ID {
@@ -30,6 +31,9 @@ public class Pidgeon2 implements LoggableHardware, AutoCloseable {
     }
   }
 
+  /**
+   * Pigeon sensor inputs
+   */
   @AutoLog
   public static class Pidgeon2Inputs {
     public double pitchAngle = 0.0;
@@ -46,7 +50,7 @@ public class Pidgeon2 implements LoggableHardware, AutoCloseable {
 
   public Pidgeon2(ID id) {
     this.m_id = id;
-    this.m_pidgeon = new WPI_Pigeon2(id.deviceID, id.bus.busName);
+    this.m_pidgeon = new WPI_Pigeon2(id.deviceID, id.bus.name);
   }
 
   /**
@@ -112,7 +116,7 @@ public class Pidgeon2 implements LoggableHardware, AutoCloseable {
 
 
   /**
-   * Update NavX input readings
+   * Update Pidgeon input readings
    */
   private void updateInputs() {
     m_inputs.pitchAngle = getPitch();
@@ -133,7 +137,7 @@ public class Pidgeon2 implements LoggableHardware, AutoCloseable {
 
   /**
    * Get latest sensor input data
-   * @return Latest Pidgeon data
+   * @return Latest sensor data
    */
   @Override
   public Pidgeon2InputsAutoLogged getInputs() {

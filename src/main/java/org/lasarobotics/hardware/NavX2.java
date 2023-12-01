@@ -32,6 +32,9 @@ public class NavX2 implements LoggableHardware, AutoCloseable {
     }
   }
 
+  /**
+   * NavX sensor inputs
+   */
   @AutoLog
   public static class NavX2Inputs {
     public double pitchAngle = 0.0;

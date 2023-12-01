@@ -7,6 +7,7 @@ package org.lasarobotics.hardware;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.inputs.LoggableInputs;
 
+/** Servo */
 public class Servo implements LoggableHardware {
   /** Servo ID */
   public static class ID {

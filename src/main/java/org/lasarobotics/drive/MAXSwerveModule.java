@@ -19,10 +19,11 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.system.plant.DCMotor;
 
-/**
- * REV MAXSwerve module
- */
+/** REV MAXSwerve module */
 public class MAXSwerveModule implements AutoCloseable {
+  /**
+   * MAXSwerve module hardware
+   */
   public static class Hardware {
     private SparkMax driveMotor;
     private SparkMax rotateMotor;
@@ -33,13 +34,16 @@ public class MAXSwerveModule implements AutoCloseable {
     }
   }
 
+  /** Module location */
   public enum ModuleLocation {
     LeftFront(0, Rotation2d.fromRadians(-Math.PI / 2)),
     RightFront(1, Rotation2d.fromRadians(+0.0)),
     LeftRear(2, Rotation2d.fromRadians(+Math.PI)),
     RightRear(3, Rotation2d.fromRadians(+Math.PI / 2));
 
+    /** Module index */
     public final int index;
+    /** Module orientation chassis offset */
     public final Rotation2d offset;
     private ModuleLocation(int index, Rotation2d offset) {
       this.index = index;
@@ -47,9 +51,15 @@ public class MAXSwerveModule implements AutoCloseable {
     }
   }
 
+  /**
+   * MAXSwerve gear ratio
+   */
   public enum GearRatio {
+    /** 5.50:1 */
     L1(5.50),
+    /** 5.08:1 */
     L2(5.08),
+    /** 4.71:1 */
     L3(4.71);
 
     public final double value;

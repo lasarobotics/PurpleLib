@@ -8,6 +8,7 @@ import org.littletonrobotics.junction.AutoLog;
 
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 
+/** Compressor */
 public class Compressor implements LoggableHardware, AutoCloseable {
   /** Compressor ID */
   public static class ID {
@@ -25,6 +26,9 @@ public class Compressor implements LoggableHardware, AutoCloseable {
     }
   }
 
+  /**
+   * Compressor sensor inputs
+   */
   @AutoLog
   public static class CompressorInputs {
     boolean isEnabled = false;

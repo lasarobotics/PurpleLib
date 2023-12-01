@@ -30,6 +30,9 @@ public class LEDStrip implements AutoCloseable {
     }
   }
 
+  /**
+   * LED strip hardware
+   */
   public static class Hardware {
     AddressableLED ledStrip;
 
@@ -196,9 +199,10 @@ public class LEDStrip implements AutoCloseable {
     OFF(PatternType.SOLID, Color.kBlack),
     RAINBOW(PatternType.RAINBOW, Color.kBlack);
 
+    /** Pattern type */
     public final PatternType type;
+    /** Pattern color */
     public final Color color;
-
     private Pattern(PatternType type, Color color) {
       this.type = type;
       this.color = color;
@@ -209,10 +213,17 @@ public class LEDStrip implements AutoCloseable {
     SOLID, STROBE, BREATHE, WAVE, RAINBOW;
   }
 
+  /** Addressable LEDs */
   public static class AddressableLED extends edu.wpi.first.wpilibj.AddressableLED {
     private final String m_name;
     private final int m_length;
 
+    /**
+     * Addressable LED strip
+     * @param name Name
+     * @param port PWM port (Must be on RIO)
+     * @param length Length of LED strip
+     */
     public AddressableLED(String name, int port, int length) {
       super(port);
       this.m_name = name;
@@ -224,8 +235,16 @@ public class LEDStrip implements AutoCloseable {
       setLength(length);
     }
 
+    /**
+     * Get name
+     * @return name
+     */
     public String getName() { return m_name; }
 
+    /**
+     * Get length
+     * @return length
+     */
     public int getLength() { return m_length; }
   }
 

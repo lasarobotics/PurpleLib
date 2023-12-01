@@ -10,6 +10,7 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.LinearFilter;
 
+/** Traction control controller */
 public class TractionControlController {
   private enum State {
     DISABLED {
@@ -21,7 +22,7 @@ public class TractionControlController {
       public State toggle() { return DISABLED; }
     };
 
-    public abstract State toggle(); 
+    public abstract State toggle();
   }
 
   private final double MIN_SLIP_RATIO = 0.01;
@@ -88,7 +89,7 @@ public class TractionControlController {
     // Make sure wheel speed and inertial velocity are positive
     wheelSpeed = Math.abs(wheelSpeed);
     inertialVelocity = Math.abs(inertialVelocity);
-    
+
     // Apply basic traction control
     // Limit wheel speed if slipping excessively
     updateSlipRatio(wheelSpeed, inertialVelocity);

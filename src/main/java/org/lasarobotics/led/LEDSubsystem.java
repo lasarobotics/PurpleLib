@@ -13,6 +13,7 @@ import org.lasarobotics.led.LEDStrip.Section;
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
+/** LED Subsystem */
 public class LEDSubsystem extends SubsystemBase implements AutoCloseable {
   private static Pattern m_overridePattern = Pattern.TEAM_COLOR_SOLID;
 
@@ -40,10 +41,18 @@ public class LEDSubsystem extends SubsystemBase implements AutoCloseable {
     setLEDs();
   }
 
+  /**
+   * Add LED strips
+   * @param ledStrips LED strips to add
+   */
   public void add(LEDStrip... ledStrips) {
     m_ledStrips.addAll(Arrays.asList(ledStrips));
   }
 
+  /**
+   * Start override of all LEDs
+   * @param pattern Pattern to override with
+   */
   public void startOverride(Pattern pattern) {
     m_overridePattern = pattern;
     for (LEDStrip ledStrip : m_ledStrips) {
@@ -52,6 +61,9 @@ public class LEDSubsystem extends SubsystemBase implements AutoCloseable {
     }
   }
 
+  /**
+   * End override of LEDs, resume previous patterns
+   */
   public void endOverride() {
     m_overridePattern = Pattern.TEAM_COLOR_SOLID;
     for (LEDStrip ledStrip : m_ledStrips) ledStrip.endOverride();

@@ -11,7 +11,11 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
+/** Battery Tracker */
 public class BatteryTracker {
+  /**
+   * Hardware used by battery tracker
+   */
   public static class Hardware {
     public BatteryScanner scanner;
 
@@ -20,6 +24,7 @@ public class BatteryTracker {
     }
   }
 
+  /** Previous battery text file */
   public static final String PREVIOUS_BATTERY_PATH = "previous_battery.txt";
 
   private BatteryScanner m_batteryScanner;

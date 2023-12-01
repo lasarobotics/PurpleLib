@@ -9,6 +9,7 @@ import org.littletonrobotics.junction.inputs.LoggableInputs;
 
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 
+/** Single solenoid */
 public class Solenoid implements LoggableHardware, AutoCloseable {
   /** Solenoid ID */
   public static class ID {
@@ -32,7 +33,7 @@ public class Solenoid implements LoggableHardware, AutoCloseable {
   private static final String VALUE_LOG_ENTRY = "/OutputValue";
 
   private edu.wpi.first.wpilibj.Solenoid m_solenoid;
-  
+
   private ID m_id;
 
   /**

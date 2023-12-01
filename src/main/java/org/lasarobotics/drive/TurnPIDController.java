@@ -13,6 +13,7 @@ import org.lasarobotics.utils.PIDConstants;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
 
+/** Turn PID controller */
 public class TurnPIDController extends PIDController {
   private final double MIN_DEADBAND = 0.001;
   private final double MAX_DEADBAND = 0.2;
