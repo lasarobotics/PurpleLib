@@ -17,5 +17,6 @@ public class GlobalConstants {
 
   public static final String REPLAY_ENVIRONMENT_VAR = "ROBOT_REPLAY";
 
+  public static final Rotation2d ROTATION_ZERO = Rotation2d.fromRadians(0.0);
   public static final Rotation2d ROTATION_PI = Rotation2d.fromRadians(Math.PI);
 }

@@ -4,6 +4,7 @@
 
 package org.lasarobotics.hardware;
 
+import org.lasarobotics.utils.GlobalConstants;
 import org.littletonrobotics.junction.AutoLog;
 import org.littletonrobotics.junction.Logger;
 
@@ -11,19 +12,23 @@ import com.kauailabs.navx.frc.AHRS;
 
 import edu.wpi.first.hal.SimDouble;
 import edu.wpi.first.hal.simulation.SimDeviceDataJNI;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.SPI;
 
 public class NavX2 implements LoggableHardware, AutoCloseable {
   /** NavX2 ID */
   public static class ID {
     public final String name;
+    public final int deviceID;
 
     /**
      * NavX2 ID
      * @param name Device name for logging
+     * @param deviceID CAN ID
      */
-    public ID(String name) {
+    public ID(String name, int deviceID) {
       this.name = name;
+      this.deviceID = deviceID;
     }
   }
 
@@ -35,6 +40,7 @@ public class NavX2 implements LoggableHardware, AutoCloseable {
     public double xVelocity = 0.0;
     public double yVelocity = 0.0;
     public double yawRate = 0.0;
+    public Rotation2d rotation2d = GlobalConstants.ROTATION_ZERO;
   }
 
   private AHRS m_navx;
@@ -132,6 +138,24 @@ public class NavX2 implements LoggableHardware, AutoCloseable {
   }
 
   /**
+   * Return the heading of the robot as a {@link edu.wpi.first.math.geometry.Rotation2d}.
+   *
+   * <p>The angle is continuous, that is it will continue from 360 to 361 degrees. This allows
+   * algorithms that wouldn't want to see a discontinuity in the gyro output as it sweeps past from
+   * 360 to 0 on the second time around.
+   *
+   * <p>The angle is expected to increase as the gyro turns counterclockwise when looked at from the
+   * top. It needs to follow the NWU axis convention.
+   *
+   * <p>This heading is based on integration of the returned rate from the gyro.
+   *
+   * @return the current heading of the robot as a {@link edu.wpi.first.math.geometry.Rotation2d}.
+   */
+  private Rotation2d getRotation2d() {
+    return Rotation2d.fromDegrees(-getAngle());
+  }
+
+  /**
    * Update NavX input readings
    */
   private void updateInputs() {
@@ -141,6 +165,7 @@ public class NavX2 implements LoggableHardware, AutoCloseable {
     m_inputs.xVelocity = getVelocityX();
     m_inputs.yVelocity = getVelocityY();
     m_inputs.yawRate = getRate();
+    m_inputs.rotation2d = getRotation2d();
   }
 
   /**
