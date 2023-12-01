@@ -19,16 +19,13 @@ public class NavX2 implements LoggableHardware, AutoCloseable {
   /** NavX2 ID */
   public static class ID {
     public final String name;
-    public final int deviceID;
 
     /**
      * NavX2 ID
      * @param name Device name for logging
-     * @param deviceID CAN ID
      */
-    public ID(String name, int deviceID) {
+    public ID(String name) {
       this.name = name;
-      this.deviceID = deviceID;
     }
   }
 
