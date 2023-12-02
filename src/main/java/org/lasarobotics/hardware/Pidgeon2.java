@@ -1,3 +1,7 @@
+// Copyright (c) LASA Robotics and other contributors
+// Open Source Software; you can modify and/or share it under the terms of
+// the MIT license file in the root directory of this project.
+
 package org.lasarobotics.hardware;
 
 import org.lasarobotics.utils.GlobalConstants;
@@ -23,6 +27,8 @@ public class Pidgeon2 implements LoggableHardware, AutoCloseable {
     /**
      * Pidgeon2 ID
      * @param name Device name for logging
+     * @param bus CAN bus
+     * @param deviceID CAN ID
      */
     public ID(String name, PhoenixCANBus bus, int deviceID) {
       this.name = name;
