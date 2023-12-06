@@ -492,6 +492,15 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
   }
 
   /**
+   * Execute a smooth motion to desired position
+   * @param value The target value for the motor
+   * @param motionConstraint The constraints for the motor
+   */
+  public void smoothMotion(double value, TrapezoidProfile.Constraints motionConstraint) {
+    smoothMotion(value, motionConstraint, (motionProfileState) -> 0.0);
+  }
+
+  /**
    * Reset NEO built-in encoder
    */
   public void resetEncoder() {
