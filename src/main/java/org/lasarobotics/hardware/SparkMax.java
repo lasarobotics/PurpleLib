@@ -5,7 +5,9 @@
 package org.lasarobotics.hardware;
 
 import java.util.function.Function;
+import java.util.function.Supplier;
 
+import org.lasarobotics.utils.GlobalConstants;
 import org.lasarobotics.utils.SparkPIDConfig;
 import org.littletonrobotics.junction.AutoLog;
 import org.littletonrobotics.junction.Logger;
@@ -23,9 +25,9 @@ import com.revrobotics.SparkMaxAnalogSensor;
 import com.revrobotics.SparkMaxLimitSwitch;
 import com.revrobotics.SparkMaxPIDController;
 
+import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
-import edu.wpi.first.wpilibj.Timer;
 
 /** REV Spark Max */
 public class SparkMax implements LoggableHardware, AutoCloseable {
@@ -67,6 +69,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
 
   private static final int PID_SLOT = 0;
   private static final double MAX_VOLTAGE = 12.0;
+  private static final double SMOOTH_MOTION_DEBOUNCE_TIME = 0.1;
   private static final String VALUE_LOG_ENTRY = "/OutputValue";
   private static final String MODE_LOG_ENTRY = "/OutputMode";
   private static final String CURRENT_LOG_ENTRY = "/Current";
@@ -78,9 +81,11 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
   private ID m_id;
   private SparkMaxInputsAutoLogged m_inputs;
 
-  private boolean m_isSmoothMotionEnabled = false;
-  private Timer m_motionTimer;
+  private boolean m_isSmoothMotionEnabled;
+  private Debouncer m_smoothMotionFinishedDebouncer;
   private TrapezoidProfile.State m_desiredState;
+  private TrapezoidProfile.State m_smoothMotionState;
+  private Supplier<TrapezoidProfile.State> m_currentStateSupplier;
   private Function<TrapezoidProfile.State, Double> m_feedforwardSupplier;
 
   private TrapezoidProfile m_motionProfile;
@@ -98,6 +103,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
     this.m_id = id;
     this.m_spark = new CANSparkMax(id.deviceID, motorType);
     this.m_inputs = new SparkMaxInputsAutoLogged();
+    this.m_isSmoothMotionEnabled = false;
 
     m_spark.restoreFactoryDefaults();
     m_spark.enableVoltageCompensation(MAX_VOLTAGE);
@@ -114,13 +120,17 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
     this.m_id = id;
     this.m_spark = new CANSparkMax(id.deviceID, motorType);
     this.m_inputs = new SparkMaxInputsAutoLogged();
+    this.m_isSmoothMotionEnabled = false;
 
     m_spark.restoreFactoryDefaults();
     m_spark.enableVoltageCompensation(MAX_VOLTAGE);
 
     this.m_config = config;
-    this.m_motionTimer = new Timer();
+    this.m_smoothMotionFinishedDebouncer = new Debouncer(SMOOTH_MOTION_DEBOUNCE_TIME);
     this.m_desiredState = new TrapezoidProfile.State();
+    this.m_smoothMotionState = new TrapezoidProfile.State();
+    this.m_feedforwardSupplier = (motionProfileState) -> 0.0;
+    this.m_currentStateSupplier = () -> new TrapezoidProfile.State(getInputs().encoderPosition, getInputs().encoderVelocity);
     initializeSparkPID(m_config, feedbackSensor);
   }
 
@@ -252,30 +262,15 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
   private void handleSmoothMotion() {
     if (!m_isSmoothMotionEnabled) return;
 
-    m_isSmoothMotionEnabled = !isSmoothMotionFinished();
-    TrapezoidProfile.State currentState;
-    switch (m_feedbackSensor) {
-      case NEO_ENCODER:
-        currentState = new TrapezoidProfile.State(getInputs().encoderPosition, getInputs().encoderVelocity);
-        break;
-      case ANALOG:
-        currentState = new TrapezoidProfile.State(getInputs().analogPosition, getInputs().analogVelocity);
-        break;
-      case THROUGH_BORE_ENCODER:
-        currentState = new TrapezoidProfile.State(getInputs().absoluteEncoderPosition, getInputs().absoluteEncoderVelocity);
-        break;
-      default:
-        currentState = new TrapezoidProfile.State(getInputs().encoderPosition, getInputs().encoderVelocity);
-        break;
-    }
-
-    TrapezoidProfile.State motionProfileState = m_motionProfile.calculate(m_motionTimer.get(), m_desiredState, currentState);
+    m_smoothMotionState = m_motionProfile.calculate(GlobalConstants.ROBOT_LOOP_PERIOD, m_smoothMotionState, m_currentStateSupplier.get());
     set(
-      motionProfileState.position,
+      m_smoothMotionState.position,
       ControlType.kPosition,
-      m_feedforwardSupplier.apply(motionProfileState),
+      m_feedforwardSupplier.apply(m_smoothMotionState),
       SparkMaxPIDController.ArbFFUnits.kVoltage
     );
+
+    m_isSmoothMotionEnabled = !isSmoothMotionFinished();
   }
 
   public void addToSimulation(DCMotor motor) {
@@ -315,7 +310,9 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    * @return True if smooth motion is complete
    */
   public boolean isSmoothMotionFinished() {
-    return m_motionProfile.isFinished(m_motionTimer.get());
+    return m_smoothMotionFinishedDebouncer.calculate(
+      Math.abs(m_currentStateSupplier.get().position - m_desiredState.position) < m_config.getTolerance()
+    );
   }
 
   /**
@@ -327,20 +324,30 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    */
   public void initializeSparkPID(SparkPIDConfig config, FeedbackSensor feedbackSensor,
                                  boolean forwardLimitSwitch, boolean reverseLimitSwitch) {
+    m_config = config;
     m_feedbackSensor = feedbackSensor;
+    m_smoothMotionFinishedDebouncer = new Debouncer(SMOOTH_MOTION_DEBOUNCE_TIME);
+    m_desiredState = new TrapezoidProfile.State();
+    m_smoothMotionState = new TrapezoidProfile.State();
+    m_feedforwardSupplier = (motionProfileState) -> 0.0;
+
     MotorFeedbackSensor selectedSensor;
     switch (m_feedbackSensor) {
       case NEO_ENCODER:
         selectedSensor = m_spark.getEncoder();
+        m_currentStateSupplier = () -> new TrapezoidProfile.State(getInputs().encoderPosition, getInputs().encoderVelocity);
         break;
       case ANALOG:
         selectedSensor = m_spark.getAnalog(SparkMaxAnalogSensor.Mode.kAbsolute);
+        m_currentStateSupplier = () -> new TrapezoidProfile.State(getInputs().analogPosition, getInputs().analogVelocity);
         break;
       case THROUGH_BORE_ENCODER:
         selectedSensor = m_spark.getAbsoluteEncoder(SparkMaxAbsoluteEncoder.Type.kDutyCycle);
+        m_currentStateSupplier = () -> new TrapezoidProfile.State(getInputs().absoluteEncoderPosition, getInputs().absoluteEncoderVelocity);
         break;
       default:
         selectedSensor = m_spark.getEncoder();
+        m_currentStateSupplier = () -> new TrapezoidProfile.State(getInputs().encoderPosition, getInputs().encoderVelocity);
         break;
     }
 
@@ -481,7 +488,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
     m_motionConstraint = motionConstraint;
     m_desiredState = new TrapezoidProfile.State(value, 0.0);
     m_motionProfile = new TrapezoidProfile(m_motionConstraint);
-    m_motionTimer.reset();
+    m_smoothMotionState = m_desiredState;
   }
 
   /**
