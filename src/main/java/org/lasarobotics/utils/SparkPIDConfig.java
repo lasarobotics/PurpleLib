@@ -36,7 +36,7 @@ public class SparkPIDConfig {
    * @param pidf PID constants
    * @param sensorPhase set sensor phase of encoder
    * @param invertMotor invert motor or not
-   * @param tolerance tolerance of PID loop in ticks per 100ms
+   * @param tolerance tolerance of PID loop
    */
   public SparkPIDConfig(PIDConstants pidf, boolean sensorPhase, boolean invertMotor, double tolerance) {
     this.m_kP = pidf.kP;
@@ -57,7 +57,7 @@ public class SparkPIDConfig {
    * @param pidf PID constants
    * @param sensorPhase set sensor phase of encoder
    * @param invertMotor invert motor or not
-   * @param tolerance tolerance of PID loop in ticks
+   * @param tolerance tolerance of PID loop
    * @param lowerLimit lower soft limit
    * @param upperLimit upper soft limit
    * @param enableSoftLimits true to enable soft limits
