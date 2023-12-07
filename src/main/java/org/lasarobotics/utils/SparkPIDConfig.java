@@ -127,7 +127,7 @@ public class SparkPIDConfig {
     pidController.setD(m_kD, PID_SLOT);
     pidController.setFF(m_kF, PID_SLOT);
     pidController.setOutputRange(-1.0, +1.0);
-    pidController.setIZone(m_tolerance * 2, PID_SLOT);
+    pidController.setIZone((m_kI != 0.0) ? m_tolerance * 2 : 0.0, PID_SLOT);
 
     // Enable voltage compensation
     spark.enableVoltageCompensation(MAX_VOLTAGE);
