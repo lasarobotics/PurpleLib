@@ -246,14 +246,16 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    * Update sensor input readings
    */
   private void updateInputs() {
-    m_inputs.encoderPosition = getEncoderPosition();
-    m_inputs.encoderVelocity = getEncoderVelocity();
     m_inputs.analogPosition = getAnalogPosition();
     m_inputs.analogVelocity = getAnalogVelocity();
     m_inputs.absoluteEncoderPosition = getAbsoluteEncoderPosition();
     m_inputs.absoluteEncoderVelocity = getAbsoluteEncoderVelocity();
     m_inputs.forwardLimitSwitch = getForwardLimitSwitch().isPressed();
     m_inputs.reverseLimitSwitch = getReverseLimitSwitch().isPressed();
+
+    if (getMotorType() == MotorType.kBrushed) return;
+    m_inputs.encoderPosition = getEncoderPosition();
+    m_inputs.encoderVelocity = getEncoderVelocity();
   }
 
   /**
@@ -306,6 +308,14 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
   }
 
   /**
+   * Get motor type
+   * @return Motor type
+   */
+  public MotorType getMotorType() {
+    return m_spark.getMotorType();
+  }
+
+  /**
    * Check if motion is complete
    * @return True if smooth motion is complete
    */
@@ -324,6 +334,9 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    */
   public void initializeSparkPID(SparkPIDConfig config, FeedbackSensor feedbackSensor,
                                  boolean forwardLimitSwitch, boolean reverseLimitSwitch) {
+    if (getMotorType() == MotorType.kBrushed && feedbackSensor == FeedbackSensor.NEO_ENCODER)
+      throw new IllegalArgumentException("NEO encoder cannot be used in brushed motor mode!");
+
     m_config = config;
     m_feedbackSensor = feedbackSensor;
     m_smoothMotionFinishedDebouncer = new Debouncer(SMOOTH_MOTION_DEBOUNCE_TIME);
@@ -333,10 +346,6 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
 
     MotorFeedbackSensor selectedSensor;
     switch (m_feedbackSensor) {
-      case NEO_ENCODER:
-        selectedSensor = m_spark.getEncoder();
-        m_currentStateSupplier = () -> new TrapezoidProfile.State(getInputs().encoderPosition, getInputs().encoderVelocity);
-        break;
       case ANALOG:
         selectedSensor = m_spark.getAnalog(SparkMaxAnalogSensor.Mode.kAbsolute);
         m_currentStateSupplier = () -> new TrapezoidProfile.State(getInputs().analogPosition, getInputs().analogVelocity);
@@ -345,6 +354,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
         selectedSensor = m_spark.getAbsoluteEncoder(SparkMaxAbsoluteEncoder.Type.kDutyCycle);
         m_currentStateSupplier = () -> new TrapezoidProfile.State(getInputs().absoluteEncoderPosition, getInputs().absoluteEncoderVelocity);
         break;
+      case NEO_ENCODER:
       default:
         selectedSensor = m_spark.getEncoder();
         m_currentStateSupplier = () -> new TrapezoidProfile.State(getInputs().encoderPosition, getInputs().encoderVelocity);
