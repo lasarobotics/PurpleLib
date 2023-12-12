@@ -31,9 +31,9 @@ public class Compressor implements LoggableHardware, AutoCloseable {
    */
   @AutoLog
   public static class CompressorInputs {
-    boolean isEnabled = false;
-    boolean digitalPressure = false;
-    double analogPressure = 0.0;
+    public boolean isEnabled = false;
+    public boolean digitalPressure = false;
+    public double analogPressure = 0.0;
   }
 
   private edu.wpi.first.wpilibj.Compressor m_compressor;
