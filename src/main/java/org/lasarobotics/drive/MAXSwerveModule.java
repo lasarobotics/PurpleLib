@@ -211,7 +211,7 @@ public class MAXSwerveModule implements AutoCloseable {
     m_radius = m_moduleCoordinate.getNorm();
 
     // Set correction multiplier
-    m_rotateCorrectionMultiplier = (RobotBase.isReal()) ? m_driveConversionFactor : 1.0;
+    m_rotateCorrectionMultiplier = (RobotBase.isReal()) ? m_rotateConversionFactor : 1.0;
   }
 
   /**
