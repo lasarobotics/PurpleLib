@@ -571,6 +571,10 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
     logOutputs(0.0, ControlType.kDutyCycle);
   }
 
+  public void burnFlash() {
+    m_spark.burnFlash();
+  }
+
   /**
    * Closes the Spark Max controller
    */

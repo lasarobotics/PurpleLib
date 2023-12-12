@@ -6,7 +6,6 @@ package org.lasarobotics.utils;
 
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.MotorFeedbackSensor;
-import com.revrobotics.REVLibError;
 import com.revrobotics.SparkMaxLimitSwitch;
 import com.revrobotics.SparkMaxPIDController;
 
@@ -129,9 +128,7 @@ public class SparkPIDConfig {
     spark.enableVoltageCompensation(MAX_VOLTAGE);
 
     // Write settings to onboard flash
-    REVLibError status;
-    do { status = spark.burnFlash(); }
-    while (status != REVLibError.kOk);
+    spark.burnFlash();
   }
 
   /**

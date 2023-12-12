@@ -18,7 +18,6 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.system.plant.DCMotor;
-import edu.wpi.first.wpilibj.RobotBase;
 
 /** REV MAXSwerve module */
 public class MAXSwerveModule implements AutoCloseable {
@@ -104,7 +103,6 @@ public class MAXSwerveModule implements AutoCloseable {
   private GearRatio m_driveGearRatio;
   private double m_driveConversionFactor;
   private double m_rotateConversionFactor;
-  private double m_rotateCorrectionMultiplier;
   private double m_simDrivePosition;
   private double m_simRotatePosition;
   private double m_radius;
@@ -210,8 +208,9 @@ public class MAXSwerveModule implements AutoCloseable {
     // Get distance from center of robot
     m_radius = m_moduleCoordinate.getNorm();
 
-    // Set correction multiplier
-    m_rotateCorrectionMultiplier = (RobotBase.isReal()) ? m_rotateConversionFactor : 1.0;
+    // Make sure settings are burned to flash
+    m_driveMotor.burnFlash();
+    m_rotateMotor.burnFlash();
   }
 
   /**
@@ -277,7 +276,7 @@ public class MAXSwerveModule implements AutoCloseable {
     desiredState = SwerveModuleState.optimize(desiredState, Rotation2d.fromRadians(m_rotateMotor.getInputs().absoluteEncoderPosition));
 
     // Set rotate motor position
-    m_rotateMotor.set(desiredState.angle.div(m_rotateConversionFactor).getRadians(), ControlType.kPosition);
+    m_rotateMotor.set(desiredState.angle.getRadians(), ControlType.kPosition);
 
     // Set drive motor speed
     m_driveMotor.set(desiredState.speedMetersPerSecond, ControlType.kVelocity);
@@ -338,8 +337,7 @@ public class MAXSwerveModule implements AutoCloseable {
   public SwerveModuleState getState() {
     return new SwerveModuleState(
       getDriveVelocity(),
-      Rotation2d.fromRadians(m_rotateMotor.getInputs().absoluteEncoderPosition * m_rotateCorrectionMultiplier)
-        .minus(m_location.offset)
+      Rotation2d.fromRadians(m_rotateMotor.getInputs().absoluteEncoderPosition).minus(m_location.offset)
     );
   }
 
@@ -350,8 +348,7 @@ public class MAXSwerveModule implements AutoCloseable {
   public SwerveModulePosition getPosition() {
     return new SwerveModulePosition(
       m_driveMotor.getInputs().encoderPosition,
-      Rotation2d.fromRadians(m_rotateMotor.getInputs().absoluteEncoderPosition * m_rotateCorrectionMultiplier)
-        .minus(m_location.offset)
+      Rotation2d.fromRadians(m_rotateMotor.getInputs().absoluteEncoderPosition).minus(m_location.offset)
     );
   }
 
