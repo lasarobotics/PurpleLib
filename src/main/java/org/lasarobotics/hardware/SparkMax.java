@@ -19,6 +19,7 @@ import com.revrobotics.CANSparkMax.ExternalFollower;
 import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.MotorFeedbackSensor;
+import com.revrobotics.REVLibError;
 import com.revrobotics.REVPhysicsSim;
 import com.revrobotics.SparkMaxAbsoluteEncoder;
 import com.revrobotics.SparkMaxAnalogSensor;
@@ -571,8 +572,16 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
     logOutputs(0.0, ControlType.kDutyCycle);
   }
 
-  public void burnFlash() {
-    m_spark.burnFlash();
+  /**
+   * Writes all settings to flash.
+   *
+   * @return {@link REVLibError#kOk} if successful
+   */
+  public REVLibError burnFlash() {
+    try { Thread.sleep(2000); }
+    catch (InterruptedException e) { e.printStackTrace(); }
+
+    return m_spark.burnFlash();
   }
 
   /**

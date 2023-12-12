@@ -4,6 +4,8 @@
 
 package org.lasarobotics.utils;
 
+import org.lasarobotics.hardware.SparkMax;
+
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.MotorFeedbackSensor;
 import com.revrobotics.SparkMaxLimitSwitch;
@@ -77,6 +79,8 @@ public class SparkPIDConfig {
 
   /**
    * Initializes Spark Max PID
+   * <p>
+   * Must call {@link SparkMax#burnFlash()} after configuring all settings
    * @param spark Spark motor controller to apply settings to
    * @param feedbackSensor Feedback device to use for Spark PID
    * @param forwardLimitSwitch Enable forward limit switch
@@ -126,15 +130,14 @@ public class SparkPIDConfig {
 
     // Enable voltage compensation
     spark.enableVoltageCompensation(MAX_VOLTAGE);
-
-    // Write settings to onboard flash
-    spark.burnFlash();
   }
 
   /**
    * Initializes Spark PID
    * <p>
    * Calls {@link SparkPIDConfig#initializeSparkPID(CANSparkMax, MotorFeedbackSensor, boolean, boolean)} with no limit switches
+   * <p>
+   * Must call {@link SparkMax#burnFlash()} after configuring all settings
    * @param spark Spark motor controller to apply settings to
    * @param feedbackSensor Feedback device to use for Spark PID
    */
