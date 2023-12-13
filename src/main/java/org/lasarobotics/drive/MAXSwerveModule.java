@@ -136,6 +136,27 @@ public class MAXSwerveModule implements AutoCloseable {
     this.m_simRotatePosition = 0.0;
     this.m_tractionControlController =  new TractionControlController(slipRatio, DRIVE_MAX_LINEAR_SPEED);
 
+    // Create PID configs
+    SparkPIDConfig driveMotorConfig = new SparkPIDConfig(
+      new PIDConstants(DRIVE_VELOCITY_kP, 0.0, 0.0, 1 / ((GlobalConstants.NEO_MAX_RPM / 60) * m_driveConversionFactor)),
+      DRIVE_VELOCITY_SENSOR_PHASE,
+      DRIVE_INVERT_MOTOR,
+      DRIVE_VELOCITY_TOLERANCE
+    );
+    SparkPIDConfig rotateMotorConfig = new SparkPIDConfig(
+      DRIVE_ROTATE_PID,
+      DRIVE_ROTATE_SENSOR_PHASE,
+      DRIVE_ROTATE_INVERT_MOTOR,
+      DRIVE_ROTATE_TOLERANCE,
+      DRIVE_ROTATE_LOWER_LIMIT,
+      DRIVE_ROTATE_UPPER_LIMIT,
+      DRIVE_ROTATE_SOFT_LIMITS
+    );
+
+    // Initialize PID
+    m_driveMotor.initializeSparkPID(driveMotorConfig, SparkMax.FeedbackSensor.NEO_ENCODER);
+    m_rotateMotor.initializeSparkPID(rotateMotorConfig, SparkMax.FeedbackSensor.THROUGH_BORE_ENCODER);
+
     // Set drive motor to coast
     m_driveMotor.setIdleMode(IdleMode.kCoast);
 
@@ -158,27 +179,6 @@ public class MAXSwerveModule implements AutoCloseable {
     m_rotateConversionFactor = 2 * Math.PI;
     m_rotateMotor.setPositionConversionFactor(SparkMax.FeedbackSensor.THROUGH_BORE_ENCODER, m_rotateConversionFactor);
     m_rotateMotor.setVelocityConversionFactor(SparkMax.FeedbackSensor.THROUGH_BORE_ENCODER, m_rotateConversionFactor / 60);
-
-    // Create PID configs
-    SparkPIDConfig driveMotorConfig = new SparkPIDConfig(
-      new PIDConstants(DRIVE_VELOCITY_kP, 0.0, 0.0, 1 / ((GlobalConstants.NEO_MAX_RPM / 60) * m_driveConversionFactor)),
-      DRIVE_VELOCITY_SENSOR_PHASE,
-      DRIVE_INVERT_MOTOR,
-      DRIVE_VELOCITY_TOLERANCE
-    );
-    SparkPIDConfig rotateMotorConfig = new SparkPIDConfig(
-      DRIVE_ROTATE_PID,
-      DRIVE_ROTATE_SENSOR_PHASE,
-      DRIVE_ROTATE_INVERT_MOTOR,
-      DRIVE_ROTATE_TOLERANCE,
-      DRIVE_ROTATE_LOWER_LIMIT,
-      DRIVE_ROTATE_UPPER_LIMIT,
-      DRIVE_ROTATE_SOFT_LIMITS
-    );
-
-    // Initialize PID
-    m_driveMotor.initializeSparkPID(driveMotorConfig, SparkMax.FeedbackSensor.NEO_ENCODER);
-    m_rotateMotor.initializeSparkPID(rotateMotorConfig, SparkMax.FeedbackSensor.THROUGH_BORE_ENCODER);
 
     // Enable PID wrapping
     m_rotateMotor.enablePIDWrapping(0.0, 2 * Math.PI);
