@@ -135,6 +135,9 @@ public class MAXSwerveModule implements AutoCloseable {
     this.m_simRotatePosition = 0.0;
     this.m_tractionControlController =  new TractionControlController(slipRatio, DRIVE_MAX_LINEAR_SPEED);
 
+    // Wait for 2 seconds before proceeding...
+    GlobalConstants.wait(2.0);
+
     // Reset motor controllers
     m_driveMotor.restoreFactoryDefaults();
     m_rotateMotor.restoreFactoryDefaults();
