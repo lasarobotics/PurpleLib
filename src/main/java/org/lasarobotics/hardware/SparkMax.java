@@ -584,6 +584,15 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
   }
 
   /**
+   * Restore motor controller parameters to factory default until the next controller reboot
+   *
+   * @return {@link REVLibError#kOk} if successful
+   */
+  public REVLibError restoreFactoryDefaults() {
+    return m_spark.restoreFactoryDefaults();
+  }
+
+  /**
    * Writes all settings to flash.
    *
    * @return {@link REVLibError#kOk} if successful

@@ -88,9 +88,6 @@ public class SparkPIDConfig {
    */
   public void initializeSparkPID(CANSparkMax spark, MotorFeedbackSensor feedbackSensor,
                                  boolean forwardLimitSwitch, boolean reverseLimitSwitch) {
-    // Reset Spark to default
-    spark.restoreFactoryDefaults();
-
     // Get PID controller
     SparkMaxPIDController pidController = spark.getPIDController();
 
