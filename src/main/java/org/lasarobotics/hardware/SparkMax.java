@@ -599,7 +599,9 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    * @return {@link REVLibError#kOk} if successful
    */
   public REVLibError burnFlash() {
-    GlobalConstants.wait(0.5);
+    try { Thread.sleep(500); }
+    catch (InterruptedException e) { e.printStackTrace(); }
+
     return m_spark.burnFlash();
   }
 

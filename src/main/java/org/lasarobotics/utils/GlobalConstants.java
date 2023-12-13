@@ -31,10 +31,4 @@ public class GlobalConstants {
   public static final Rotation2d ROTATION_ZERO = Rotation2d.fromRadians(0.0);
   /** Pi radians rotation */
   public static final Rotation2d ROTATION_PI = Rotation2d.fromRadians(Math.PI);
-
-  public static void wait(double seconds) {
-    long time = (long)seconds / 1000;
-    try { Thread.sleep(time); }
-    catch (InterruptedException e) { e.printStackTrace(); }
-  }
 }
