@@ -181,7 +181,7 @@ public class MAXSwerveModule implements AutoCloseable {
     m_rotateMotor.setVelocityConversionFactor(SparkMax.FeedbackSensor.THROUGH_BORE_ENCODER, m_rotateConversionFactor / 60);
 
     // Enable PID wrapping
-    m_rotateMotor.enablePIDWrapping(0.0, 2 * Math.PI);
+    m_rotateMotor.enablePIDWrapping(0.0, m_rotateConversionFactor);
 
     // Add motors to REVPhysicsSim
     m_driveMotor.addToSimulation(DCMotor.getNEO(1));
