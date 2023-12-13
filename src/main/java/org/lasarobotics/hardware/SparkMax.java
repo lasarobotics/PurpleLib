@@ -363,6 +363,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
     }
 
     config.initializeSparkPID(m_spark, selectedSensor, forwardLimitSwitch, reverseLimitSwitch);
+    burnFlash();
   }
 
   /**
@@ -383,6 +384,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    */
   public void follow(SparkMax master, boolean isInverted) {
     m_spark.follow(ExternalFollower.kFollowerSparkMax, master.getID().deviceID, isInverted);
+    burnFlash();
   }
 
   /**
@@ -403,6 +405,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    */
   public void setInverted(boolean isInverted) {
     m_spark.setInverted(isInverted);
+    burnFlash();
   }
 
   /**
@@ -463,6 +466,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
       default:
         break;
     }
+    burnFlash();
   }
 
   /**
@@ -485,6 +489,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
       default:
         break;
     }
+    burnFlash();
   }
 
   /**
@@ -526,8 +531,11 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    */
   public void enablePIDWrapping(double minInput, double maxInput) {
     m_spark.getPIDController().setPositionPIDWrappingEnabled(true);
+    burnFlash();
     m_spark.getPIDController().setPositionPIDWrappingMinInput(minInput);
+    burnFlash();
     m_spark.getPIDController().setPositionPIDWrappingMaxInput(maxInput);
+    burnFlash();
   }
 
   /**
@@ -578,9 +586,6 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    * @return {@link REVLibError#kOk} if successful
    */
   public REVLibError burnFlash() {
-    try { Thread.sleep(2000); }
-    catch (InterruptedException e) { e.printStackTrace(); }
-
     return m_spark.burnFlash();
   }
 
