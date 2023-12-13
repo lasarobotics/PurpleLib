@@ -571,6 +571,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    */
   public void setSmartCurrentLimit(int limit) {
     m_spark.setSmartCurrentLimit(limit);
+    burnFlash();
   }
 
   /**
