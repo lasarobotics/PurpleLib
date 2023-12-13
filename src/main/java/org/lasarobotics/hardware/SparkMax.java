@@ -543,6 +543,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    */
   public void disablePIDWrapping() {
     m_spark.getPIDController().setPositionPIDWrappingEnabled(false);
+    burnFlash();
   }
 
   /**
@@ -551,6 +552,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    */
   public void setIdleMode(IdleMode mode) {
     m_spark.setIdleMode(mode);
+    burnFlash();
   }
 
   /**
