@@ -588,9 +588,9 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    *
    * @return {@link REVLibError#kOk} if successful
    */
-  public void restoreFactoryDefaults() {
+  public REVLibError restoreFactoryDefaults() {
     m_spark.restoreFactoryDefaults();
-    burnFlash();
+    return burnFlash();
   }
 
   /**
