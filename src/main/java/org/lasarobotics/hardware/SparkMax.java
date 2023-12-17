@@ -4,6 +4,7 @@
 
 package org.lasarobotics.hardware;
 
+import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -29,6 +30,7 @@ import com.revrobotics.SparkMaxPIDController;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.wpilibj.Timer;
 
 /** REV Spark Max */
 public class SparkMax implements LoggableHardware, AutoCloseable {
@@ -69,13 +71,14 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
   }
 
   private static final int PID_SLOT = 0;
+  private static final int BURN_FLASH_ATTEMPTS = 5;
   private static final double MAX_VOLTAGE = 12.0;
   private static final double SMOOTH_MOTION_DEBOUNCE_TIME = 0.1;
   private static final String VALUE_LOG_ENTRY = "/OutputValue";
   private static final String MODE_LOG_ENTRY = "/OutputMode";
   private static final String CURRENT_LOG_ENTRY = "/Current";
   private static final String MOTION_LOG_ENTRY = "/SmoothMotion";
-  private static final String ENCODER_RESET_MESSAGE = "/EncoderReset";
+
 
   private CANSparkMax m_spark;
 
@@ -142,7 +145,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    */
   private void logOutputs(double value, ControlType ctrl) {
     Logger.recordOutput(m_id.name + VALUE_LOG_ENTRY, value);
-    Logger.recordOutput(m_id.name + MODE_LOG_ENTRY, ctrl.name());
+    Logger.recordOutput(m_id.name + MODE_LOG_ENTRY, ctrl.toString());
     Logger.recordOutput(m_id.name + CURRENT_LOG_ENTRY, m_spark.getOutputCurrent());
     Logger.recordOutput(m_id.name + MOTION_LOG_ENTRY, m_isSmoothMotionEnabled);
   }
@@ -276,6 +279,52 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
     m_isSmoothMotionEnabled = !isSmoothMotionFinished();
   }
 
+  /**
+   * Attempt to burn settings to flash and check if specified parameter is set correctly
+   * @param parameterCheckSupplier Method to check for parameter in question
+   * @return {@link REVLibError#kOk} if successful
+   */
+  private REVLibError burnFlash(BooleanSupplier parameterCheckSupplier) {
+    REVLibError status = REVLibError.kError;
+    for (int i = 0; i < BURN_FLASH_ATTEMPTS; i++) {
+      status = burnFlash();
+      if (parameterCheckSupplier.getAsBoolean() && status == REVLibError.kOk) break;
+    }
+
+    return status;
+  }
+
+  /**
+   * Writes all settings to flash.
+   * @return {@link REVLibError#kOk} if successful
+   */
+  public REVLibError burnFlash() {
+    Timer.delay(0.5);
+    REVLibError status = m_spark.burnFlash();
+    Timer.delay(0.5);
+
+    return status;
+  }
+
+  /**
+   * Restore motor controller parameters to factory defaults until the next controller reboot
+   * @return {@link REVLibError#kOk} if successful
+   */
+  public REVLibError restoreFactoryDefaults() {
+    REVLibError status;
+    m_spark.restoreFactoryDefaults();
+    status = burnFlash();
+
+    if (status != REVLibError.kOk)
+      System.out.println(String.join(" ", m_id.name, "Restore factory defaults failure:", status.toString()));
+
+    return status;
+  }
+
+  /**
+   * Add motor to simulation
+   * @param motor Motor that is connected to this Spark Max
+   */
   public void addToSimulation(DCMotor motor) {
     REVPhysicsSim.getInstance().addSparkMax(m_spark, motor);
   }
@@ -380,11 +429,10 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
   /**
    * Slave Spark Max to another
    * @param master Spark Max to follow
-   * @param isInverted Whether or not to invert slave
+   * @param invert Set slave to output opposite of the master
    */
-  public void follow(SparkMax master, boolean isInverted) {
-    m_spark.follow(ExternalFollower.kFollowerSparkMax, master.getID().deviceID, isInverted);
-    burnFlash();
+  public void follow(SparkMax master, boolean invert) {
+    m_spark.follow(ExternalFollower.kFollowerSparkMax, master.getID().deviceID, invert);
   }
 
   /**
@@ -405,7 +453,6 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    */
   public void setInverted(boolean isInverted) {
     m_spark.setInverted(isInverted);
-    burnFlash();
   }
 
   /**
@@ -453,20 +500,29 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    * @param factor The conversion factor to multiply the native units by
    */
   public void setPositionConversionFactor(FeedbackSensor sensor, double factor) {
+    REVLibError status;
+    BooleanSupplier parameterCheckSupplier;
     switch (sensor) {
       case NEO_ENCODER:
         m_spark.getEncoder().setPositionConversionFactor(factor);
+        parameterCheckSupplier = () -> m_spark.getEncoder().getPositionConversionFactor() == factor;
         break;
       case ANALOG:
         getAnalog().setPositionConversionFactor(factor);
+        parameterCheckSupplier = () -> getAnalog().getPositionConversionFactor() == factor;
         break;
       case THROUGH_BORE_ENCODER:
         getAbsoluteEncoder().setPositionConversionFactor(factor);
+        parameterCheckSupplier = () -> getAbsoluteEncoder().getPositionConversionFactor() == factor;
         break;
       default:
+        parameterCheckSupplier = () -> true;
         break;
     }
-    burnFlash();
+
+    status = burnFlash(parameterCheckSupplier);
+    if (status != REVLibError.kOk)
+      System.out.println(String.join(" ", m_id.name, "Set position conversion factor failure:", status.toString()));
   }
 
   /**
@@ -476,20 +532,29 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    * @param factor The conversion factor to multiply the native units by
    */
   public void setVelocityConversionFactor(FeedbackSensor sensor, double factor) {
+    REVLibError status;
+    BooleanSupplier parameterCheckSupplier;
     switch (sensor) {
       case NEO_ENCODER:
         m_spark.getEncoder().setVelocityConversionFactor(factor);
+        parameterCheckSupplier = () -> m_spark.getEncoder().getVelocityConversionFactor() == factor;
         break;
       case ANALOG:
         getAnalog().setVelocityConversionFactor(factor);
+        parameterCheckSupplier = () -> getAnalog().getVelocityConversionFactor() == factor;
         break;
       case THROUGH_BORE_ENCODER:
         getAbsoluteEncoder().setVelocityConversionFactor(factor);
+        parameterCheckSupplier = () -> getAnalog().getVelocityConversionFactor() == factor;
         break;
       default:
+        parameterCheckSupplier = () -> true;
         break;
     }
-    burnFlash();
+
+    status = burnFlash(parameterCheckSupplier);
+    if (status != REVLibError.kOk)
+      System.out.println(String.join(" ", m_id.name, "Set velocity conversion factor failure:", status.toString()));
   }
 
   /**
@@ -521,7 +586,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    */
   public void resetEncoder() {
     m_spark.getEncoder().setPosition(0.0);
-    System.out.println(m_id.name + ENCODER_RESET_MESSAGE);
+    System.out.println(String.join(" ", m_id.name, "Encoder reset!"));
   }
 
   /**
@@ -530,20 +595,31 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    * @param maxInput Value of max input for position
    */
   public void enablePIDWrapping(double minInput, double maxInput) {
+    REVLibError status;
     m_spark.getPIDController().setPositionPIDWrappingEnabled(true);
-    burnFlash();
     m_spark.getPIDController().setPositionPIDWrappingMinInput(minInput);
-    burnFlash();
     m_spark.getPIDController().setPositionPIDWrappingMaxInput(maxInput);
-    burnFlash();
+
+    status = burnFlash(() ->
+      m_spark.getPIDController().getPositionPIDWrappingEnabled() == true &&
+      m_spark.getPIDController().getPositionPIDWrappingMinInput() == minInput &&
+      m_spark.getPIDController().getPositionPIDWrappingMaxInput() == maxInput
+    );
+
+    if (status != REVLibError.kOk)
+      System.out.println(String.join(" ", m_id.name, "Enable position PID wrapping failure:", status.toString()));
   }
 
   /**
    * Disable PID wrapping for close loop position control
    */
   public void disablePIDWrapping() {
+    REVLibError status;
     m_spark.getPIDController().setPositionPIDWrappingEnabled(false);
-    burnFlash();
+
+    status = burnFlash(() -> m_spark.getPIDController().getPositionPIDWrappingEnabled() == false);
+    if (status != REVLibError.kOk)
+      System.out.println(String.join(" ", m_id.name, "Disable position PID wrapping failure:", status.toString()));
   }
 
   /**
@@ -552,7 +628,6 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    */
   public void setIdleMode(IdleMode mode) {
     m_spark.setIdleMode(mode);
-    burnFlash();
   }
 
   /**
@@ -571,7 +646,6 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    */
   public void setSmartCurrentLimit(int limit) {
     m_spark.setSmartCurrentLimit(limit);
-    burnFlash();
   }
 
   /**
@@ -581,28 +655,6 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
   public void stopMotor() {
     m_spark.stopMotor();
     logOutputs(0.0, ControlType.kDutyCycle);
-  }
-
-  /**
-   * Restore motor controller parameters to factory default until the next controller reboot
-   *
-   * @return {@link REVLibError#kOk} if successful
-   */
-  public REVLibError restoreFactoryDefaults() {
-    m_spark.restoreFactoryDefaults();
-    return burnFlash();
-  }
-
-  /**
-   * Writes all settings to flash.
-   *
-   * @return {@link REVLibError#kOk} if successful
-   */
-  public REVLibError burnFlash() {
-    try { Thread.sleep(500); }
-    catch (InterruptedException e) { e.printStackTrace(); }
-
-    return m_spark.burnFlash();
   }
 
   /**
