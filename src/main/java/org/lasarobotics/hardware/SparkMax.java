@@ -279,6 +279,11 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
     m_isSmoothMotionEnabled = !isSmoothMotionFinished();
   }
 
+  private void checkStatus(REVLibError status, String errorMessage) {
+    if (status != REVLibError.kOk)
+      System.out.println(String.join(" ", m_id.name, errorMessage, "-", status.toString()));
+  }
+
   /**
    * Attempt to burn settings to flash and check if specified parameter is set correctly
    * @param parameterCheckSupplier Method to check for parameter in question
@@ -313,10 +318,9 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
   public REVLibError restoreFactoryDefaults() {
     REVLibError status;
     m_spark.restoreFactoryDefaults();
-    status = burnFlash();
+    status = burnFlash(() -> true);
 
-    if (status != REVLibError.kOk)
-      System.out.println(String.join(" ", m_id.name, "Restore factory defaults failure:", status.toString()));
+    checkStatus(status, "Restore factory defaults failure");
 
     return status;
   }
@@ -411,7 +415,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
         break;
     }
 
-    config.initializeSparkPID(m_spark, selectedSensor, forwardLimitSwitch, reverseLimitSwitch);
+    m_config.initializeSparkPID(m_spark, selectedSensor, forwardLimitSwitch, reverseLimitSwitch);
     burnFlash();
   }
 
@@ -432,7 +436,11 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    * @param invert Set slave to output opposite of the master
    */
   public void follow(SparkMax master, boolean invert) {
+    REVLibError status;
     m_spark.follow(ExternalFollower.kFollowerSparkMax, master.getID().deviceID, invert);
+    status = burnFlash(() -> m_spark.isFollower() && m_spark.getInverted() == invert);
+
+    checkStatus(status, "Set motor master failure");
   }
 
   /**
@@ -452,7 +460,11 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    * @param isInverted The state of inversion, true is inverted.
    */
   public void setInverted(boolean isInverted) {
+    REVLibError status;
     m_spark.setInverted(isInverted);
+    status = burnFlash(() -> m_spark.getInverted() == isInverted);
+
+    checkStatus(status, "Set motor inversion failure");
   }
 
   /**
@@ -521,8 +533,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
     }
 
     status = burnFlash(parameterCheckSupplier);
-    if (status != REVLibError.kOk)
-      System.out.println(String.join(" ", m_id.name, "Set position conversion factor failure:", status.toString()));
+    checkStatus(status, "Set position conversion factor failure");
   }
 
   /**
@@ -553,8 +564,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
     }
 
     status = burnFlash(parameterCheckSupplier);
-    if (status != REVLibError.kOk)
-      System.out.println(String.join(" ", m_id.name, "Set velocity conversion factor failure:", status.toString()));
+    checkStatus(status, "Set velocity conversion factor failure");
   }
 
   /**
@@ -606,8 +616,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
       m_spark.getPIDController().getPositionPIDWrappingMaxInput() == maxInput
     );
 
-    if (status != REVLibError.kOk)
-      System.out.println(String.join(" ", m_id.name, "Enable position PID wrapping failure:", status.toString()));
+    checkStatus(status, "Enable position PID wrapping failure");
   }
 
   /**
@@ -618,8 +627,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
     m_spark.getPIDController().setPositionPIDWrappingEnabled(false);
 
     status = burnFlash(() -> m_spark.getPIDController().getPositionPIDWrappingEnabled() == false);
-    if (status != REVLibError.kOk)
-      System.out.println(String.join(" ", m_id.name, "Disable position PID wrapping failure:", status.toString()));
+    checkStatus(status, "Disable position PID wrapping failure");
   }
 
   /**
