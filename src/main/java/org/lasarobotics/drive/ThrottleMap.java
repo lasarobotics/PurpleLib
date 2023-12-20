@@ -31,10 +31,10 @@ public class ThrottleMap {
    * @param maxLinearSpeed maximum linear speed of robot (m/s)
    */
   public ThrottleMap(PolynomialSplineFunction throttleInputCurve,
-    double deadband, double accelerationRate, double maxLinearSpeed) {
+    double deadband, double accelerationTime, double maxLinearSpeed) {
     this.m_deadband = MathUtil.clamp(deadband, MIN_DEADBAND, MAX_DEADBAND);
     this.m_throttleSlewLimiter = new SlewRateLimiter(
-      maxLinearSpeed / MathUtil.clamp(accelerationRate, MIN_ACCELERATION_TIME, MAX_ACCELERATION_TIME)
+      maxLinearSpeed / MathUtil.clamp(accelerationTime, MIN_ACCELERATION_TIME, MAX_ACCELERATION_TIME)
     );
 
     // Fill throttle input hashmap
