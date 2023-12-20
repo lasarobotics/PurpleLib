@@ -72,7 +72,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
   }
 
   private static final int PID_SLOT = 0;
-  private static final int BURN_FLASH_ATTEMPTS = 5;
+  private static final int MAX_ATTEMPTS = 5;
   private static final double MAX_VOLTAGE = 12.0;
   private static final double SMOOTH_MOTION_DEBOUNCE_TIME = 0.1;
   private static final String VALUE_LOG_ENTRY = "/OutputValue";
@@ -290,10 +290,12 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    * @param parameterCheckSupplier Method to check for parameter in question
    * @return {@link REVLibError#kOk} if successful
    */
-  private REVLibError burnFlash(BooleanSupplier parameterCheckSupplier) {
+  private REVLibError applyParameter(Supplier<REVLibError> parameterSetter, BooleanSupplier parameterCheckSupplier) {
+    if (RobotBase.isSimulation()) return parameterSetter.get();
+
     REVLibError status = REVLibError.kError;
-    for (int i = 0; i < BURN_FLASH_ATTEMPTS; i++) {
-      status = burnFlash();
+    for (int i = 0; i < MAX_ATTEMPTS; i++) {
+      status = parameterSetter.get();
       if (parameterCheckSupplier.getAsBoolean() && status == REVLibError.kOk) break;
     }
 
@@ -320,8 +322,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    */
   public REVLibError restoreFactoryDefaults() {
     REVLibError status;
-    m_spark.restoreFactoryDefaults();
-    status = burnFlash(() -> true);
+    status = applyParameter(() -> m_spark.restoreFactoryDefaults(), () -> true);
 
     checkStatus(status, "Restore factory defaults failure");
 
@@ -440,8 +441,10 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    */
   public void follow(SparkMax master, boolean invert) {
     REVLibError status;
-    m_spark.follow(ExternalFollower.kFollowerSparkMax, master.getID().deviceID, invert);
-    status = burnFlash(() -> m_spark.isFollower() && m_spark.getInverted() == invert);
+    status = applyParameter(
+      () -> m_spark.follow(ExternalFollower.kFollowerSparkMax, master.getID().deviceID, invert),
+      () -> m_spark.isFollower() && m_spark.getInverted() == invert
+    );
 
     checkStatus(status, "Set motor master failure");
   }
@@ -463,11 +466,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    * @param isInverted The state of inversion, true is inverted.
    */
   public void setInverted(boolean isInverted) {
-    REVLibError status;
     m_spark.setInverted(isInverted);
-    status = burnFlash(() -> m_spark.getInverted() == isInverted);
-
-    checkStatus(status, "Set motor inversion failure");
   }
 
   /**
@@ -516,26 +515,28 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    */
   public void setPositionConversionFactor(FeedbackSensor sensor, double factor) {
     REVLibError status;
+    Supplier<REVLibError> parameterSetter;
     BooleanSupplier parameterCheckSupplier;
     switch (sensor) {
       case NEO_ENCODER:
-        m_spark.getEncoder().setPositionConversionFactor(factor);
+        parameterSetter = () -> m_spark.getEncoder().setPositionConversionFactor(factor);
         parameterCheckSupplier = () -> m_spark.getEncoder().getPositionConversionFactor() == factor;
         break;
       case ANALOG:
-        getAnalog().setPositionConversionFactor(factor);
+        parameterSetter = () -> getAnalog().setPositionConversionFactor(factor);
         parameterCheckSupplier = () -> getAnalog().getPositionConversionFactor() == factor;
         break;
       case THROUGH_BORE_ENCODER:
-        getAbsoluteEncoder().setPositionConversionFactor(factor);
+        parameterSetter = () -> getAbsoluteEncoder().setPositionConversionFactor(factor);
         parameterCheckSupplier = () -> getAbsoluteEncoder().getPositionConversionFactor() == factor;
         break;
       default:
+        parameterSetter = () -> REVLibError.kOk;
         parameterCheckSupplier = () -> true;
         break;
     }
 
-    status = burnFlash(parameterCheckSupplier);
+    status = applyParameter(parameterSetter, parameterCheckSupplier);
     checkStatus(status, "Set position conversion factor failure");
   }
 
@@ -547,26 +548,28 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    */
   public void setVelocityConversionFactor(FeedbackSensor sensor, double factor) {
     REVLibError status;
+    Supplier<REVLibError> parameterSetter;
     BooleanSupplier parameterCheckSupplier;
     switch (sensor) {
       case NEO_ENCODER:
-        m_spark.getEncoder().setVelocityConversionFactor(factor);
+        parameterSetter = () -> m_spark.getEncoder().setVelocityConversionFactor(factor);
         parameterCheckSupplier = () -> m_spark.getEncoder().getVelocityConversionFactor() == factor;
         break;
       case ANALOG:
-        getAnalog().setVelocityConversionFactor(factor);
+        parameterSetter = () -> getAnalog().setVelocityConversionFactor(factor);
         parameterCheckSupplier = () -> getAnalog().getVelocityConversionFactor() == factor;
         break;
       case THROUGH_BORE_ENCODER:
-        getAbsoluteEncoder().setVelocityConversionFactor(factor);
+        parameterSetter = () -> getAbsoluteEncoder().setVelocityConversionFactor(factor);
         parameterCheckSupplier = () -> getAnalog().getVelocityConversionFactor() == factor;
         break;
       default:
+        parameterSetter = () -> REVLibError.kOk;
         parameterCheckSupplier = () -> true;
         break;
     }
 
-    status = burnFlash(parameterCheckSupplier);
+    status = applyParameter(parameterSetter, parameterCheckSupplier);
     checkStatus(status, "Set velocity conversion factor failure");
   }
 
@@ -637,16 +640,19 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    */
   public void enablePIDWrapping(double minInput, double maxInput) {
     REVLibError status;
-    m_spark.getPIDController().setPositionPIDWrappingEnabled(true);
-    m_spark.getPIDController().setPositionPIDWrappingMinInput(minInput);
-    m_spark.getPIDController().setPositionPIDWrappingMaxInput(maxInput);
-
-    status = burnFlash(() ->
+    Supplier<REVLibError> parameterSetter = () -> {
+      REVLibError s;
+      s = m_spark.getPIDController().setPositionPIDWrappingEnabled(true);
+      s = m_spark.getPIDController().setPositionPIDWrappingMinInput(minInput);
+      s = m_spark.getPIDController().setPositionPIDWrappingMaxInput(maxInput);
+      return s;
+    };
+    BooleanSupplier parameterCheckSupplier = () ->
       m_spark.getPIDController().getPositionPIDWrappingEnabled() == true &&
       m_spark.getPIDController().getPositionPIDWrappingMinInput() == minInput &&
-      m_spark.getPIDController().getPositionPIDWrappingMaxInput() == maxInput
-    );
+      m_spark.getPIDController().getPositionPIDWrappingMaxInput() == maxInput;
 
+    status = applyParameter(parameterSetter, parameterCheckSupplier);
     checkStatus(status, "Enable position PID wrapping failure");
   }
 
@@ -655,9 +661,10 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    */
   public void disablePIDWrapping() {
     REVLibError status;
-    m_spark.getPIDController().setPositionPIDWrappingEnabled(false);
-
-    status = burnFlash(() -> m_spark.getPIDController().getPositionPIDWrappingEnabled() == false);
+    status = applyParameter(
+      () -> m_spark.getPIDController().setPositionPIDWrappingEnabled(false),
+      () -> m_spark.getPIDController().getPositionPIDWrappingEnabled() == false
+    );
     checkStatus(status, "Disable position PID wrapping failure");
   }
 
