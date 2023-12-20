@@ -287,6 +287,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
 
   /**
    * Attempt to burn settings to flash and check if specified parameter is set correctly
+   * @param parameterSetter Method to set desired parameter
    * @param parameterCheckSupplier Method to check for parameter in question
    * @return {@link REVLibError#kOk} if successful
    */
