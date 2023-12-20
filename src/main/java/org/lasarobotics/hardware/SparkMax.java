@@ -30,6 +30,7 @@ import com.revrobotics.SparkMaxPIDController;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 
 /** REV Spark Max */
@@ -304,6 +305,8 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    * @return {@link REVLibError#kOk} if successful
    */
   public REVLibError burnFlash() {
+    if (RobotBase.isSimulation()) return REVLibError.kOk;
+
     Timer.delay(0.5);
     REVLibError status = m_spark.burnFlash();
     Timer.delay(0.5);
