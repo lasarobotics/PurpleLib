@@ -21,7 +21,6 @@ import org.junit.jupiter.api.TestMethodOrder;
 public class ThrottleMapTest {
   private final double DELTA = 1e-5;
   private final double CONTROLLER_DEADBAND = 0.10;
-  private final double ACCELERATION_TIME = 0.1;
   private final double[] DRIVE_THROTTLE_INPUT_CURVE_X = { 0.0, 0.100, 0.200, 0.300, 0.400, 0.500, 0.600, 0.700, 0.800, 0.900, 1.000 };
   private final double[] DRIVE_THROTTLE_INPUT_CURVE_Y = { 0.0, 0.200, 0.400, 0.600, 0.800, 1.000, 1.200, 1.400, 1.600, 1.800, 2.000 };
   private final SplineInterpolator SPLINE_INTERPOLATOR = new SplineInterpolator();
@@ -34,7 +33,6 @@ public class ThrottleMapTest {
     m_throttleMap = new ThrottleMap(
       DRIVE_THROTTLE_INPUT_CURVE,
       CONTROLLER_DEADBAND,
-      ACCELERATION_TIME,
       DRIVE_THROTTLE_INPUT_CURVE_Y[DRIVE_THROTTLE_INPUT_CURVE_Y.length - 1]
     );
   }
