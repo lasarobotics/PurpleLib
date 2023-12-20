@@ -600,6 +600,34 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
   }
 
   /**
+   * Disable forward limit switch
+   */
+  public void disableForwardLimitSwitch() {
+    getForwardLimitSwitch().enableLimitSwitch(false);
+  }
+
+  /**
+   * Enable forward limit switch
+   */
+  public void enableForwardLimitSwitch() {
+    getForwardLimitSwitch().enableLimitSwitch(true);
+  }
+
+  /**
+   * Disable reverse limit switch
+   */
+  public void disableReverseLimitSwitch() {
+    getReverseLimitSwitch().enableLimitSwitch(false);
+  }
+
+  /**
+   * Enable reverse limit switch
+   */
+  public void enableReverseLimitSwitch() {
+    getReverseLimitSwitch().enableLimitSwitch(true);
+  }
+
+  /**
    * Enable PID wrapping for closed loop position control
    * @param minInput Value of the min input for position
    * @param maxInput Value of max input for position
