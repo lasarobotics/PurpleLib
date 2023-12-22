@@ -2,7 +2,7 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the MIT license file in the root directory of this project.
 
-package org.lasarobotics.hardware.rev;
+package org.lasarobotics.hardware.revrobotics;
 
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
@@ -101,7 +101,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
   private SparkMaxLimitSwitch.Type m_limitSwitchType = SparkMaxLimitSwitch.Type.kNormallyOpen;
 
   /**
-   * Create a Spark Max with built-in logging that is unit-testing friendly and
+   * Create a Spark Max with built-in logging and is unit-testing friendly
    * @param id Spark Max ID
    * @param motorType The motor type connected to the controller
    */
@@ -116,10 +116,10 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
   }
 
   /**
-   * Create a Spark Max with built-in logging that is unit-testing friendly and configure PID
+   * Create a Spark Max with built-in logging, is unit-testing friendly and configure PID
    * @param id Spark Max ID
    * @param motorType The motor type connected to the controller
-   * @param config PID config for spark max
+   * @param config PID config for Spark Max
    * @param feedbackSensor Feedback device to use for Spark PID
    */
   public SparkMax(ID id, MotorType motorType, SparkPIDConfig config, FeedbackSensor feedbackSensor) {
@@ -770,7 +770,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
 
   /**
    * Enable PID wrapping for closed loop position control
-   * @param minInput Value of the min input for position
+   * @param minInput Value of min input for position
    * @param maxInput Value of max input for position
    * @return {@link REVLibError#kOk} if successful
    */
@@ -835,8 +835,14 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    *
    * @param limit The current limit in Amps.
    */
-  public void setSmartCurrentLimit(int limit) {
-    m_spark.setSmartCurrentLimit(limit);
+  public REVLibError setSmartCurrentLimit(int limit) {
+    REVLibError status;
+    status = applyParameter(
+      () -> m_spark.setSmartCurrentLimit(limit),
+      () -> true,
+      "Set current limit failure"
+    );
+    return status;
   }
 
   /**

@@ -2,7 +2,7 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the MIT license file in the root directory of this project.
 
-package org.lasarobotics.hardware.rev;
+package org.lasarobotics.hardware.revrobotics;
 
 import org.lasarobotics.utils.PIDConstants;
 
