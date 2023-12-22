@@ -19,8 +19,12 @@ public class GlobalConstants {
 
   /** Max RPM of NEO */
   public static final int NEO_MAX_RPM = 5676;
+  /** Max RPM of Vortex */
+  public static final int VORTEX_MAX_RPM = 6784;
   /** Ticks per revolution of NEO built-in encoder */
   public static final int NEO_ENCODER_TICKS_PER_ROTATION = 42;
+  /** Ticks per rotation of Vortex built-in encoder */
+  public static final int VORTEX_ENCODER_TICKS_PER_ROTATION = 7168;
   /** Ticks per revolution of REV through bore encoder */
   public static final int REV_ENCODER_TICKS_PER_ROTATION = 8192;
 
