@@ -684,6 +684,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
 
   /**
    * Set forward soft limit
+   * @param limit Value to set
    * @return {@link REVLibError#kOk} if successful
    */
   public REVLibError setForwardSoftLimit(double limit) {
@@ -698,6 +699,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
 
   /**
    * Set reverse soft limit
+   * @param limit Value to set
    * @return {@link REVLibError#kOk} if successful
    */
   public REVLibError setReverseSoftLimit(double limit) {
