@@ -135,10 +135,6 @@ public class MAXSwerveModule implements AutoCloseable {
     this.m_simRotatePosition = 0.0;
     this.m_tractionControlController =  new TractionControlController(slipRatio, DRIVE_MAX_LINEAR_SPEED);
 
-    // Reset motor controllers
-    m_driveMotor.restoreFactoryDefaults();
-    m_rotateMotor.restoreFactoryDefaults();
-
     // Create PID configs
     SparkPIDConfig driveMotorConfig = new SparkPIDConfig(
       new PIDConstants(DRIVE_VELOCITY_kP, 0.0, 0.0, 1 / ((GlobalConstants.NEO_MAX_RPM / 60) * m_driveConversionFactor)),
