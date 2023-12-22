@@ -2,8 +2,9 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the MIT license file in the root directory of this project.
 
-package org.lasarobotics.hardware;
+package org.lasarobotics.hardware.kauailabs;
 
+import org.lasarobotics.hardware.LoggableHardware;
 import org.lasarobotics.utils.GlobalConstants;
 import org.littletonrobotics.junction.AutoLog;
 import org.littletonrobotics.junction.Logger;

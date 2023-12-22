@@ -4,10 +4,10 @@
 
 package org.lasarobotics.drive;
 
-import org.lasarobotics.hardware.SparkMax;
+import org.lasarobotics.hardware.rev.SparkMax;
+import org.lasarobotics.hardware.rev.SparkPIDConfig;
 import org.lasarobotics.utils.GlobalConstants;
 import org.lasarobotics.utils.PIDConstants;
-import org.lasarobotics.utils.SparkPIDConfig;
 
 import com.revrobotics.CANSparkMax.ControlType;
 import com.revrobotics.CANSparkMax.IdleMode;

@@ -2,14 +2,14 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the MIT license file in the root directory of this project.
 
-package org.lasarobotics.hardware;
+package org.lasarobotics.hardware.rev;
 
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import org.lasarobotics.hardware.LoggableHardware;
 import org.lasarobotics.utils.GlobalConstants;
-import org.lasarobotics.utils.SparkPIDConfig;
 import org.littletonrobotics.junction.AutoLog;
 import org.littletonrobotics.junction.Logger;
 
@@ -18,6 +18,7 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMax.ControlType;
 import com.revrobotics.CANSparkMax.ExternalFollower;
 import com.revrobotics.CANSparkMax.IdleMode;
+import com.revrobotics.CANSparkMax.SoftLimitDirection;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.MotorFeedbackSensor;
 import com.revrobotics.REVLibError;
@@ -137,6 +138,43 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
     this.m_feedforwardSupplier = (motionProfileState) -> 0.0;
     this.m_currentStateSupplier = () -> new TrapezoidProfile.State(getInputs().encoderPosition, getInputs().encoderVelocity);
     initializeSparkPID(m_config, feedbackSensor);
+  }
+
+  /**
+   * Get internal Spark Max object
+   * @return Raw internal Spark Max object
+   */
+  CANSparkMax getMotorController() {
+    return m_spark;
+  }
+
+  /**
+   * Attempt to apply parameter and check if specified parameter is set correctly
+   * @param parameterSetter Method to set desired parameter
+   * @param parameterCheckSupplier Method to check for parameter in question
+   * @return {@link REVLibError#kOk} if successful
+   */
+  REVLibError applyParameter(Supplier<REVLibError> parameterSetter, BooleanSupplier parameterCheckSupplier, String errorMessage) {
+    if (RobotBase.isSimulation()) return parameterSetter.get();
+
+    REVLibError status = REVLibError.kError;
+    for (int i = 0; i < MAX_ATTEMPTS; i++) {
+      status = parameterSetter.get();
+      if (parameterCheckSupplier.getAsBoolean() && status == REVLibError.kOk) break;
+    }
+
+    checkStatus(status, errorMessage);
+    return status;
+  }
+
+  /**
+   * Check status and print error message if necessary
+   * @param status Status to check
+   * @param errorMessage Error message to print
+   */
+  private void checkStatus(REVLibError status, String errorMessage) {
+    if (status != REVLibError.kOk)
+      System.out.println(String.join(" ", m_id.name, errorMessage, "-", status.toString()));
   }
 
   /**
@@ -280,29 +318,6 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
     m_isSmoothMotionEnabled = !isSmoothMotionFinished();
   }
 
-  private void checkStatus(REVLibError status, String errorMessage) {
-    if (status != REVLibError.kOk)
-      System.out.println(String.join(" ", m_id.name, errorMessage, "-", status.toString()));
-  }
-
-  /**
-   * Attempt to apply parameter and check if specified parameter is set correctly
-   * @param parameterSetter Method to set desired parameter
-   * @param parameterCheckSupplier Method to check for parameter in question
-   * @return {@link REVLibError#kOk} if successful
-   */
-  private REVLibError applyParameter(Supplier<REVLibError> parameterSetter, BooleanSupplier parameterCheckSupplier) {
-    if (RobotBase.isSimulation()) return parameterSetter.get();
-
-    REVLibError status = REVLibError.kError;
-    for (int i = 0; i < MAX_ATTEMPTS; i++) {
-      status = parameterSetter.get();
-      if (parameterCheckSupplier.getAsBoolean() && status == REVLibError.kOk) break;
-    }
-
-    return status;
-  }
-
   /**
    * Writes all settings to flash
    * @return {@link REVLibError#kOk} if successful
@@ -323,9 +338,11 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    */
   public REVLibError restoreFactoryDefaults() {
     REVLibError status;
-    status = applyParameter(() -> m_spark.restoreFactoryDefaults(), () -> true);
-
-    checkStatus(status, "Restore factory defaults failure");
+    status = applyParameter(
+      () -> m_spark.restoreFactoryDefaults(),
+      () -> true,
+      "Restore factory defaults failure"
+    );
 
     return status;
   }
@@ -420,7 +437,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
         break;
     }
 
-    m_config.initializeSparkPID(m_spark, selectedSensor, forwardLimitSwitch, reverseLimitSwitch);
+    m_config.initializeSparkPID(this, selectedSensor, forwardLimitSwitch, reverseLimitSwitch);
     burnFlash();
   }
 
@@ -439,15 +456,16 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    * Slave Spark Max to another
    * @param master Spark Max to follow
    * @param invert Set slave to output opposite of the master
+   * @return {@link REVLibError#kOk} if successful
    */
-  public void follow(SparkMax master, boolean invert) {
+  public REVLibError follow(SparkMax master, boolean invert) {
     REVLibError status;
     status = applyParameter(
       () -> m_spark.follow(ExternalFollower.kFollowerSparkMax, master.getID().deviceID, invert),
-      () -> m_spark.isFollower() && m_spark.getInverted() == invert
+      () -> m_spark.isFollower(),
+      "Set motor master failure"
     );
-
-    checkStatus(status, "Set motor master failure");
+    return status;
   }
 
   /**
@@ -513,8 +531,9 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    * give you position.
    * @param sensor Sensor to set conversion factor for
    * @param factor The conversion factor to multiply the native units by
+   * @return {@link REVLibError#kOk} if successful
    */
-  public void setPositionConversionFactor(FeedbackSensor sensor, double factor) {
+  public REVLibError setPositionConversionFactor(FeedbackSensor sensor, double factor) {
     REVLibError status;
     Supplier<REVLibError> parameterSetter;
     BooleanSupplier parameterCheckSupplier;
@@ -537,8 +556,8 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
         break;
     }
 
-    status = applyParameter(parameterSetter, parameterCheckSupplier);
-    checkStatus(status, "Set position conversion factor failure");
+    status = applyParameter(parameterSetter, parameterCheckSupplier, "Set position conversion factor failure");
+    return status;
   }
 
   /**
@@ -546,8 +565,9 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    * give you velocity.
    * @param sensor Sensor to set conversion factor for
    * @param factor The conversion factor to multiply the native units by
+   * @return {@link REVLibError#kOk} if successful
    */
-  public void setVelocityConversionFactor(FeedbackSensor sensor, double factor) {
+  public REVLibError setVelocityConversionFactor(FeedbackSensor sensor, double factor) {
     REVLibError status;
     Supplier<REVLibError> parameterSetter;
     BooleanSupplier parameterCheckSupplier;
@@ -570,8 +590,8 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
         break;
     }
 
-    status = applyParameter(parameterSetter, parameterCheckSupplier);
-    checkStatus(status, "Set velocity conversion factor failure");
+    status = applyParameter(parameterSetter, parameterCheckSupplier, "Set velocity conversion factor failure");
+    return status;
   }
 
   /**
@@ -608,38 +628,151 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
 
   /**
    * Disable forward limit switch
+   * @return {@link REVLibError#kOk} if successful
    */
-  public void disableForwardLimitSwitch() {
-    getForwardLimitSwitch().enableLimitSwitch(false);
+  public REVLibError disableForwardLimitSwitch() {
+    REVLibError status;
+    status = applyParameter(
+      () -> getForwardLimitSwitch().enableLimitSwitch(false),
+      () -> getForwardLimitSwitch().isLimitSwitchEnabled() == false,
+      "Disable forward limit switch failure!"
+    );
+    return status;
   }
 
   /**
    * Enable forward limit switch
+   * @return {@link REVLibError#kOk} if successful
    */
-  public void enableForwardLimitSwitch() {
-    getForwardLimitSwitch().enableLimitSwitch(true);
+  public REVLibError enableForwardLimitSwitch() {
+    REVLibError status;
+    status = applyParameter(
+      () -> getForwardLimitSwitch().enableLimitSwitch(true),
+      () -> getForwardLimitSwitch().isLimitSwitchEnabled() == true,
+      "Enable forward limit switch failure!"
+    );
+    return status;
   }
 
   /**
    * Disable reverse limit switch
+   * @return {@link REVLibError#kOk} if successful
    */
-  public void disableReverseLimitSwitch() {
-    getReverseLimitSwitch().enableLimitSwitch(false);
+  public REVLibError disableReverseLimitSwitch() {
+    REVLibError status;
+    status = applyParameter(
+      () -> getReverseLimitSwitch().enableLimitSwitch(false),
+      () -> getReverseLimitSwitch().isLimitSwitchEnabled() == false,
+      "Disable reverse limit switch failure!"
+    );
+    return status;
   }
 
   /**
    * Enable reverse limit switch
+   * @return {@link REVLibError#kOk} if successful
    */
-  public void enableReverseLimitSwitch() {
-    getReverseLimitSwitch().enableLimitSwitch(true);
+  public REVLibError enableReverseLimitSwitch() {
+    REVLibError status;
+    status = applyParameter(
+      () -> getReverseLimitSwitch().enableLimitSwitch(true),
+      () -> getReverseLimitSwitch().isLimitSwitchEnabled() == true,
+      "Enable reverse limit switch failure!"
+    );
+    return status;
+  }
+
+  /**
+   * Set forward soft limit
+   * @return {@link REVLibError#kOk} if successful
+   */
+  public REVLibError setForwardSoftLimit(double limit) {
+    REVLibError status;
+    status = applyParameter(
+      () -> m_spark.setSoftLimit(SoftLimitDirection.kForward, (float)limit),
+      () -> m_spark.getSoftLimit(SoftLimitDirection.kForward) == limit,
+      "Set forward soft limit failure!"
+    );
+    return status;
+  }
+
+  /**
+   * Set reverse soft limit
+   * @return {@link REVLibError#kOk} if successful
+   */
+  public REVLibError setReverseSoftLimit(double limit) {
+    REVLibError status;
+    status = applyParameter(
+      () -> m_spark.setSoftLimit(SoftLimitDirection.kReverse, (float)limit),
+      () -> m_spark.getSoftLimit(SoftLimitDirection.kReverse) == limit,
+      "Set reverse soft limit failure!"
+    );
+    return status;
+  }
+
+  /**
+   * Enable forward soft limit
+   * @return {@link REVLibError#kOk} if successful
+   */
+  public REVLibError enableForwardSoftLimit() {
+    REVLibError status;
+    status = applyParameter(
+      () -> m_spark.enableSoftLimit(SoftLimitDirection.kForward, true),
+      () -> m_spark.isSoftLimitEnabled(SoftLimitDirection.kForward) == true,
+      "Enable forward soft limit failure!"
+    );
+    return status;
+  }
+
+  /**
+   * Enable reverse soft limit
+   * @return {@link REVLibError#kOk} if successful
+   */
+  public REVLibError enableReverseSoftLimit() {
+    REVLibError status;
+    status = applyParameter(
+      () -> m_spark.enableSoftLimit(SoftLimitDirection.kReverse, true),
+      () -> m_spark.isSoftLimitEnabled(SoftLimitDirection.kReverse) == true,
+      "Enable reverse soft limit failure!"
+    );
+    return status;
+  }
+
+  /**
+   * Disable forward soft limit
+   * @return {@link REVLibError#kOk} if successful
+   */
+  public REVLibError disableForwardSoftLimit() {
+    REVLibError status;
+    status = applyParameter(
+      () -> m_spark.enableSoftLimit(SoftLimitDirection.kForward, false),
+      () -> m_spark.isSoftLimitEnabled(SoftLimitDirection.kForward) == false,
+      "Disable forward soft limit failure!"
+    );
+    return status;
+  }
+
+  /**
+   * Disable reverse soft limit
+   * @return {@link REVLibError#kOk} if successful
+   */
+  public REVLibError disableReverseSoftLimit() {
+    REVLibError status;
+    status = applyParameter(
+      () -> m_spark.enableSoftLimit(SoftLimitDirection.kReverse, false),
+      () -> m_spark.isSoftLimitEnabled(SoftLimitDirection.kReverse) == false,
+      "Disable reverse soft limit failure!"
+    );
+    return status;
   }
 
   /**
    * Enable PID wrapping for closed loop position control
    * @param minInput Value of the min input for position
    * @param maxInput Value of max input for position
+   * @return {@link REVLibError#kOk} if successful
    */
-  public void enablePIDWrapping(double minInput, double maxInput) {
+  public REVLibError enablePIDWrapping(double minInput, double maxInput) {
     REVLibError status;
     Supplier<REVLibError> parameterSetter = () -> {
       REVLibError s;
@@ -653,28 +786,37 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
       m_spark.getPIDController().getPositionPIDWrappingMinInput() == minInput &&
       m_spark.getPIDController().getPositionPIDWrappingMaxInput() == maxInput;
 
-    status = applyParameter(parameterSetter, parameterCheckSupplier);
-    checkStatus(status, "Enable position PID wrapping failure");
+    status = applyParameter(parameterSetter, parameterCheckSupplier, "Enable position PID wrapping failure");
+    return status;
   }
 
   /**
    * Disable PID wrapping for close loop position control
+   * @return {@link REVLibError#kOk} if successful
    */
-  public void disablePIDWrapping() {
+  public REVLibError disablePIDWrapping() {
     REVLibError status;
     status = applyParameter(
       () -> m_spark.getPIDController().setPositionPIDWrappingEnabled(false),
-      () -> m_spark.getPIDController().getPositionPIDWrappingEnabled() == false
+      () -> m_spark.getPIDController().getPositionPIDWrappingEnabled() == false,
+      "Disable position PID wrapping failure"
     );
-    checkStatus(status, "Disable position PID wrapping failure");
+    return status;
   }
 
   /**
    * Sets the idle mode setting for the SPARK MAX.
    * @param mode Idle mode (coast or brake).
+   * @return {@link REVLibError#kOk} if successful
    */
-  public void setIdleMode(IdleMode mode) {
-    m_spark.setIdleMode(mode);
+  public REVLibError setIdleMode(IdleMode mode) {
+    REVLibError status;
+    status = applyParameter(
+      () -> m_spark.setIdleMode(mode),
+      () -> m_spark.getIdleMode() == mode,
+      "Set idle mode failure!"
+    );
+    return status;
   }
 
   /**

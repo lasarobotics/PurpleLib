@@ -2,24 +2,18 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the MIT license file in the root directory of this project.
 
-package org.lasarobotics.utils;
+package org.lasarobotics.hardware.rev;
 
-import org.lasarobotics.hardware.SparkMax;
+import org.lasarobotics.utils.PIDConstants;
 
-import com.revrobotics.CANSparkMax;
 import com.revrobotics.MotorFeedbackSensor;
-import com.revrobotics.SparkMaxLimitSwitch;
 import com.revrobotics.SparkMaxPIDController;
 
 /**
  * Automates the configuration of Spark PID
  */
 public class SparkPIDConfig {
-  private static final double MAX_VOLTAGE = 12.0;
-  private static final int PID_SLOT = 0;
-
   private boolean m_enableSoftLimits = true;
-
   private boolean m_sensorPhase = false;
   private boolean m_invertMotor = false;
   private double m_kP = 0.0;
@@ -86,10 +80,10 @@ public class SparkPIDConfig {
    * @param forwardLimitSwitch Enable forward limit switch
    * @param reverseLimitSwitch Enable reverse limit switch
    */
-  public void initializeSparkPID(CANSparkMax spark, MotorFeedbackSensor feedbackSensor,
+  public void initializeSparkPID(SparkMax spark, MotorFeedbackSensor feedbackSensor,
                                  boolean forwardLimitSwitch, boolean reverseLimitSwitch) {
     // Get PID controller
-    SparkMaxPIDController pidController = spark.getPIDController();
+    SparkMaxPIDController pidController = spark.getMotorController().getPIDController();
 
     // Configure feedback sensor and set sensor phase
     try {
@@ -99,46 +93,47 @@ public class SparkPIDConfig {
 
     // Configure forward and reverse soft limits
     if (m_enableSoftLimits) {
-      spark.setSoftLimit(CANSparkMax.SoftLimitDirection.kForward, (float) m_upperLimit);
-      spark.enableSoftLimit(CANSparkMax.SoftLimitDirection.kForward, true);
-      spark.setSoftLimit(CANSparkMax.SoftLimitDirection.kReverse, (float) m_lowerLimit);
-      spark.enableSoftLimit(CANSparkMax.SoftLimitDirection.kReverse, true);
+      spark.setForwardSoftLimit(m_upperLimit);
+      spark.enableForwardSoftLimit();
+      spark.setReverseSoftLimit(m_lowerLimit);
+      spark.enableReverseSoftLimit();
     }
 
     // Configure forward and reverse limit switches if required, and disable soft limit
     if (forwardLimitSwitch) {
-      spark.getForwardLimitSwitch(SparkMaxLimitSwitch.Type.kNormallyOpen).enableLimitSwitch(true);
-      spark.enableSoftLimit(CANSparkMax.SoftLimitDirection.kForward, false);
+      spark.enableForwardLimitSwitch();
+      spark.disableForwardSoftLimit();
     }
     if (reverseLimitSwitch) {
-      spark.getReverseLimitSwitch(SparkMaxLimitSwitch.Type.kNormallyOpen).enableLimitSwitch(true);
-      spark.enableSoftLimit(CANSparkMax.SoftLimitDirection.kReverse, false);
+      spark.enableReverseLimitSwitch();
+      spark.disableReverseSoftLimit();
     }
 
     // Invert motor if required
     spark.setInverted(m_invertMotor);
 
     // Configure PID values
-    pidController.setP(m_kP, PID_SLOT);
-    pidController.setI(m_kI, PID_SLOT);
-    pidController.setD(m_kD, PID_SLOT);
-    pidController.setFF(m_kF, PID_SLOT);
-    pidController.setIZone(m_kI != 0.0 ? m_tolerance * 2 : 0.0, PID_SLOT);
-
-    // Enable voltage compensation
-    spark.enableVoltageCompensation(MAX_VOLTAGE);
+    spark.applyParameter(() -> pidController.setP(m_kP), () -> pidController.getP() == m_kP, "Set kP failure!");
+    spark.applyParameter(() -> pidController.setI(m_kI), () -> pidController.getI() == m_kI, "Set kI failure!");
+    spark.applyParameter(() -> pidController.setD(m_kD), () -> pidController.getD() == m_kD, "Set kD failure!");
+    spark.applyParameter(() -> pidController.setFF(m_kF), () -> pidController.getFF() == m_kF, "Set kF failure!");
+    spark.applyParameter(
+      () -> pidController.setIZone(m_kI != 0.0 ? m_tolerance * 2 : 0.0),
+      () -> pidController.getIZone() == (m_kI != 0.0 ? m_tolerance * 2 : 0.0),
+      "Set Izone failure!"
+    );
   }
 
   /**
    * Initializes Spark PID
    * <p>
-   * Calls {@link SparkPIDConfig#initializeSparkPID(CANSparkMax, MotorFeedbackSensor, boolean, boolean)} with no limit switches
+   * Calls {@link SparkPIDConfig#initializeSparkPID(SparkMax, MotorFeedbackSensor, boolean, boolean)} with no limit switches
    * <p>
    * Must call {@link SparkMax#burnFlash()} after configuring all settings
    * @param spark Spark motor controller to apply settings to
    * @param feedbackSensor Feedback device to use for Spark PID
    */
-  public void initializeSparkPID(CANSparkMax spark, MotorFeedbackSensor feedbackSensor) {
+  public void initializeSparkPID(SparkMax spark, MotorFeedbackSensor feedbackSensor) {
     initializeSparkPID(spark, feedbackSensor, false, false);
   }
 

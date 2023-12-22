@@ -2,7 +2,9 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the MIT license file in the root directory of this project.
 
-package org.lasarobotics.utils;
+package org.lasarobotics.hardware.ctre;
+
+import org.lasarobotics.utils.PIDConstants;
 
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
 import com.ctre.phoenix.motorcontrol.LimitSwitchNormal;
