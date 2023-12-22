@@ -4,6 +4,9 @@
 
 package org.lasarobotics.drive;
 
+import java.time.Duration;
+import java.time.Instant;
+
 import org.lasarobotics.hardware.revrobotics.SparkMax;
 import org.lasarobotics.hardware.revrobotics.SparkPIDConfig;
 import org.lasarobotics.utils.GlobalConstants;
@@ -13,6 +16,7 @@ import com.revrobotics.CANSparkMax.ControlType;
 import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
@@ -75,6 +79,7 @@ public class MAXSwerveModule implements AutoCloseable {
 
   private static final double DRIVE_WHEEL_DIAMETER_METERS = 0.0762; // 3" wheels
   private static final double DRIVETRAIN_EFFICIENCY = 0.90;
+  private static final double MAX_AUTO_LOCK_TIME = 10.0;
   private final double DRIVE_TICKS_PER_METER;
   private final double DRIVE_METERS_PER_TICK;
   private final double DRIVE_METERS_PER_ROTATION;
@@ -106,9 +111,11 @@ public class MAXSwerveModule implements AutoCloseable {
   private double m_simDrivePosition;
   private double m_simRotatePosition;
   private double m_radius;
+  private double m_autoLockTime;
   private boolean m_autoLock;
 
   private TractionControlController m_tractionControlController;
+  private Instant m_autoLockTimer;
 
   /**
    * Create an instance of a MAXSwerveModule
@@ -118,9 +125,10 @@ public class MAXSwerveModule implements AutoCloseable {
    * @param slipRatio Desired slip ratio
    * @param wheelbase Robot wheelbase in meters
    * @param trackWidth Robot track width in meters
+   * @param autoLockTime Time in seconds before rotating module to locked position [0.0, +inf]
    */
   public MAXSwerveModule(Hardware swerveHardware, ModuleLocation location, GearRatio driveGearRatio,
-                         double slipRatio, double wheelbase, double trackWidth) {
+                         double slipRatio, double wheelbase, double trackWidth, double autoLockTime) {
     DRIVE_TICKS_PER_METER = (GlobalConstants.NEO_ENCODER_TICKS_PER_ROTATION * driveGearRatio.value) * (1 / (DRIVE_WHEEL_DIAMETER_METERS * Math.PI));
     DRIVE_METERS_PER_TICK = 1 / DRIVE_TICKS_PER_METER;
     DRIVE_METERS_PER_ROTATION = DRIVE_METERS_PER_TICK * GlobalConstants.NEO_ENCODER_TICKS_PER_ROTATION;
@@ -133,7 +141,9 @@ public class MAXSwerveModule implements AutoCloseable {
     this.m_autoLock = true;
     this.m_simDrivePosition = 0.0;
     this.m_simRotatePosition = 0.0;
+    this.m_autoLockTime = MathUtil.clamp(autoLockTime * 1000, 0.0, MAX_AUTO_LOCK_TIME * 1000);
     this.m_tractionControlController =  new TractionControlController(slipRatio, DRIVE_MAX_LINEAR_SPEED);
+    this.m_autoLockTimer = Instant.now();
 
     // Create PID configs
     SparkPIDConfig driveMotorConfig = new SparkPIDConfig(
@@ -259,10 +269,15 @@ public class MAXSwerveModule implements AutoCloseable {
    * @param state Desired swerve module state
    */
   public void set(SwerveModuleState state) {
-    // Auto lock modules if enabled and speed not requested
+    // Auto lock modules if auto lock enabled, speed not requested, and time has elapsed
     if (m_autoLock && state.speedMetersPerSecond < EPSILON) {
-      state.speedMetersPerSecond = 0.0;
-      state.angle = LOCK_POSITION.minus(m_location.offset);
+      if (Duration.between(m_autoLockTimer, Instant.now()).toMillis() > m_autoLockTime) {
+        state.speedMetersPerSecond = 0.0;
+        state.angle = LOCK_POSITION.minus(m_location.offset);
+      }
+    } else {
+      // Not locking this loop, restart timer...
+      m_autoLockTimer = Instant.now();
     }
 
     // Apply chassis angular offset to the requested state.

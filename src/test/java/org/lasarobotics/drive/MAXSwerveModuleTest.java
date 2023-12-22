@@ -30,6 +30,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.wpilibj.Timer;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class MAXSwerveModuleTest {
@@ -40,6 +41,7 @@ public class MAXSwerveModuleTest {
   private final double SLIP_RATIO = 0.08;
   private final double WHEELBASE = 0.6;
   private final double TRACK_WIDTH = 0.6;
+  private final double AUTO_LOCK_TIME = 3.0;
 
   private SparkMax m_lFrontDriveMotor, m_lFrontRotateMotor;
   private SparkMax m_rFrontDriveMotor, m_rFrontRotateMotor;
@@ -71,7 +73,8 @@ public class MAXSwerveModuleTest {
       GEAR_RATIO,
       SLIP_RATIO,
       WHEELBASE,
-      TRACK_WIDTH
+      TRACK_WIDTH,
+      AUTO_LOCK_TIME
     );
     m_rFrontModule = new MAXSwerveModule(
       new MAXSwerveModule.Hardware(m_rFrontDriveMotor, m_rFrontRotateMotor),
@@ -79,7 +82,8 @@ public class MAXSwerveModuleTest {
       GEAR_RATIO,
       SLIP_RATIO,
       WHEELBASE,
-      TRACK_WIDTH
+      TRACK_WIDTH,
+      AUTO_LOCK_TIME
     );
     m_lRearModule = new MAXSwerveModule(
      new MAXSwerveModule.Hardware(m_lRearDriveMotor, m_lRearRotateMotor),
@@ -87,7 +91,8 @@ public class MAXSwerveModuleTest {
       GEAR_RATIO,
       SLIP_RATIO,
       WHEELBASE,
-      TRACK_WIDTH
+      TRACK_WIDTH,
+      AUTO_LOCK_TIME
     );
     m_rRearModule = new MAXSwerveModule(
       new MAXSwerveModule.Hardware(m_rRearDriveMotor, m_rRearRotateMotor),
@@ -95,7 +100,8 @@ public class MAXSwerveModuleTest {
       GEAR_RATIO,
       SLIP_RATIO,
       WHEELBASE,
-      TRACK_WIDTH
+      TRACK_WIDTH,
+      AUTO_LOCK_TIME
     );
 
     // Disable traction control for unit tests
@@ -155,6 +161,9 @@ public class MAXSwerveModuleTest {
     when(m_rFrontRotateMotor.getInputs()).thenReturn(sparkMaxInputs);
     when(m_lRearRotateMotor.getInputs()).thenReturn(sparkMaxInputs);
     when(m_rRearRotateMotor.getInputs()).thenReturn(sparkMaxInputs);
+
+    // Advance sim time
+    Timer.delay(AUTO_LOCK_TIME);
 
     // Try to set module state
     SwerveModuleState state = new SwerveModuleState(0.0, Rotation2d.fromRadians(+Math.PI));
