@@ -72,7 +72,7 @@ public class MAXSwerveModule implements AutoCloseable {
     }
   }
 
-  private final double EPSILON = 2e-3;
+  private final double EPSILON = 5e-3;
   private final int DRIVE_MOTOR_CURRENT_LIMIT = 50;
   private final int ROTATE_MOTOR_CURRENT_LIMIT = 20;
   private final Rotation2d LOCK_POSITION = Rotation2d.fromRadians(Math.PI / 4);
