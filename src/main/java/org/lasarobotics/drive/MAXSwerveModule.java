@@ -104,6 +104,7 @@ public class MAXSwerveModule implements AutoCloseable {
   private SparkMax m_rotateMotor;
   private Translation2d m_moduleCoordinate;
   private ModuleLocation m_location;
+  private Rotation2d m_previousRotatePosition;
 
   private GearRatio m_driveGearRatio;
   private double m_driveConversionFactor;
@@ -142,6 +143,7 @@ public class MAXSwerveModule implements AutoCloseable {
     this.m_simDrivePosition = 0.0;
     this.m_simRotatePosition = 0.0;
     this.m_autoLockTime = MathUtil.clamp(autoLockTime * 1000, 0.0, MAX_AUTO_LOCK_TIME * 1000);
+    this.m_previousRotatePosition = LOCK_POSITION;
     this.m_tractionControlController =  new TractionControlController(slipRatio, DRIVE_MAX_LINEAR_SPEED);
     this.m_autoLockTimer = Instant.now();
 
@@ -271,10 +273,10 @@ public class MAXSwerveModule implements AutoCloseable {
   public void set(SwerveModuleState state) {
     // Auto lock modules if auto lock enabled, speed not requested, and time has elapsed
     if (m_autoLock && state.speedMetersPerSecond < EPSILON) {
-      if (Duration.between(m_autoLockTimer, Instant.now()).toMillis() > m_autoLockTime) {
-        state.speedMetersPerSecond = 0.0;
+      state.speedMetersPerSecond = 0.0;
+      if (Duration.between(m_autoLockTimer, Instant.now()).toMillis() > m_autoLockTime)
         state.angle = LOCK_POSITION.minus(m_location.offset);
-      }
+      else state.angle = m_previousRotatePosition.minus(m_location.offset);
     } else {
       // Not locking this loop, restart timer...
       m_autoLockTimer = Instant.now();
@@ -299,6 +301,9 @@ public class MAXSwerveModule implements AutoCloseable {
     // Save drive and rotate position for simulation purposes only
     m_simDrivePosition += desiredState.speedMetersPerSecond * GlobalConstants.ROBOT_LOOP_PERIOD;
     m_simRotatePosition = desiredState.angle.getRadians();
+
+    // Save rotate position
+    m_previousRotatePosition = desiredState.angle;
   }
 
   /**
