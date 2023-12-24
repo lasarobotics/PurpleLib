@@ -28,7 +28,7 @@ public class TractionControlController {
   private final double MIN_SLIP_RATIO = 0.01;
   private final double MAX_SLIP_RATIO = 0.40;
   private final double EPSILON = 1e-3;
-  private final int FILTER_TIME_CONSTANT_MULTIPLIER = 10;
+  private final int FILTER_TIME_CONSTANT_MULTIPLIER = 3;
   private final int DEBOUNCER_TIME_CONSTANT_MULTIPLIER = 5;
 
   private double m_averageWheelSpeed = 0.0;
