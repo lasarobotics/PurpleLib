@@ -274,8 +274,10 @@ public class MAXSwerveModule implements AutoCloseable {
     // Auto lock modules if auto lock enabled, speed not requested, and time has elapsed
     if (m_autoLock && state.speedMetersPerSecond < EPSILON) {
       state.speedMetersPerSecond = 0.0;
+      // Time's up, lock now...
       if (Duration.between(m_autoLockTimer, Instant.now()).toMillis() > m_autoLockTime)
         state.angle = LOCK_POSITION.minus(m_location.offset);
+      // Waiting to lock...
       else state.angle = m_previousRotatePosition.minus(m_location.offset);
     } else {
       // Not locking this loop, restart timer...

@@ -6,9 +6,6 @@ package org.lasarobotics.hardware.revrobotics;
 
 import org.lasarobotics.utils.PIDConstants;
 
-import com.revrobotics.MotorFeedbackSensor;
-import com.revrobotics.SparkMaxPIDController;
-
 /**
  * Automates the configuration of Spark PID
  */
@@ -72,72 +69,6 @@ public class SparkPIDConfig {
   }
 
   /**
-   * Initializes Spark Max PID
-   * <p>
-   * Must call {@link SparkMax#burnFlash()} after configuring all settings
-   * @param spark Spark motor controller to apply settings to
-   * @param feedbackSensor Feedback device to use for Spark PID
-   * @param forwardLimitSwitch Enable forward limit switch
-   * @param reverseLimitSwitch Enable reverse limit switch
-   */
-  public void initializeSparkPID(SparkMax spark, MotorFeedbackSensor feedbackSensor,
-                                 boolean forwardLimitSwitch, boolean reverseLimitSwitch) {
-    // Get PID controller
-    SparkMaxPIDController pidController = spark.getMotorController().getPIDController();
-
-    // Configure feedback sensor and set sensor phase
-    try {
-      pidController.setFeedbackDevice(feedbackSensor);
-      feedbackSensor.setInverted(m_sensorPhase);
-    } catch (IllegalArgumentException e) {}
-
-    // Configure forward and reverse soft limits
-    if (m_enableSoftLimits) {
-      spark.setForwardSoftLimit(m_upperLimit);
-      spark.enableForwardSoftLimit();
-      spark.setReverseSoftLimit(m_lowerLimit);
-      spark.enableReverseSoftLimit();
-    }
-
-    // Configure forward and reverse limit switches if required, and disable soft limit
-    if (forwardLimitSwitch) {
-      spark.enableForwardLimitSwitch();
-      spark.disableForwardSoftLimit();
-    }
-    if (reverseLimitSwitch) {
-      spark.enableReverseLimitSwitch();
-      spark.disableReverseSoftLimit();
-    }
-
-    // Invert motor if required
-    spark.setInverted(m_invertMotor);
-
-    // Configure PID values
-    spark.applyParameter(() -> pidController.setP(m_kP), () -> pidController.getP() == m_kP, "Set kP failure!");
-    spark.applyParameter(() -> pidController.setI(m_kI), () -> pidController.getI() == m_kI, "Set kI failure!");
-    spark.applyParameter(() -> pidController.setD(m_kD), () -> pidController.getD() == m_kD, "Set kD failure!");
-    spark.applyParameter(() -> pidController.setFF(m_kF), () -> pidController.getFF() == m_kF, "Set kF failure!");
-    spark.applyParameter(
-      () -> pidController.setIZone(m_kI != 0.0 ? m_tolerance * 2 : 0.0),
-      () -> pidController.getIZone() == (m_kI != 0.0 ? m_tolerance * 2 : 0.0),
-      "Set Izone failure!"
-    );
-  }
-
-  /**
-   * Initializes Spark PID
-   * <p>
-   * Calls {@link SparkPIDConfig#initializeSparkPID(SparkMax, MotorFeedbackSensor, boolean, boolean)} with no limit switches
-   * <p>
-   * Must call {@link SparkMax#burnFlash()} after configuring all settings
-   * @param spark Spark motor controller to apply settings to
-   * @param feedbackSensor Feedback device to use for Spark PID
-   */
-  public void initializeSparkPID(SparkMax spark, MotorFeedbackSensor feedbackSensor) {
-    initializeSparkPID(spark, feedbackSensor, false, false);
-  }
-
-  /**
    * @return Sensor phase
    */
   public boolean getSensorPhase() {
@@ -147,35 +78,35 @@ public class SparkPIDConfig {
   /**
    * @return Whether motor is inverted or not
    */
-  public boolean getInvertMotor() {
+  public boolean getInverted() {
     return m_invertMotor;
   }
 
   /**
    * @return Proportional gain
    */
-  public double getkP() {
+  public double getP() {
     return m_kP;
   }
 
   /**
    * @return Integral gain
    */
-  public double getkI() {
+  public double getI() {
     return m_kI;
   }
 
   /**
    * @return Derivative gain
    */
-  public double getkD() {
+  public double getD() {
     return m_kD;
   }
 
   /**
    * @return Feed-forward gain
    */
-  public double getkF() {
+  public double getF() {
     return m_kF;
   }
 
@@ -184,6 +115,10 @@ public class SparkPIDConfig {
    */
   public double getTolerance() {
     return m_tolerance;
+  }
+
+  public boolean isSoftLimitEnabled() {
+    return m_enableSoftLimits;
   }
 
   /**

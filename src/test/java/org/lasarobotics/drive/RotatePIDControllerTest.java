@@ -19,7 +19,7 @@ import org.lasarobotics.utils.GlobalConstants;
 import org.lasarobotics.utils.PIDConstants;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class TurnPIDControllerTest {
+public class RotatePIDControllerTest {
   private final double DELTA = 1e-5;
 
   private static final double CONTROLLER_DEADBAND = 0.10;
@@ -30,11 +30,11 @@ public class TurnPIDControllerTest {
   private static final double DRIVE_TURN_SCALAR = 30.0;
   private static final double DRIVE_LOOKAHEAD = 3;
 
-  private TurnPIDController m_turnPIDController;
+  private RotatePIDController m_turnPIDController;
 
   @BeforeEach
   public void setup() {
-    m_turnPIDController = new TurnPIDController(DRIVE_TURN_INPUT_CURVE, DRIVE_TURN_PID, DRIVE_TURN_SCALAR, CONTROLLER_DEADBAND, DRIVE_LOOKAHEAD);
+    m_turnPIDController = new RotatePIDController(DRIVE_TURN_INPUT_CURVE, DRIVE_TURN_PID, DRIVE_TURN_SCALAR, CONTROLLER_DEADBAND, DRIVE_LOOKAHEAD);
   }
 
   @Test

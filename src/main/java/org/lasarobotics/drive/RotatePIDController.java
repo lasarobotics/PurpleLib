@@ -13,8 +13,8 @@ import org.lasarobotics.utils.PIDConstants;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
 
-/** Turn PID controller */
-public class TurnPIDController extends PIDController {
+/** Rotate PID controller */
+public class RotatePIDController extends PIDController {
   private final double MIN_DEADBAND = 0.001;
   private final double MAX_DEADBAND = 0.2;
   private final double FILTER_FACTOR = 1.0 / 3.0;
@@ -27,14 +27,14 @@ public class TurnPIDController extends PIDController {
   private boolean m_isTurning;
 
   /**
-   * Create an instance of TurnPIDController
-   * @param turnInputCurve Turn input curve
+   * Create an instance of RotatePIDController
+   * @param turnInputCurve Rotate input curve
    * @param pidf PID constants
    * @param turnScalar Value to turn input by (degrees)
    * @param deadband Controller deadband
    * @param lookAhead Number of loops to look ahead by
    */
-  public TurnPIDController(PolynomialSplineFunction turnInputCurve, PIDConstants pidf, double turnScalar, double deadband, double lookAhead) {
+  public RotatePIDController(PolynomialSplineFunction turnInputCurve, PIDConstants pidf, double turnScalar, double deadband, double lookAhead) {
     super(pidf.kP, 0.0, pidf.kD, pidf.period);
     this.m_turnScalar = turnScalar;
     this.m_deadband = MathUtil.clamp(deadband, MIN_DEADBAND, MAX_DEADBAND);

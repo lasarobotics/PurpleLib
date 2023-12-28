@@ -437,8 +437,39 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
         break;
     }
 
-    m_config.initializeSparkPID(this, selectedSensor, forwardLimitSwitch, reverseLimitSwitch);
-    burnFlash();
+    // Configure feedback sensor and set sensor phase
+    try {
+      m_spark.getPIDController().setFeedbackDevice(selectedSensor);
+      selectedSensor.setInverted(m_config.getSensorPhase());
+    } catch (IllegalArgumentException e) {}
+
+    // Configure forward and reverse soft limits
+    if (config.isSoftLimitEnabled()) {
+      setForwardSoftLimit(config.getUpperLimit());
+      enableForwardSoftLimit();
+      setReverseSoftLimit(config.getLowerLimit());
+      enableReverseSoftLimit();
+    }
+
+    // Configure forward and reverse limit switches if required, and disable soft limit
+    if (forwardLimitSwitch) {
+      enableForwardLimitSwitch();
+      disableForwardSoftLimit();
+    }
+    if (reverseLimitSwitch) {
+      enableReverseLimitSwitch();
+      disableReverseSoftLimit();
+    }
+
+    // Invert motor if required
+    setInverted(config.getInverted());
+
+    // Configure PID values
+    setP(config.getP());
+    setI(config.getI());
+    setD(config.getD());
+    setF(config.getF());
+    setIzone(config.getI() != 0.0 ? config.getTolerance() * 2 : 0.0);
   }
 
   /**
@@ -591,6 +622,83 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
     }
 
     status = applyParameter(parameterSetter, parameterCheckSupplier, "Set velocity conversion factor failure");
+    return status;
+  }
+
+  /**
+   * Set proportional gain for PIDF controller on Spark Max
+   * @param value Value to set
+   * @return {@link REVLibError#kOk} if successful
+   */
+  public REVLibError setP(double value) {
+    REVLibError status;
+    status = applyParameter(
+      () -> m_spark.getPIDController().setP(value),
+      () -> m_spark.getPIDController().getP() == value,
+      "Set kP failure!"
+    );
+    return status;
+  }
+
+  /**
+   * Set integral gain for PIDF controller on Spark Max
+   * @param value Value to set
+   * @return {@link REVLibError#kOk} if successful
+   */
+  public REVLibError setI(double value) {
+    REVLibError status;
+    status = applyParameter(
+      () -> m_spark.getPIDController().setI(value),
+      () -> m_spark.getPIDController().getI() == value,
+      "Set kI failure!"
+    );
+    return status;
+  }
+
+  /**
+   * Set derivative gain for PIDF controller on Spark Max
+   * @param value Value to set
+   * @return {@link REVLibError#kOk} if successful
+   */
+  public REVLibError setD(double value) {
+    REVLibError status;
+    status = applyParameter(
+      () -> m_spark.getPIDController().setD(value),
+      () -> m_spark.getPIDController().getD() == value,
+      "Set kD failure!"
+    );
+    return status;
+  }
+
+  /**
+   * Set feed-forward gain for PIDF controller on Spark Max
+   * @param value Value to set
+   * @return {@link REVLibError#kOk} if successful
+   */
+  public REVLibError setF(double value) {
+    REVLibError status;
+    status = applyParameter(
+      () -> m_spark.getPIDController().setFF(value),
+      () -> m_spark.getPIDController().getFF() == value,
+      "Set kF failure!"
+    );
+    return status;
+  }
+
+  /**
+   * Set integral zone range for PIDF controller on Spark Max
+   * <p>
+   * This value specifies the range the |error| must be within for the integral constant to take effect
+   * @param value Value to set
+   * @return {@link REVLibError#kOk} if successful
+   */
+  public REVLibError setIzone(double value) {
+    REVLibError status;
+    status = applyParameter(
+      () -> m_spark.getPIDController().setIZone(value),
+      () -> m_spark.getPIDController().getIZone() == value,
+      "Set Izone failure!"
+    );
     return status;
   }
 
