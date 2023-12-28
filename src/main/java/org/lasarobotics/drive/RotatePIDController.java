@@ -19,24 +19,24 @@ public class RotatePIDController extends PIDController {
   private final double MAX_DEADBAND = 0.2;
   private final double FILTER_FACTOR = 1.0 / 3.0;
 
-  private HashMap<Double, Double> m_turnInputMap = new HashMap<Double, Double>();
-  private double m_turnScalar;
+  private HashMap<Double, Double> m_rotateInputMap = new HashMap<Double, Double>();
+  private double m_rotateScalar;
   private double m_lookAhead;
   private double m_deadband;
-  private double m_turnRequest;
+  private double m_rotateRequest;
   private boolean m_isTurning;
 
   /**
    * Create an instance of RotatePIDController
    * @param rotateInputCurve Rotate input curve
    * @param pidf PID constants
-   * @param turnScalar Value to turn input by (degrees)
+   * @param rotateScalar Value to turn input by (degrees)
    * @param deadband Controller deadband
    * @param lookAhead Number of loops to look ahead by
    */
-  public RotatePIDController(PolynomialSplineFunction rotateInputCurve, PIDConstants pidf, double turnScalar, double deadband, double lookAhead) {
+  public RotatePIDController(PolynomialSplineFunction rotateInputCurve, PIDConstants pidf, double rotateScalar, double deadband, double lookAhead) {
     super(pidf.kP, 0.0, pidf.kD, pidf.period);
-    this.m_turnScalar = turnScalar;
+    this.m_rotateScalar = rotateScalar;
     this.m_deadband = MathUtil.clamp(deadband, MIN_DEADBAND, MAX_DEADBAND);
     this.m_lookAhead = lookAhead;
     this.m_isTurning = false;
@@ -48,8 +48,8 @@ public class RotatePIDController extends PIDController {
       // Evaluate and clamp value between [0.0, +1.0]
       double value = MathUtil.clamp(rotateInputCurve.value(deadbandKey), 0.0, +1.0);
       // Add both positive and negative values to map
-      m_turnInputMap.put(+key, +value);
-      m_turnInputMap.put(-key, -value);
+      m_rotateInputMap.put(+key, +value);
+      m_rotateInputMap.put(-key, -value);
     }
   }
 
@@ -63,15 +63,15 @@ public class RotatePIDController extends PIDController {
    */
   public double calculate(double currentAngle, double rotateRate, double rotateRequest) {
     // Filter turnRequest
-    m_turnRequest -= (m_turnRequest - rotateRequest) * FILTER_FACTOR;
+    m_rotateRequest -= (m_rotateRequest - rotateRequest) * FILTER_FACTOR;
 
     // Start turning if input is greater than deadband
-    if (Math.abs(m_turnRequest) >= m_deadband) {
+    if (Math.abs(m_rotateRequest) >= m_deadband) {
       // Get scaled turnRequest
-      m_turnRequest = Math.copySign(Math.floor(Math.abs(m_turnRequest) * 1000) / 1000, m_turnRequest) + 0.0;
-      double scaledTurnRequest = m_turnInputMap.get(m_turnRequest);
+      m_rotateRequest = Math.copySign(Math.floor(Math.abs(m_rotateRequest) * 1000) / 1000, m_rotateRequest) + 0.0;
+      double scaledTurnRequest = m_rotateInputMap.get(m_rotateRequest);
       // Add delta to setpoint scaled by factor
-      super.setSetpoint(currentAngle + (scaledTurnRequest * m_turnScalar));
+      super.setSetpoint(currentAngle + (scaledTurnRequest * m_rotateScalar));
       m_isTurning = true;
     } else {
       // When turning is complete, set setpoint to current angle
