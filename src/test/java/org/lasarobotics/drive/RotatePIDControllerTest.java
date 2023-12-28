@@ -70,6 +70,6 @@ public class RotatePIDControllerTest {
   @DisplayName("Test if turn PID controller detects turns")
   public void isTurning() {
     m_turnPIDController.calculate(0.0, 0.0, +1.0);
-    assertTrue(m_turnPIDController.isTurning());
+    assertTrue(m_turnPIDController.isRotating());
   }
 }

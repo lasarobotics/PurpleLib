@@ -28,13 +28,13 @@ public class RotatePIDController extends PIDController {
 
   /**
    * Create an instance of RotatePIDController
-   * @param turnInputCurve Rotate input curve
+   * @param rotateInputCurve Rotate input curve
    * @param pidf PID constants
    * @param turnScalar Value to turn input by (degrees)
    * @param deadband Controller deadband
    * @param lookAhead Number of loops to look ahead by
    */
-  public RotatePIDController(PolynomialSplineFunction turnInputCurve, PIDConstants pidf, double turnScalar, double deadband, double lookAhead) {
+  public RotatePIDController(PolynomialSplineFunction rotateInputCurve, PIDConstants pidf, double turnScalar, double deadband, double lookAhead) {
     super(pidf.kP, 0.0, pidf.kD, pidf.period);
     this.m_turnScalar = turnScalar;
     this.m_deadband = MathUtil.clamp(deadband, MIN_DEADBAND, MAX_DEADBAND);
@@ -46,7 +46,7 @@ public class RotatePIDController extends PIDController {
       double key = (double)i / 1000;
       double deadbandKey = MathUtil.applyDeadband(key, m_deadband);
       // Evaluate and clamp value between [0.0, +1.0]
-      double value = MathUtil.clamp(turnInputCurve.value(deadbandKey), 0.0, +1.0);
+      double value = MathUtil.clamp(rotateInputCurve.value(deadbandKey), 0.0, +1.0);
       // Add both positive and negative values to map
       m_turnInputMap.put(+key, +value);
       m_turnInputMap.put(-key, -value);
@@ -54,7 +54,7 @@ public class RotatePIDController extends PIDController {
   }
 
   /**
-   * Returns next output of TurnPIDController
+   * Returns next output of RotatePIDController
    * @param currentAngle current yaw angle of robot (degrees)
    * @param rotateRate current yaw rotate rate of robot (degrees/sec)
    * @param rotateRequest rotate request [-1.0, +1.0]
@@ -85,10 +85,10 @@ public class RotatePIDController extends PIDController {
   }
 
   /**
-   * Get if robot is turning
-   * @return true if turning
+   * Get if robot is rotating
+   * @return true if rotating
    */
-  public boolean isTurning() {
+  public boolean isRotating() {
     return m_isTurning;
   }
 }
