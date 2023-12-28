@@ -1,11 +1,31 @@
 
 # PurpleLib [![Release](https://jitpack.io/v/lasarobotics/PurpleLib.svg)](https://jitpack.io/#lasarobotics/PurpleLib)
+
+
 Custom library for 418 Purple Haze
 
-Features:
-* Spark Max wrapper with AdvantageKit logging and smooth motion
+Note: CTRE will not be as well supported as REV products as our team primarily lives in the REV Robotics ecosystem
+
+## Features
+* Hardware wrappers with built-in AdvantageKit logging
+  * REV Robotics
+    * Spark Max with SmoothMotion<sup>TM</sup>
+    * Through bore encoder connected to Spark Max in absolute mode ONLY!
+  * CTRE
+    * CANivore
+    * Pidgeon 2.0
+    * CANCoder
+  * Kauai Labs
+    * NavX2
+  * Generic
+    * Analog sensor
+    * Compressor
+    * Single and double solenoid
+    * Limit switch
+    * Servo
 * MAXSwerve module support
-* Turn PID
+  * Supports NEO v1.0/1.1 + NEO 550 configuration only
+* Robot rotation PID
 * Traction control
 * Swerve second order kinematics correction
 * Configurable input maps
