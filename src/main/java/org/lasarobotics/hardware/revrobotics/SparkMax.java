@@ -307,7 +307,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
   private void handleSmoothMotion() {
     if (!m_isSmoothMotionEnabled) return;
 
-    m_smoothMotionState = m_motionProfile.calculate(GlobalConstants.ROBOT_LOOP_PERIOD, m_currentStateSupplier.get(), m_smoothMotionState);
+    m_smoothMotionState = m_motionProfile.calculate(GlobalConstants.ROBOT_LOOP_PERIOD, m_currentStateSupplier.get(), m_desiredState);
     set(
       m_smoothMotionState.position,
       ControlType.kPosition,
