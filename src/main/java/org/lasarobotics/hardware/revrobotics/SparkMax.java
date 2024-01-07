@@ -14,19 +14,19 @@ import org.littletonrobotics.junction.AutoLog;
 import org.littletonrobotics.junction.Logger;
 
 import com.revrobotics.AbsoluteEncoder;
+import com.revrobotics.CANSparkBase.ControlType;
+import com.revrobotics.CANSparkBase.ExternalFollower;
+import com.revrobotics.CANSparkBase.IdleMode;
+import com.revrobotics.CANSparkBase.SoftLimitDirection;
+import com.revrobotics.CANSparkLowLevel.MotorType;
 import com.revrobotics.CANSparkMax;
-import com.revrobotics.CANSparkMax.ControlType;
-import com.revrobotics.CANSparkMax.ExternalFollower;
-import com.revrobotics.CANSparkMax.IdleMode;
-import com.revrobotics.CANSparkMax.SoftLimitDirection;
-import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.MotorFeedbackSensor;
 import com.revrobotics.REVLibError;
 import com.revrobotics.REVPhysicsSim;
-import com.revrobotics.SparkMaxAbsoluteEncoder;
-import com.revrobotics.SparkMaxAnalogSensor;
-import com.revrobotics.SparkMaxLimitSwitch;
-import com.revrobotics.SparkMaxPIDController;
+import com.revrobotics.SparkAbsoluteEncoder;
+import com.revrobotics.SparkAnalogSensor;
+import com.revrobotics.SparkLimitSwitch;
+import com.revrobotics.SparkPIDController;
 
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.system.plant.DCMotor;
@@ -98,7 +98,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
   private TrapezoidProfile.Constraints m_motionConstraint;
   private SparkPIDConfig m_config;
   private FeedbackSensor m_feedbackSensor;
-  private SparkMaxLimitSwitch.Type m_limitSwitchType = SparkMaxLimitSwitch.Type.kNormallyOpen;
+  private SparkLimitSwitch.Type m_limitSwitchType = SparkLimitSwitch.Type.kNormallyOpen;
 
   /**
    * Create a Spark Max with built-in logging and is unit-testing friendly
@@ -211,8 +211,8 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    * Returns an object for interfacing with a connected analog sensor.
    * @return An object for interfacing with a connected analog sensor
    */
-  private SparkMaxAnalogSensor getAnalog() {
-    return m_spark.getAnalog(SparkMaxAnalogSensor.Mode.kAbsolute);
+  private SparkAnalogSensor getAnalog() {
+    return m_spark.getAnalog(SparkAnalogSensor.Mode.kAbsolute);
   }
 
   /**
@@ -238,7 +238,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    * @return An object for interfacing with a connected absolute encoder
    */
   private AbsoluteEncoder getAbsoluteEncoder() {
-    return m_spark.getAbsoluteEncoder(SparkMaxAbsoluteEncoder.Type.kDutyCycle);
+    return m_spark.getAbsoluteEncoder(SparkAbsoluteEncoder.Type.kDutyCycle);
   }
 
   /**
@@ -268,7 +268,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    * @param switchType Whether the limit switch is normally open or normally closed.
    * @return An object for interfacing with the forward limit switch.
    */
-  private SparkMaxLimitSwitch getForwardLimitSwitch() {
+  private SparkLimitSwitch getForwardLimitSwitch() {
     return m_spark.getForwardLimitSwitch(m_limitSwitchType);
   }
 
@@ -281,7 +281,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    * @param switchType Whether the limit switch is normally open or normally closed.
    * @return An object for interfacing with the reverse limit switch.
    */
-  private SparkMaxLimitSwitch getReverseLimitSwitch() {
+  private SparkLimitSwitch getReverseLimitSwitch() {
     return m_spark.getReverseLimitSwitch(m_limitSwitchType);
   }
 
@@ -312,7 +312,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
       m_smoothMotionState.position,
       ControlType.kPosition,
       m_feedforwardSupplier.apply(m_smoothMotionState),
-      SparkMaxPIDController.ArbFFUnits.kVoltage
+      SparkPIDController.ArbFFUnits.kVoltage
     );
 
     m_isSmoothMotionEnabled = !isSmoothMotionFinished();
@@ -423,11 +423,11 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
     MotorFeedbackSensor selectedSensor;
     switch (m_feedbackSensor) {
       case ANALOG:
-        selectedSensor = m_spark.getAnalog(SparkMaxAnalogSensor.Mode.kAbsolute);
+        selectedSensor = m_spark.getAnalog(SparkAnalogSensor.Mode.kAbsolute);
         m_currentStateSupplier = () -> new TrapezoidProfile.State(getInputs().analogPosition, getInputs().analogVelocity);
         break;
       case THROUGH_BORE_ENCODER:
-        selectedSensor = m_spark.getAbsoluteEncoder(SparkMaxAbsoluteEncoder.Type.kDutyCycle);
+        selectedSensor = m_spark.getAbsoluteEncoder(SparkAbsoluteEncoder.Type.kDutyCycle);
         m_currentStateSupplier = () -> new TrapezoidProfile.State(getInputs().absoluteEncoderPosition, getInputs().absoluteEncoderVelocity);
         break;
       case NEO_ENCODER:
@@ -492,7 +492,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
   public REVLibError follow(SparkMax master, boolean invert) {
     REVLibError status;
     status = applyParameter(
-      () -> m_spark.follow(ExternalFollower.kFollowerSparkMax, master.getID().deviceID, invert),
+      () -> m_spark.follow(ExternalFollower.kFollowerSpark, master.getID().deviceID, invert),
       () -> m_spark.isFollower(),
       "Set motor master failure"
     );
@@ -544,7 +544,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    * @param arbFeedforward Feed forward value
    * @param arbFFUnits Feed forward units
    */
-  public void set(double value, ControlType ctrl, double arbFeedforward, SparkMaxPIDController.ArbFFUnits arbFFUnits) {
+  public void set(double value, ControlType ctrl, double arbFeedforward, SparkPIDController.ArbFFUnits arbFFUnits) {
     m_spark.getPIDController().setReference(value, ctrl, PID_SLOT, arbFeedforward, arbFFUnits);
     logOutputs(value, ctrl);
   }
@@ -553,7 +553,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    * Change the limit switch type
    * @param type The desired limit switch type
    */
-  public void setLimitSwitchType(SparkMaxLimitSwitch.Type type) {
+  public void setLimitSwitchType(SparkLimitSwitch.Type type) {
     m_limitSwitchType = type;
   }
 

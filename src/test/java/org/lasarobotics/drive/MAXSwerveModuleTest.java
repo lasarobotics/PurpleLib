@@ -24,7 +24,7 @@ import org.lasarobotics.utils.GlobalConstants;
 import org.mockito.AdditionalMatchers;
 import org.mockito.ArgumentMatchers;
 
-import com.revrobotics.CANSparkMax.ControlType;
+import com.revrobotics.CANSparkBase.ControlType;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
