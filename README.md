@@ -10,7 +10,9 @@ Note: CTRE will not be as well supported as REV products as our team primarily l
 * Hardware wrappers with built-in AdvantageKit logging
   * REV Robotics
     * Spark Max with SmoothMotion<sup>TM</sup>
-    * Through bore encoder connected to Spark Max in absolute mode ONLY!
+    * Spark Flex with SmoothMotion<sup>TM</sup>
+    * Through bore encoder connected to Spark Max/Flex in absolute mode ONLY!
+    * Spark Flex and NEO Vortex MUST be paired together!
   * CTRE
     * CANivore
     * Pidgeon 2.0
