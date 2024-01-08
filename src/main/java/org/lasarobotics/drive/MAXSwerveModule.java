@@ -240,7 +240,7 @@ public class MAXSwerveModule implements AutoCloseable {
    * @throws IllegalArgumentException If specified drive motor is not supported
    */
   public static Hardware initializeHardware(Spark.ID driveMotorID, Spark.ID rotateMotorID, MotorKind driveMotorKind) {
-    if (driveMotorKind != MotorKind.NEO || driveMotorKind != MotorKind.NEO_VORTEX)
+    if (driveMotorKind != MotorKind.NEO && driveMotorKind != MotorKind.NEO_VORTEX)
       throw new IllegalArgumentException("Drive motor MUST be a NEO or a NEO Vortex!");
     Hardware swerveModuleHardware = new Hardware(
       new Spark(driveMotorID, driveMotorKind),
