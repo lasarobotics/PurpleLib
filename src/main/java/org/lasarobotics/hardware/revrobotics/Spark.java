@@ -14,10 +14,12 @@ import org.littletonrobotics.junction.AutoLog;
 import org.littletonrobotics.junction.Logger;
 
 import com.revrobotics.AbsoluteEncoder;
+import com.revrobotics.CANSparkBase;
 import com.revrobotics.CANSparkBase.ControlType;
 import com.revrobotics.CANSparkBase.ExternalFollower;
 import com.revrobotics.CANSparkBase.IdleMode;
 import com.revrobotics.CANSparkBase.SoftLimitDirection;
+import com.revrobotics.CANSparkFlex;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.MotorFeedbackSensor;
@@ -34,15 +36,15 @@ import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 
-/** REV Spark Max */
-public class SparkMax implements LoggableHardware, AutoCloseable {
-  /** Spark Max ID */
+/** REV Spark */
+public class Spark implements LoggableHardware, AutoCloseable {
+  /** Spark ID */
   public static class ID {
     public final String name;
     public final int deviceID;
 
     /**
-     * Spark Max ID
+     * Spark ID
      * @param name Device name for logging
      * @param deviceID CAN ID
      */
@@ -52,16 +54,34 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
     }
   }
 
+  /** Kinds of motors */
+  public enum MotorKind {
+    NEO(MotorType.kBrushless, DCMotor.getNEO(1)),
+    NEO_550(MotorType.kBrushless, DCMotor.getNeo550(1)),
+    NEO_VORTEX(MotorType.kBrushless, DCMotor.getNeoVortex(1)),
+    CIM(MotorType.kBrushed, DCMotor.getCIM(1)),
+    MINI_CIM(MotorType.kBrushed, DCMotor.getMiniCIM(1)),
+    BAG(MotorType.kBrushed, DCMotor.getBag(1)),
+    VEX_775Pro(MotorType.kBrushed, DCMotor.getVex775Pro(1));
+
+    public final MotorType type;
+    public final DCMotor motor;
+    private MotorKind(MotorType type, DCMotor motor) {
+      this.type = type;
+      this.motor = motor;
+    }
+  }
+
   /** Feedback sensor */
   public enum FeedbackSensor {
     NEO_ENCODER, ANALOG, THROUGH_BORE_ENCODER;
   }
 
   /**
-   * Spark Max sensor inputs
+   * Spark sensor inputs
    */
   @AutoLog
-  public static class SparkMaxInputs {
+  public static class SparkInputs {
     public double encoderPosition = 0.0;
     public double encoderVelocity = 0.0;
     public double analogPosition = 0.0;
@@ -75,6 +95,8 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
   private static final int PID_SLOT = 0;
   private static final int MAX_ATTEMPTS = 5;
   private static final double MAX_VOLTAGE = 12.0;
+  private static final double BURN_FLASH_WAIT_TIME = 0.5;
+  private static final double APPLY_PARAMETER_WAIT_TIME = 0.1;
   private static final double SMOOTH_MOTION_DEBOUNCE_TIME = 0.1;
   private static final String VALUE_LOG_ENTRY = "/OutputValue";
   private static final String MODE_LOG_ENTRY = "/OutputMode";
@@ -82,10 +104,11 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
   private static final String MOTION_LOG_ENTRY = "/SmoothMotion";
 
 
-  private CANSparkMax m_spark;
+  private CANSparkBase m_spark;
 
   private ID m_id;
-  private SparkMaxInputsAutoLogged m_inputs;
+  private MotorKind m_kind;
+  private SparkInputsAutoLogged m_inputs;
 
   private boolean m_isSmoothMotionEnabled;
   private Debouncer m_smoothMotionFinishedDebouncer;
@@ -101,35 +124,33 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
   private SparkLimitSwitch.Type m_limitSwitchType = SparkLimitSwitch.Type.kNormallyOpen;
 
   /**
-   * Create a Spark Max with built-in logging and is unit-testing friendly
-   * @param id Spark Max ID
-   * @param motorType The motor type connected to the controller
+   * Create a Spark with built-in logging and is unit-testing friendly
+   * @param id Spark ID
+   * @param kind The kind of motor connected to the controller
    */
-  public SparkMax(ID id, MotorType motorType) {
+  public Spark(ID id, MotorKind kind) {
+    if (kind == MotorKind.NEO_VORTEX) this.m_spark = new CANSparkFlex(id.deviceID, kind.type);
+    else this.m_spark = new CANSparkMax(id.deviceID, kind.type);
     this.m_id = id;
-    this.m_spark = new CANSparkMax(id.deviceID, motorType);
-    this.m_inputs = new SparkMaxInputsAutoLogged();
+    this.m_kind = kind;
+    this.m_inputs = new SparkInputsAutoLogged();
     this.m_isSmoothMotionEnabled = false;
 
     m_spark.restoreFactoryDefaults();
     m_spark.enableVoltageCompensation(MAX_VOLTAGE);
+
+    REVPhysicsSim.getInstance().addSparkMax((CANSparkMax)m_spark, kind.motor);
   }
 
   /**
-   * Create a Spark Max with built-in logging, is unit-testing friendly and configure PID
-   * @param id Spark Max ID
-   * @param motorType The motor type connected to the controller
-   * @param config PID config for Spark Max
+   * Create a Spark with built-in logging, is unit-testing friendly and configure PID
+   * @param id Spark ID
+   * @param kind The kind of motor connected to the controller
+   * @param config PID config for Spark
    * @param feedbackSensor Feedback device to use for Spark PID
    */
-  public SparkMax(ID id, MotorType motorType, SparkPIDConfig config, FeedbackSensor feedbackSensor) {
-    this.m_id = id;
-    this.m_spark = new CANSparkMax(id.deviceID, motorType);
-    this.m_inputs = new SparkMaxInputsAutoLogged();
-    this.m_isSmoothMotionEnabled = false;
-
-    m_spark.restoreFactoryDefaults();
-    m_spark.enableVoltageCompensation(MAX_VOLTAGE);
+  public Spark(ID id, MotorKind kind, SparkPIDConfig config, FeedbackSensor feedbackSensor) {
+    this(id, kind);
 
     this.m_config = config;
     this.m_smoothMotionFinishedDebouncer = new Debouncer(SMOOTH_MOTION_DEBOUNCE_TIME);
@@ -138,14 +159,6 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
     this.m_feedforwardSupplier = (motionProfileState) -> 0.0;
     this.m_currentStateSupplier = () -> new TrapezoidProfile.State(getInputs().encoderPosition, getInputs().encoderVelocity);
     initializeSparkPID(m_config, feedbackSensor);
-  }
-
-  /**
-   * Get internal Spark Max object
-   * @return Raw internal Spark Max object
-   */
-  CANSparkMax getMotorController() {
-    return m_spark;
   }
 
   /**
@@ -161,6 +174,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
     for (int i = 0; i < MAX_ATTEMPTS; i++) {
       status = parameterSetter.get();
       if (parameterCheckSupplier.getAsBoolean() && status == REVLibError.kOk) break;
+      Timer.delay(APPLY_PARAMETER_WAIT_TIME);
     }
 
     checkStatus(status, errorMessage);
@@ -325,9 +339,9 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
   public REVLibError burnFlash() {
     if (RobotBase.isSimulation()) return REVLibError.kOk;
 
-    Timer.delay(0.5);
+    Timer.delay(BURN_FLASH_WAIT_TIME);
     REVLibError status = m_spark.burnFlash();
-    Timer.delay(0.5);
+    Timer.delay(BURN_FLASH_WAIT_TIME);
 
     return status;
   }
@@ -349,10 +363,10 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
 
   /**
    * Add motor to simulation
-   * @param motor Motor that is connected to this Spark Max
+   * @param motor Motor that is connected to this Spark
    */
   public void addToSimulation(DCMotor motor) {
-    REVPhysicsSim.getInstance().addSparkMax(m_spark, motor);
+    REVPhysicsSim.getInstance().addSparkMax((CANSparkMax)m_spark, motor);
   }
 
   /**
@@ -371,7 +385,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    * @return Latest sensor data
    */
   @Override
-  public SparkMaxInputsAutoLogged getInputs() {
+  public SparkInputsAutoLogged getInputs() {
     return m_inputs;
   }
 
@@ -381,6 +395,14 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    */
   public ID getID() {
     return m_id;
+  }
+
+  /**
+   * Get connected motor kind
+   * @return Kind of connected motor
+   */
+  public MotorKind getKind() {
+    return m_kind;
   }
 
   /**
@@ -402,7 +424,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
   }
 
   /**
-   * Initializes Spark Max PID
+   * Initializes Spark PID
    * @param config Configuration to apply
    * @param feedbackSensor Feedback device to use for Spark PID
    * @param forwardLimitSwitch Enable forward limit switch
@@ -473,9 +495,9 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
   }
 
   /**
-   * Initializes Spark Max PID
+   * Initializes Spark PID
    * <p>
-   * Calls {@link SparkMax#initializeSparkPID(SparkPIDConfig, FeedbackSensor, boolean, boolean)} with no limit switches
+   * Calls {@link Spark#initializeSparkPID(SparkPIDConfig, FeedbackSensor, boolean, boolean)} with no limit switches
    * @param config Configuration to apply
    * @param feedbackSensor Feedback device to use for Spark PID
    */
@@ -484,12 +506,12 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
   }
 
   /**
-   * Slave Spark Max to another
-   * @param master Spark Max to follow
+   * Slave Spark to another
+   * @param master Spark to follow
    * @param invert Set slave to output opposite of the master
    * @return {@link REVLibError#kOk} if successful
    */
-  public REVLibError follow(SparkMax master, boolean invert) {
+  public REVLibError follow(Spark master, boolean invert) {
     REVLibError status;
     status = applyParameter(
       () -> m_spark.follow(ExternalFollower.kFollowerSpark, master.getID().deviceID, invert),
@@ -500,10 +522,10 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
   }
 
   /**
-   * Slave Spark Max to another
-   * @param master Spark Max to follow
+   * Slave Spark to another
+   * @param master Spark to follow
    */
-  public void follow(SparkMax master) {
+  public void follow(Spark master) {
     follow(master, false);
   }
 
@@ -511,7 +533,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
    * Common interface for inverting direction of a speed controller.
    *
    * <p>This call has no effect if the controller is a slave. To invert a slave, see the
-   * {@link SparkMax#follow(SparkMax, boolean)} method.
+   * {@link Spark#follow(Spark, boolean)} method.
    *
    * @param isInverted The state of inversion, true is inverted.
    */
@@ -626,7 +648,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
   }
 
   /**
-   * Set proportional gain for PIDF controller on Spark Max
+   * Set proportional gain for PIDF controller on Spark
    * @param value Value to set
    * @return {@link REVLibError#kOk} if successful
    */
@@ -641,7 +663,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
   }
 
   /**
-   * Set integral gain for PIDF controller on Spark Max
+   * Set integral gain for PIDF controller on Spark
    * @param value Value to set
    * @return {@link REVLibError#kOk} if successful
    */
@@ -656,7 +678,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
   }
 
   /**
-   * Set derivative gain for PIDF controller on Spark Max
+   * Set derivative gain for PIDF controller on Spark
    * @param value Value to set
    * @return {@link REVLibError#kOk} if successful
    */
@@ -671,7 +693,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
   }
 
   /**
-   * Set feed-forward gain for PIDF controller on Spark Max
+   * Set feed-forward gain for PIDF controller on Spark
    * @param value Value to set
    * @return {@link REVLibError#kOk} if successful
    */
@@ -686,7 +708,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
   }
 
   /**
-   * Set integral zone range for PIDF controller on Spark Max
+   * Set integral zone range for PIDF controller on Spark
    * <p>
    * This value specifies the range the |error| must be within for the integral constant to take effect
    * @param value Value to set
@@ -915,7 +937,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
   }
 
   /**
-   * Sets the idle mode setting for the SPARK MAX.
+   * Sets the idle mode setting for the Spark
    * @param mode Idle mode (coast or brake).
    * @return {@link REVLibError#kOk} if successful
    */
@@ -963,7 +985,7 @@ public class SparkMax implements LoggableHardware, AutoCloseable {
   }
 
   /**
-   * Closes the Spark Max controller
+   * Closes the Spark motor controller
    */
   @Override
   public void close() {

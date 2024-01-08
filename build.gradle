@@ -22,6 +22,9 @@ repositories {
   }
 }
 
+// Get AdvantageKit version from vendordep file
+def AdvantageKitJSON = new groovy.json.JsonSlurper().parseText(new File(projectDir.getAbsolutePath() + "/vendordeps/AdvantageKit.json").text)
+
 dependencies {
   implementation wpi.java.deps.wpilib()
   implementation wpi.java.vendor.java()
@@ -41,7 +44,7 @@ dependencies {
 
   testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.+'
 
-  annotationProcessor 'org.littletonrobotics.akit.junction:junction-autolog:3.0.0-beta-2'
+  annotationProcessor "org.littletonrobotics.akit.junction:junction-autolog:$AdvantageKitJSON.version"
 }
 
 test {

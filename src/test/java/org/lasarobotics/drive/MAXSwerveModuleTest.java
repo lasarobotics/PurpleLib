@@ -18,8 +18,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.lasarobotics.drive.MAXSwerveModule.GearRatio;
 import org.lasarobotics.drive.MAXSwerveModule.ModuleLocation;
-import org.lasarobotics.hardware.revrobotics.SparkMax;
-import org.lasarobotics.hardware.revrobotics.SparkMaxInputsAutoLogged;
+import org.lasarobotics.hardware.revrobotics.Spark;
+import org.lasarobotics.hardware.revrobotics.SparkInputsAutoLogged;
+import org.lasarobotics.hardware.revrobotics.Spark.MotorKind;
 import org.lasarobotics.utils.GlobalConstants;
 import org.mockito.AdditionalMatchers;
 import org.mockito.ArgumentMatchers;
@@ -43,10 +44,10 @@ public class MAXSwerveModuleTest {
   private final double TRACK_WIDTH = 0.6;
   private final double AUTO_LOCK_TIME = 3.0;
 
-  private SparkMax m_lFrontDriveMotor, m_lFrontRotateMotor;
-  private SparkMax m_rFrontDriveMotor, m_rFrontRotateMotor;
-  private SparkMax m_lRearDriveMotor, m_lRearRotateMotor;
-  private SparkMax m_rRearDriveMotor, m_rRearRotateMotor;
+  private Spark m_lFrontDriveMotor, m_lFrontRotateMotor;
+  private Spark m_rFrontDriveMotor, m_rFrontRotateMotor;
+  private Spark m_lRearDriveMotor, m_lRearRotateMotor;
+  private Spark m_rRearDriveMotor, m_rRearRotateMotor;
 
   private MAXSwerveModule m_lFrontModule;
   private MAXSwerveModule m_rFrontModule;
@@ -57,14 +58,20 @@ public class MAXSwerveModuleTest {
   @BeforeEach
   public void setup() {
     // Create mock hardware devices
-    m_lFrontDriveMotor = mock(SparkMax.class);
-    m_lFrontRotateMotor = mock(SparkMax.class);
-    m_rFrontDriveMotor = mock(SparkMax.class);
-    m_rFrontRotateMotor = mock(SparkMax.class);
-    m_lRearDriveMotor = mock(SparkMax.class);
-    m_lRearRotateMotor = mock(SparkMax.class);
-    m_rRearDriveMotor = mock(SparkMax.class);
-    m_rRearRotateMotor = mock(SparkMax.class);
+    m_lFrontDriveMotor = mock(Spark.class);
+    m_lFrontRotateMotor = mock(Spark.class);
+    m_rFrontDriveMotor = mock(Spark.class);
+    m_rFrontRotateMotor = mock(Spark.class);
+    m_lRearDriveMotor = mock(Spark.class);
+    m_lRearRotateMotor = mock(Spark.class);
+    m_rRearDriveMotor = mock(Spark.class);
+    m_rRearRotateMotor = mock(Spark.class);
+
+    // Hardcode motor kind
+    when(m_lFrontDriveMotor.getKind()).thenReturn(MotorKind.NEO);
+    when(m_rFrontDriveMotor.getKind()).thenReturn(MotorKind.NEO);
+    when(m_lRearDriveMotor.getKind()).thenReturn(MotorKind.NEO_VORTEX);
+    when(m_rRearDriveMotor.getKind()).thenReturn(MotorKind.NEO_VORTEX);
 
     // Create hardware objects using mock devices
     m_lFrontModule = new MAXSwerveModule(
@@ -127,7 +134,7 @@ public class MAXSwerveModuleTest {
   @DisplayName("Test if module can set state")
   public void set() {
     // Hardcode sensor values
-    SparkMaxInputsAutoLogged sparkMaxInputs = new SparkMaxInputsAutoLogged();
+    SparkInputsAutoLogged sparkMaxInputs = new SparkInputsAutoLogged();
     when(m_lFrontRotateMotor.getInputs()).thenReturn(sparkMaxInputs);
     when(m_rFrontRotateMotor.getInputs()).thenReturn(sparkMaxInputs);
     when(m_lRearRotateMotor.getInputs()).thenReturn(sparkMaxInputs);
@@ -156,7 +163,7 @@ public class MAXSwerveModuleTest {
   @DisplayName("Test if module will auto-lock")
   public void autoLock() {
     // Hardcode sensor values
-    SparkMaxInputsAutoLogged sparkMaxInputs = new SparkMaxInputsAutoLogged();
+    SparkInputsAutoLogged sparkMaxInputs = new SparkInputsAutoLogged();
     when(m_lFrontRotateMotor.getInputs()).thenReturn(sparkMaxInputs);
     when(m_rFrontRotateMotor.getInputs()).thenReturn(sparkMaxInputs);
     when(m_lRearRotateMotor.getInputs()).thenReturn(sparkMaxInputs);
@@ -188,8 +195,8 @@ public class MAXSwerveModuleTest {
   @DisplayName("Test if module works in simulation")
   public void simulation() {
     // Hardcode sensor values
-    SparkMaxInputsAutoLogged defaultInputs = new SparkMaxInputsAutoLogged();
-    SparkMaxInputsAutoLogged lFrontRotateMotorInputs = new SparkMaxInputsAutoLogged();
+    SparkInputsAutoLogged defaultInputs = new SparkInputsAutoLogged();
+    SparkInputsAutoLogged lFrontRotateMotorInputs = new SparkInputsAutoLogged();
     lFrontRotateMotorInputs.absoluteEncoderPosition = ModuleLocation.LeftFront.offset.getRadians();
     when(m_lFrontDriveMotor.getInputs()).thenReturn(defaultInputs);
     when(m_lFrontRotateMotor.getInputs()).thenReturn(lFrontRotateMotorInputs);

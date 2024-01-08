@@ -7,14 +7,14 @@ package org.lasarobotics.drive;
 import java.time.Duration;
 import java.time.Instant;
 
-import org.lasarobotics.hardware.revrobotics.SparkMax;
+import org.lasarobotics.hardware.revrobotics.Spark;
+import org.lasarobotics.hardware.revrobotics.Spark.MotorKind;
 import org.lasarobotics.hardware.revrobotics.SparkPIDConfig;
 import org.lasarobotics.utils.GlobalConstants;
 import org.lasarobotics.utils.PIDConstants;
 
 import com.revrobotics.CANSparkBase.ControlType;
 import com.revrobotics.CANSparkBase.IdleMode;
-import com.revrobotics.CANSparkLowLevel.MotorType;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -22,6 +22,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.math.util.Units;
 
 /** REV MAXSwerve module */
 public class MAXSwerveModule implements AutoCloseable {
@@ -29,10 +30,10 @@ public class MAXSwerveModule implements AutoCloseable {
    * MAXSwerve module hardware
    */
   public static class Hardware {
-    private SparkMax driveMotor;
-    private SparkMax rotateMotor;
+    private Spark driveMotor;
+    private Spark rotateMotor;
 
-    public Hardware(SparkMax driveMotor, SparkMax rotateMotor) {
+    public Hardware(Spark driveMotor, Spark rotateMotor) {
       this.driveMotor = driveMotor;
       this.rotateMotor = rotateMotor;
     }
@@ -100,8 +101,8 @@ public class MAXSwerveModule implements AutoCloseable {
   private static final boolean DRIVE_ROTATE_SENSOR_PHASE = true;
   private static final boolean DRIVE_ROTATE_INVERT_MOTOR = false;
 
-  private SparkMax m_driveMotor;
-  private SparkMax m_rotateMotor;
+  private Spark m_driveMotor;
+  private Spark m_rotateMotor;
   private Translation2d m_moduleCoordinate;
   private ModuleLocation m_location;
   private Rotation2d m_previousRotatePosition;
@@ -126,7 +127,7 @@ public class MAXSwerveModule implements AutoCloseable {
    * @param slipRatio Desired slip ratio
    * @param wheelbase Robot wheelbase in meters
    * @param trackWidth Robot track width in meters
-   * @param autoLockTime Time in seconds before rotating module to locked position [0.0, +inf]
+   * @param autoLockTime Time in seconds before rotating module to locked position [0.0, 10.0]
    */
   public MAXSwerveModule(Hardware swerveHardware, ModuleLocation location, GearRatio driveGearRatio,
                          double slipRatio, double wheelbase, double trackWidth, double autoLockTime) {
@@ -149,7 +150,12 @@ public class MAXSwerveModule implements AutoCloseable {
 
     // Create PID configs
     SparkPIDConfig driveMotorConfig = new SparkPIDConfig(
-      new PIDConstants(DRIVE_VELOCITY_kP, 0.0, 0.0, 1 / ((GlobalConstants.NEO_MAX_RPM / 60) * m_driveConversionFactor)),
+      new PIDConstants(
+        DRIVE_VELOCITY_kP,
+        0.0,
+        0.0,
+        1 / ((Units.radiansPerSecondToRotationsPerMinute(m_driveMotor.getKind().motor.freeSpeedRadPerSec) / 60) * m_driveConversionFactor)
+      ),
       DRIVE_VELOCITY_SENSOR_PHASE,
       DRIVE_INVERT_MOTOR,
       DRIVE_VELOCITY_TOLERANCE
@@ -165,8 +171,8 @@ public class MAXSwerveModule implements AutoCloseable {
     );
 
     // Initialize PID
-    m_driveMotor.initializeSparkPID(driveMotorConfig, SparkMax.FeedbackSensor.NEO_ENCODER);
-    m_rotateMotor.initializeSparkPID(rotateMotorConfig, SparkMax.FeedbackSensor.THROUGH_BORE_ENCODER);
+    m_driveMotor.initializeSparkPID(driveMotorConfig, Spark.FeedbackSensor.NEO_ENCODER);
+    m_rotateMotor.initializeSparkPID(rotateMotorConfig, Spark.FeedbackSensor.THROUGH_BORE_ENCODER);
 
     // Set drive motor to coast
     m_driveMotor.setIdleMode(IdleMode.kCoast);
@@ -183,13 +189,13 @@ public class MAXSwerveModule implements AutoCloseable {
 
     // Set drive encoder conversion factor
     m_driveConversionFactor = DRIVE_WHEEL_DIAMETER_METERS * Math.PI / m_driveGearRatio.value;
-    m_driveMotor.setPositionConversionFactor(SparkMax.FeedbackSensor.NEO_ENCODER, m_driveConversionFactor);
-    m_driveMotor.setVelocityConversionFactor(SparkMax.FeedbackSensor.NEO_ENCODER, m_driveConversionFactor / 60);
+    m_driveMotor.setPositionConversionFactor(Spark.FeedbackSensor.NEO_ENCODER, m_driveConversionFactor);
+    m_driveMotor.setVelocityConversionFactor(Spark.FeedbackSensor.NEO_ENCODER, m_driveConversionFactor / 60);
 
     // Set rotate encoder conversion factor
     m_rotateConversionFactor = 2 * Math.PI;
-    m_rotateMotor.setPositionConversionFactor(SparkMax.FeedbackSensor.THROUGH_BORE_ENCODER, m_rotateConversionFactor);
-    m_rotateMotor.setVelocityConversionFactor(SparkMax.FeedbackSensor.THROUGH_BORE_ENCODER, m_rotateConversionFactor / 60);
+    m_rotateMotor.setPositionConversionFactor(Spark.FeedbackSensor.THROUGH_BORE_ENCODER, m_rotateConversionFactor);
+    m_rotateMotor.setVelocityConversionFactor(Spark.FeedbackSensor.THROUGH_BORE_ENCODER, m_rotateConversionFactor / 60);
 
     // Enable PID wrapping
     m_rotateMotor.enablePIDWrapping(0.0, m_rotateConversionFactor);
@@ -229,12 +235,16 @@ public class MAXSwerveModule implements AutoCloseable {
    * Initialize hardware devices for MAXSwerve module
    * @param driveMotorID Drive motor ID
    * @param rotateMotorID Rotate motor ID
+   * @param driveMotorKind Kind of drive motor
    * @return Hardware object containing all necessary objects for a MAXSwerve module
+   * @throws IllegalArgumentException If specified drive motor is not supported
    */
-  public static Hardware initializeHardware(SparkMax.ID driveMotorID, SparkMax.ID rotateMotorID) {
+  public static Hardware initializeHardware(Spark.ID driveMotorID, Spark.ID rotateMotorID, MotorKind driveMotorKind) {
+    if (driveMotorKind != MotorKind.NEO || driveMotorKind != MotorKind.NEO_VORTEX)
+      throw new IllegalArgumentException("Drive motor MUST be a NEO or a NEO Vortex!");
     Hardware swerveModuleHardware = new Hardware(
-      new SparkMax(driveMotorID, MotorType.kBrushless),
-      new SparkMax(rotateMotorID, MotorType.kBrushless)
+      new Spark(driveMotorID, driveMotorKind),
+      new Spark(rotateMotorID, MotorKind.NEO_550)
     );
 
     return swerveModuleHardware;
