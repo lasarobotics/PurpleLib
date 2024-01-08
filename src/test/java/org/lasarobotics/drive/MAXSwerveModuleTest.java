@@ -134,11 +134,11 @@ public class MAXSwerveModuleTest {
   @DisplayName("Test if module can set state")
   public void set() {
     // Hardcode sensor values
-    SparkInputsAutoLogged sparkMaxInputs = new SparkInputsAutoLogged();
-    when(m_lFrontRotateMotor.getInputs()).thenReturn(sparkMaxInputs);
-    when(m_rFrontRotateMotor.getInputs()).thenReturn(sparkMaxInputs);
-    when(m_lRearRotateMotor.getInputs()).thenReturn(sparkMaxInputs);
-    when(m_rRearRotateMotor.getInputs()).thenReturn(sparkMaxInputs);
+    SparkInputsAutoLogged sparkInputs = new SparkInputsAutoLogged();
+    when(m_lFrontRotateMotor.getInputs()).thenReturn(sparkInputs);
+    when(m_rFrontRotateMotor.getInputs()).thenReturn(sparkInputs);
+    when(m_lRearRotateMotor.getInputs()).thenReturn(sparkInputs);
+    when(m_rRearRotateMotor.getInputs()).thenReturn(sparkInputs);
 
     // Try to set module state
     SwerveModuleState state = new SwerveModuleState(+2.0, Rotation2d.fromRadians(+Math.PI));
@@ -163,11 +163,11 @@ public class MAXSwerveModuleTest {
   @DisplayName("Test if module will auto-lock")
   public void autoLock() {
     // Hardcode sensor values
-    SparkInputsAutoLogged sparkMaxInputs = new SparkInputsAutoLogged();
-    when(m_lFrontRotateMotor.getInputs()).thenReturn(sparkMaxInputs);
-    when(m_rFrontRotateMotor.getInputs()).thenReturn(sparkMaxInputs);
-    when(m_lRearRotateMotor.getInputs()).thenReturn(sparkMaxInputs);
-    when(m_rRearRotateMotor.getInputs()).thenReturn(sparkMaxInputs);
+    SparkInputsAutoLogged sparkInputs = new SparkInputsAutoLogged();
+    when(m_lFrontRotateMotor.getInputs()).thenReturn(sparkInputs);
+    when(m_rFrontRotateMotor.getInputs()).thenReturn(sparkInputs);
+    when(m_lRearRotateMotor.getInputs()).thenReturn(sparkInputs);
+    when(m_rRearRotateMotor.getInputs()).thenReturn(sparkInputs);
 
     // Advance sim time
     Timer.delay(AUTO_LOCK_TIME);
