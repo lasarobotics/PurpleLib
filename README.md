@@ -24,7 +24,7 @@ Note: CTRE will not be as well supported as REV products as our team primarily l
     * Limit switch
     * Servo
 * MAXSwerve module support
-  * Supports NEO v1.0/1.1 + NEO 550 configuration only
+  * Supports NEO v1.0/1.1 or NEO Vortex + NEO 550 configuration only
 * Robot rotation PID
 * Traction control
 * Swerve second order kinematics correction
