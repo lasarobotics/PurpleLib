@@ -14,6 +14,11 @@ import com.kauailabs.navx.frc.AHRS;
 import edu.wpi.first.hal.SimDouble;
 import edu.wpi.first.hal.simulation.SimDeviceDataJNI;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.units.Angle;
+import edu.wpi.first.units.Distance;
+import edu.wpi.first.units.Measure;
+import edu.wpi.first.units.Units;
+import edu.wpi.first.units.Velocity;
 import edu.wpi.first.wpilibj.SPI;
 
 /** NavX2 */
@@ -36,12 +41,12 @@ public class NavX2 implements LoggableHardware, AutoCloseable {
    */
   @AutoLog
   public static class NavX2Inputs {
-    public double pitchAngle = 0.0;
-    public double yawAngle = 0.0;
-    public double rollAngle = 0.0;
-    public double xVelocity = 0.0;
-    public double yVelocity = 0.0;
-    public double yawRate = 0.0;
+    public Measure<Angle> pitchAngle = Units.Radians.of(0.0);
+    public Measure<Angle> yawAngle = Units.Radians.of(0.0);
+    public Measure<Angle> rollAngle = Units.Radians.of(0.0);
+    public Measure<Velocity<Distance>> xVelocity = Units.MetersPerSecond.of(0.0);
+    public Measure<Velocity<Distance>> yVelocity = Units.MetersPerSecond.of(0.0);
+    public Measure<Velocity<Angle>> yawRate = Units.RadiansPerSecond.of(0.0);
     public Rotation2d rotation2d = GlobalConstants.ROTATION_ZERO;
   }
 
@@ -161,12 +166,12 @@ public class NavX2 implements LoggableHardware, AutoCloseable {
    * Update NavX input readings
    */
   private void updateInputs() {
-    m_inputs.pitchAngle = getPitch();
-    m_inputs.yawAngle = getAngle();
-    m_inputs.rollAngle = getRoll();
-    m_inputs.xVelocity = getVelocityX();
-    m_inputs.yVelocity = getVelocityY();
-    m_inputs.yawRate = getRate();
+    m_inputs.pitchAngle = Units.Degrees.of(getPitch());
+    m_inputs.yawAngle = Units.Degrees.of(getAngle());
+    m_inputs.rollAngle = Units.Degrees.of(getRoll());
+    m_inputs.xVelocity = Units.MetersPerSecond.of(getVelocityX());
+    m_inputs.yVelocity = Units.MetersPerSecond.of(getVelocityY());
+    m_inputs.yawRate = Units.DegreesPerSecond.of(getRate());
     m_inputs.rotation2d = getRotation2d();
   }
 

@@ -9,6 +9,10 @@ import org.lasarobotics.utils.GlobalConstants;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.LinearFilter;
+import edu.wpi.first.units.Distance;
+import edu.wpi.first.units.Measure;
+import edu.wpi.first.units.Units;
+import edu.wpi.first.units.Velocity;
 
 /** Traction control controller */
 public class TractionControlController {
@@ -44,12 +48,12 @@ public class TractionControlController {
 
   /**
    * Create an instance of TractionControlController
+   * @param maxLinearSpeed Maximum linear speed of robot
    * @param optimalSlipRatio Desired slip ratio [+0.01, +0.40]
-   * @param maxLinearSpeed maximum linear speed of robot (m/s)
    */
-  public TractionControlController(double optimalSlipRatio, double maxLinearSpeed) {
+  public TractionControlController(Measure<Velocity<Distance>> maxLinearSpeed, double optimalSlipRatio) {
     this.m_optimalSlipRatio = MathUtil.clamp(optimalSlipRatio, MIN_SLIP_RATIO, MAX_SLIP_RATIO);
-    this.m_maxLinearSpeed = Math.floor(maxLinearSpeed * 1000) / 1000;
+    this.m_maxLinearSpeed = Math.floor(maxLinearSpeed.in(Units.MetersPerSecond) * 1000) / 1000;
     this.m_speedFilter = LinearFilter.singlePoleIIR(
       GlobalConstants.ROBOT_LOOP_PERIOD * FILTER_TIME_CONSTANT_MULTIPLIER,
       GlobalConstants.ROBOT_LOOP_PERIOD

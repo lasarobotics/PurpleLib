@@ -22,6 +22,12 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.units.Angle;
+import edu.wpi.first.units.Distance;
+import edu.wpi.first.units.Measure;
+import edu.wpi.first.units.Time;
+import edu.wpi.first.units.Units;
+import edu.wpi.first.units.Velocity;
 
 /** REV MAXSwerve module */
 public class MAXSwerveModule implements AutoCloseable {
@@ -123,13 +129,13 @@ public class MAXSwerveModule implements AutoCloseable {
    * @param swerveHardware Hardware devices required by swerve module
    * @param location Location of module
    * @param driveGearRatio Gear ratio for driving wheel
+   * @param wheelbase Robot wheelbase
+   * @param trackWidth Robot track width
+   * @param autoLockTime Time before rotating module to locked position [0.0, 10.0]
    * @param slipRatio Desired slip ratio
-   * @param wheelbase Robot wheelbase in meters
-   * @param trackWidth Robot track width in meters
-   * @param autoLockTime Time in seconds before rotating module to locked position [0.0, 10.0]
    */
   public MAXSwerveModule(Hardware swerveHardware, ModuleLocation location, GearRatio driveGearRatio,
-                         double slipRatio, double wheelbase, double trackWidth, double autoLockTime) {
+                         Measure<Distance> wheelbase, Measure<Distance> trackWidth, Measure<Time> autoLockTime, double slipRatio) {
     DRIVE_TICKS_PER_METER = (GlobalConstants.NEO_ENCODER_TICKS_PER_ROTATION * driveGearRatio.value) * (1 / (DRIVE_WHEEL_DIAMETER_METERS * Math.PI));
     DRIVE_METERS_PER_TICK = 1 / DRIVE_TICKS_PER_METER;
     DRIVE_METERS_PER_ROTATION = DRIVE_METERS_PER_TICK * GlobalConstants.NEO_ENCODER_TICKS_PER_ROTATION;
@@ -142,9 +148,9 @@ public class MAXSwerveModule implements AutoCloseable {
     this.m_autoLock = true;
     this.m_simDrivePosition = 0.0;
     this.m_simRotatePosition = 0.0;
-    this.m_autoLockTime = MathUtil.clamp(autoLockTime * 1000, 0.0, MAX_AUTO_LOCK_TIME * 1000);
+    this.m_autoLockTime = MathUtil.clamp(autoLockTime.in(Units.Milliseconds), 0.0, MAX_AUTO_LOCK_TIME * 1000);
     this.m_previousRotatePosition = LOCK_POSITION;
-    this.m_tractionControlController =  new TractionControlController(slipRatio, DRIVE_MAX_LINEAR_SPEED);
+    this.m_tractionControlController =  new TractionControlController(Units.MetersPerSecond.of(DRIVE_MAX_LINEAR_SPEED), slipRatio);
     this.m_autoLockTimer = Instant.now();
 
     // Set drive encoder conversion factor
@@ -182,8 +188,6 @@ public class MAXSwerveModule implements AutoCloseable {
       DRIVE_ROTATE_SOFT_LIMITS
     );
 
-    System.out.println(1 / ((m_driveMotor.getKind().getMaxRPM() / 60) * m_driveConversionFactor));
-
     // Initialize PID
     m_driveMotor.initializeSparkPID(driveMotorConfig, Spark.FeedbackSensor.NEO_ENCODER);
     m_rotateMotor.initializeSparkPID(rotateMotorConfig, Spark.FeedbackSensor.THROUGH_BORE_ENCODER);
@@ -208,16 +212,16 @@ public class MAXSwerveModule implements AutoCloseable {
     // Calculate module coordinate
     switch (location) {
       case LeftFront:
-        m_moduleCoordinate = new Translation2d(+wheelbase / 2, +trackWidth / 2);
+        m_moduleCoordinate = new Translation2d(+wheelbase.in(Units.Meters) / 2, +trackWidth.in(Units.Meters) / 2);
         break;
       case RightFront:
-        m_moduleCoordinate = new Translation2d(+wheelbase / 2, -trackWidth / 2);
+        m_moduleCoordinate = new Translation2d(+wheelbase.in(Units.Meters) / 2, -trackWidth.in(Units.Meters) / 2);
         break;
       case LeftRear:
-        m_moduleCoordinate = new Translation2d(-wheelbase / 2, +trackWidth / 2);
+        m_moduleCoordinate = new Translation2d(-wheelbase.in(Units.Meters) / 2, +trackWidth.in(Units.Meters) / 2);
         break;
       case RightRear:
-        m_moduleCoordinate = new Translation2d(-wheelbase / 2, -trackWidth / 2);
+        m_moduleCoordinate = new Translation2d(-wheelbase.in(Units.Meters) / 2, -trackWidth.in(Units.Meters) / 2);
         break;
       default:
         m_moduleCoordinate = new Translation2d();
@@ -322,15 +326,15 @@ public class MAXSwerveModule implements AutoCloseable {
   /**
    * Set swerve module direction and speed, automatically applying traction control
    * @param state Desired swerve module state
-   * @param inertialVelocity Current inertial velocity (m/s)
-   * @param rotateRate Current rotate rate (degrees/s)
+   * @param inertialVelocity Current inertial velocity
+   * @param rotateRate Current rotate rate
    */
-  public void set(SwerveModuleState state, double inertialVelocity, double rotateRate) {
+  public void set(SwerveModuleState state, Measure<Velocity<Distance>> inertialVelocity, Measure<Velocity<Angle>> rotateRate) {
     // Apply traction control
     state.speedMetersPerSecond = m_tractionControlController.calculate(
       state.speedMetersPerSecond,
-      calculateRealSpeed(inertialVelocity, rotateRate),
-      getDriveVelocity()
+      calculateRealSpeed(inertialVelocity.in(Units.MetersPerSecond), rotateRate.in(Units.DegreesPerSecond)),
+      getDriveVelocity().in(Units.MetersPerSecond)
     );
 
     // Set swerve module state
@@ -348,10 +352,10 @@ public class MAXSwerveModule implements AutoCloseable {
   /**
    * Set swerve module direction and speed, automatically applying traction control
    * @param states Array of states for all swerve modules
-   * @param inertialVelocity Current inertial velocity (m/s)
-   * @param rotateRate Current turn rate (degrees/s)
+   * @param inertialVelocity Current inertial velocity
+   * @param rotateRate Current turn rate
    */
-  public void set(SwerveModuleState[] states, double inertialVelocity, double rotateRate) {
+  public void set(SwerveModuleState[] states, Measure<Velocity<Distance>> inertialVelocity, Measure<Velocity<Angle>> rotateRate) {
     set(states[m_location.index], inertialVelocity, rotateRate);
   }
 
@@ -359,8 +363,8 @@ public class MAXSwerveModule implements AutoCloseable {
    * Get velocity of drive wheel
    * @return velocity of drive wheel in m/s
    */
-  public double getDriveVelocity() {
-    return m_driveMotor.getInputs().encoderVelocity;
+  public Measure<Velocity<Distance>> getDriveVelocity() {
+    return Units.MetersPerSecond.of(m_driveMotor.getInputs().encoderVelocity);
   }
 
   /**
@@ -444,8 +448,8 @@ public class MAXSwerveModule implements AutoCloseable {
    * Get maximum drive speed of module
    * @return Max linear speed (m/s)
    */
-  public double getMaxLinearSpeed() {
-    return DRIVE_MAX_LINEAR_SPEED;
+  public Measure<Velocity<Distance>> getMaxLinearSpeed() {
+    return Units.MetersPerSecond.of(DRIVE_MAX_LINEAR_SPEED);
   }
 
   /**

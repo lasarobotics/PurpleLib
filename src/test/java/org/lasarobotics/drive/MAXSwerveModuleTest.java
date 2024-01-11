@@ -19,8 +19,8 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.lasarobotics.drive.MAXSwerveModule.GearRatio;
 import org.lasarobotics.drive.MAXSwerveModule.ModuleLocation;
 import org.lasarobotics.hardware.revrobotics.Spark;
-import org.lasarobotics.hardware.revrobotics.SparkInputsAutoLogged;
 import org.lasarobotics.hardware.revrobotics.Spark.MotorKind;
+import org.lasarobotics.hardware.revrobotics.SparkInputsAutoLogged;
 import org.lasarobotics.utils.GlobalConstants;
 import org.mockito.AdditionalMatchers;
 import org.mockito.ArgumentMatchers;
@@ -31,6 +31,10 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.units.Distance;
+import edu.wpi.first.units.Measure;
+import edu.wpi.first.units.Time;
+import edu.wpi.first.units.Units;
 import edu.wpi.first.wpilibj.Timer;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -40,9 +44,9 @@ public class MAXSwerveModuleTest {
 
   private final GearRatio GEAR_RATIO = MAXSwerveModule.GearRatio.L3;
   private final double SLIP_RATIO = 0.08;
-  private final double WHEELBASE = 0.6;
-  private final double TRACK_WIDTH = 0.6;
-  private final double AUTO_LOCK_TIME = 3.0;
+  private final Measure<Distance> WHEELBASE = Units.Meters.of(0.6);
+  private final Measure<Distance> TRACK_WIDTH = Units.Meters.of(0.6);
+  private final Measure<Time> AUTO_LOCK_TIME = Units.Seconds.of(3.0);
 
   private Spark m_lFrontDriveMotor, m_lFrontRotateMotor;
   private Spark m_rFrontDriveMotor, m_rFrontRotateMotor;
@@ -78,37 +82,37 @@ public class MAXSwerveModuleTest {
       new MAXSwerveModule.Hardware(m_lFrontDriveMotor, m_lFrontRotateMotor),
       MAXSwerveModule.ModuleLocation.LeftFront,
       GEAR_RATIO,
-      SLIP_RATIO,
       WHEELBASE,
       TRACK_WIDTH,
-      AUTO_LOCK_TIME
+      AUTO_LOCK_TIME,
+      SLIP_RATIO
     );
     m_rFrontModule = new MAXSwerveModule(
       new MAXSwerveModule.Hardware(m_rFrontDriveMotor, m_rFrontRotateMotor),
       MAXSwerveModule.ModuleLocation.RightFront,
       GEAR_RATIO,
-      SLIP_RATIO,
       WHEELBASE,
       TRACK_WIDTH,
-      AUTO_LOCK_TIME
+      AUTO_LOCK_TIME,
+      SLIP_RATIO
     );
     m_lRearModule = new MAXSwerveModule(
      new MAXSwerveModule.Hardware(m_lRearDriveMotor, m_lRearRotateMotor),
       MAXSwerveModule.ModuleLocation.LeftRear,
       GEAR_RATIO,
-      SLIP_RATIO,
       WHEELBASE,
       TRACK_WIDTH,
-      AUTO_LOCK_TIME
+      AUTO_LOCK_TIME,
+      SLIP_RATIO
     );
     m_rRearModule = new MAXSwerveModule(
       new MAXSwerveModule.Hardware(m_rRearDriveMotor, m_rRearRotateMotor),
       MAXSwerveModule.ModuleLocation.RightRear,
       GEAR_RATIO,
-      SLIP_RATIO,
       WHEELBASE,
       TRACK_WIDTH,
-      AUTO_LOCK_TIME
+      AUTO_LOCK_TIME,
+      SLIP_RATIO
     );
 
     // Disable traction control for unit tests
@@ -123,10 +127,10 @@ public class MAXSwerveModuleTest {
   @DisplayName("Test if module location is set correctly")
   public void moduleLocation() {
     // Check if all module locations are set
-    assertEquals(new Translation2d(+WHEELBASE / 2, +TRACK_WIDTH / 2), m_lFrontModule.getModuleCoordinate());
-    assertEquals(new Translation2d(+WHEELBASE / 2, -TRACK_WIDTH / 2), m_rFrontModule.getModuleCoordinate());
-    assertEquals(new Translation2d(-WHEELBASE / 2, +TRACK_WIDTH / 2), m_lRearModule.getModuleCoordinate());
-    assertEquals(new Translation2d(-WHEELBASE / 2, -TRACK_WIDTH / 2), m_rRearModule.getModuleCoordinate());
+    assertEquals(new Translation2d(+WHEELBASE.in(Units.Meters) / 2, +TRACK_WIDTH.in(Units.Meters) / 2), m_lFrontModule.getModuleCoordinate());
+    assertEquals(new Translation2d(+WHEELBASE.in(Units.Meters) / 2, -TRACK_WIDTH.in(Units.Meters) / 2), m_rFrontModule.getModuleCoordinate());
+    assertEquals(new Translation2d(-WHEELBASE.in(Units.Meters) / 2, +TRACK_WIDTH.in(Units.Meters) / 2), m_lRearModule.getModuleCoordinate());
+    assertEquals(new Translation2d(-WHEELBASE.in(Units.Meters) / 2, -TRACK_WIDTH.in(Units.Meters) / 2), m_rRearModule.getModuleCoordinate());
   }
 
   @Test
@@ -170,7 +174,7 @@ public class MAXSwerveModuleTest {
     when(m_rRearRotateMotor.getInputs()).thenReturn(sparkInputs);
 
     // Advance sim time
-    Timer.delay(AUTO_LOCK_TIME);
+    Timer.delay(AUTO_LOCK_TIME.in(Units.Seconds));
 
     // Try to set module state
     SwerveModuleState state = new SwerveModuleState(0.0, Rotation2d.fromRadians(+Math.PI));

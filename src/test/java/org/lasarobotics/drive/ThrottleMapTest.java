@@ -17,6 +17,8 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+import edu.wpi.first.units.Units;
+
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class ThrottleMapTest {
   private final double DELTA = 1e-5;
@@ -32,8 +34,8 @@ public class ThrottleMapTest {
   public void setup() {
     m_throttleMap = new ThrottleMap(
       DRIVE_THROTTLE_INPUT_CURVE,
-      CONTROLLER_DEADBAND,
-      DRIVE_THROTTLE_INPUT_CURVE_Y[DRIVE_THROTTLE_INPUT_CURVE_Y.length - 1]
+      Units.MetersPerSecond.of(DRIVE_THROTTLE_INPUT_CURVE_Y[DRIVE_THROTTLE_INPUT_CURVE_Y.length - 1]),
+      CONTROLLER_DEADBAND
     );
   }
 

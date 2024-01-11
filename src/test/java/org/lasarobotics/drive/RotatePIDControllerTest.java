@@ -18,6 +18,8 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.lasarobotics.utils.GlobalConstants;
 import org.lasarobotics.utils.PIDConstants;
 
+import edu.wpi.first.units.Units;
+
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class RotatePIDControllerTest {
   private final double DELTA = 1e-5;
@@ -41,35 +43,35 @@ public class RotatePIDControllerTest {
   @Order(1)
   @DisplayName("Test if turn PID controller returns zero")
   public void zero() {
-    assertEquals(0.0, m_turnPIDController.calculate(0.0, 0.0, 0.0), DELTA);
+    assertEquals(0.0, m_turnPIDController.calculate(Units.Degrees.of(0.0), Units.DegreesPerSecond.of(0.0), 0.0), DELTA);
   }
 
   @Test
   @Order(2)
   @DisplayName("Test if turn PID controller ignores values within deadband")
   public void deadband() {
-    assertEquals(0.0,m_turnPIDController.calculate(0.0, 0.0, 0.09), DELTA);
+    assertEquals(0.0,m_turnPIDController.calculate(Units.Degrees.of(0.0), Units.DegreesPerSecond.of(0.0), 0.09), DELTA);
   }
 
   @Test
   @Order(3)
   @DisplayName("Test if turn PID controller accepts negative input")
   public void negative() {
-    assertTrue(m_turnPIDController.calculate(0.0, 0.0, -1.0) < 0.0);
+    assertTrue(m_turnPIDController.calculate(Units.Degrees.of(0.0), Units.DegreesPerSecond.of(0.0), -1.0) < 0.0);
   }
 
   @Test
   @Order(4)
   @DisplayName("Test if turn PID controller accepts positive input")
   public void positive() {
-    assertTrue(m_turnPIDController.calculate(0.0, 0.0, +1.0) > 0.0);
+    assertTrue(m_turnPIDController.calculate(Units.Degrees.of(0.0), Units.DegreesPerSecond.of(0.0), +1.0) > 0.0);
   }
 
   @Test
   @Order(5)
   @DisplayName("Test if turn PID controller detects turns")
   public void isTurning() {
-    m_turnPIDController.calculate(0.0, 0.0, +1.0);
+    m_turnPIDController.calculate(Units.Degrees.of(0.0), Units.DegreesPerSecond.of(0.0), +1.0);
     assertTrue(m_turnPIDController.isRotating());
   }
 }

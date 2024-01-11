@@ -12,6 +12,10 @@ import org.lasarobotics.utils.PIDConstants;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.units.Angle;
+import edu.wpi.first.units.Measure;
+import edu.wpi.first.units.Units;
+import edu.wpi.first.units.Velocity;
 
 /** Rotate PID controller */
 public class RotatePIDController extends PIDController {
@@ -59,9 +63,9 @@ public class RotatePIDController extends PIDController {
    * @param rotateRate current yaw rotate rate of robot (degrees/sec)
    * @param rotateRequest rotate request [-1.0, +1.0]
    *
-   * @return optimal turn output [-1.0, +1.0]
+   * @return optimal turn output
    */
-  public double calculate(double currentAngle, double rotateRate, double rotateRequest) {
+  public double calculate(Measure<Angle> currentAngle, Measure<Velocity<Angle>> rotateRate, double rotateRequest) {
     // Filter turnRequest
     m_rotateRequest -= (m_rotateRequest - rotateRequest) * FILTER_FACTOR;
 
@@ -71,17 +75,17 @@ public class RotatePIDController extends PIDController {
       m_rotateRequest = Math.copySign(Math.floor(Math.abs(m_rotateRequest) * 1000) / 1000, m_rotateRequest) + 0.0;
       double scaledTurnRequest = m_rotateInputMap.get(m_rotateRequest);
       // Add delta to setpoint scaled by factor
-      super.setSetpoint(currentAngle + (scaledTurnRequest * m_rotateScalar));
+      super.setSetpoint(currentAngle.in(Units.Degrees) + (scaledTurnRequest * m_rotateScalar));
       m_isTurning = true;
     } else {
       // When turning is complete, set setpoint to current angle
       if (m_isTurning) {
-        super.setSetpoint(currentAngle + (rotateRate * m_lookAhead * GlobalConstants.ROBOT_LOOP_PERIOD));
+        super.setSetpoint(currentAngle.in(Units.Degrees) + (rotateRate.in(Units.DegreesPerSecond) * m_lookAhead * GlobalConstants.ROBOT_LOOP_PERIOD));
         m_isTurning = false;
       }
     }
 
-    return super.calculate(currentAngle);
+    return super.calculate(currentAngle.in(Units.Degrees));
   }
 
   /**

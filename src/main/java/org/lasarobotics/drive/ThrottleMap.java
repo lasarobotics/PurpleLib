@@ -9,6 +9,10 @@ import java.util.HashMap;
 import org.apache.commons.math3.analysis.polynomials.PolynomialSplineFunction;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.units.Distance;
+import edu.wpi.first.units.Measure;
+import edu.wpi.first.units.Units;
+import edu.wpi.first.units.Velocity;
 
 /** Throttle map */
 public class ThrottleMap {
@@ -22,10 +26,10 @@ public class ThrottleMap {
   /**
    * Create an instance of ThrottleMap
    * @param throttleInputCurve Spline function characterising throttle input curve
+   * @param maxLinearSpeed Maximum linear speed of robot
    * @param deadband Deadband for controller input [+0.001, +0.2]
-   * @param maxLinearSpeed maximum linear speed of robot (m/s)
    */
-  public ThrottleMap(PolynomialSplineFunction throttleInputCurve, double deadband, double maxLinearSpeed) {
+  public ThrottleMap(PolynomialSplineFunction throttleInputCurve, Measure<Velocity<Distance>> maxLinearSpeed, double deadband) {
     this.m_deadband = MathUtil.clamp(deadband, MIN_DEADBAND, MAX_DEADBAND);
 
     // Fill throttle input hashmap
@@ -33,7 +37,7 @@ public class ThrottleMap {
       double key = (double)i / 1000;
       double deadbandKey = MathUtil.applyDeadband(key, m_deadband);
       // Evaluate value between [0.0, +MAX_LINEAR_SPEED]
-      double value = MathUtil.clamp(throttleInputCurve.value(deadbandKey), 0.0, +maxLinearSpeed);
+      double value = MathUtil.clamp(throttleInputCurve.value(deadbandKey), 0.0, +maxLinearSpeed.in(Units.MetersPerSecond));
       // Add both positive and negative values to map
       m_throttleInputMap.put(+key, +value);
       m_throttleInputMap.put(-key, -value);

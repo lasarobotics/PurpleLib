@@ -15,6 +15,10 @@ import com.ctre.phoenix6.configs.Pigeon2Configuration;
 import com.ctre.phoenix6.hardware.Pigeon2;
 
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.units.Angle;
+import edu.wpi.first.units.Measure;
+import edu.wpi.first.units.Units;
+import edu.wpi.first.units.Velocity;
 
 /** CTRE Pidgeon 2.0 */
 public class Pidgeon2 implements LoggableHardware, AutoCloseable {
@@ -49,10 +53,10 @@ public class Pidgeon2 implements LoggableHardware, AutoCloseable {
    */
   @AutoLog
   public static class Pidgeon2Inputs {
-    public double pitchAngle = 0.0;
-    public double yawAngle = 0.0;
-    public double rollAngle = 0.0;
-    public double yawRate = 0.0;
+    public Measure<Angle> pitchAngle = Units.Radians.of(0.0);
+    public Measure<Angle> yawAngle = Units.Radians.of(0.0);
+    public Measure<Angle> rollAngle = Units.Radians.of(0.0);
+    public Measure<Velocity<Angle>> yawRate = Units.RadiansPerSecond.of(0.0);
     public Rotation2d rotation2d = GlobalConstants.ROTATION_ZERO;
   }
 
@@ -132,10 +136,10 @@ public class Pidgeon2 implements LoggableHardware, AutoCloseable {
    * Update Pidgeon input readings
    */
   private void updateInputs() {
-    m_inputs.pitchAngle = getPitch();
-    m_inputs.yawAngle = getAngle();
-    m_inputs.rollAngle = getRoll();
-    m_inputs.yawRate = getRate();
+    m_inputs.pitchAngle = Units.Degrees.of(getPitch());
+    m_inputs.yawAngle = Units.Degrees.of(getAngle());
+    m_inputs.rollAngle = Units.Degrees.of(getRoll());
+    m_inputs.yawRate = Units.DegreesPerSecond.of(getRate());
     m_inputs.rotation2d = getRotation2d();
   }
 
