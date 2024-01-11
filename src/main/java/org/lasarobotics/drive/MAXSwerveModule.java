@@ -22,7 +22,6 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.system.plant.DCMotor;
-import edu.wpi.first.math.util.Units;
 
 /** REV MAXSwerve module */
 public class MAXSwerveModule implements AutoCloseable {
@@ -148,13 +147,26 @@ public class MAXSwerveModule implements AutoCloseable {
     this.m_tractionControlController =  new TractionControlController(slipRatio, DRIVE_MAX_LINEAR_SPEED);
     this.m_autoLockTimer = Instant.now();
 
+    // Set drive encoder conversion factor
+    m_driveConversionFactor = DRIVE_WHEEL_DIAMETER_METERS * Math.PI / m_driveGearRatio.value;
+    m_driveMotor.setPositionConversionFactor(Spark.FeedbackSensor.NEO_ENCODER, m_driveConversionFactor);
+    m_driveMotor.setVelocityConversionFactor(Spark.FeedbackSensor.NEO_ENCODER, m_driveConversionFactor / 60);
+
+    // Set rotate encoder conversion factor
+    m_rotateConversionFactor = 2 * Math.PI;
+    m_rotateMotor.setPositionConversionFactor(Spark.FeedbackSensor.THROUGH_BORE_ENCODER, m_rotateConversionFactor);
+    m_rotateMotor.setVelocityConversionFactor(Spark.FeedbackSensor.THROUGH_BORE_ENCODER, m_rotateConversionFactor / 60);
+
+    // Enable PID wrapping
+    m_rotateMotor.enablePIDWrapping(0.0, m_rotateConversionFactor);
+
     // Create PID configs
     SparkPIDConfig driveMotorConfig = new SparkPIDConfig(
       new PIDConstants(
         DRIVE_VELOCITY_kP,
         0.0,
         0.0,
-        1 / ((Units.radiansPerSecondToRotationsPerMinute(m_driveMotor.getKind().motor.freeSpeedRadPerSec) / 60) * m_driveConversionFactor)
+        1 / ((m_driveMotor.getKind().getMaxRPM() / 60) * m_driveConversionFactor)
       ),
       DRIVE_VELOCITY_SENSOR_PHASE,
       DRIVE_INVERT_MOTOR,
@@ -169,6 +181,8 @@ public class MAXSwerveModule implements AutoCloseable {
       DRIVE_ROTATE_UPPER_LIMIT,
       DRIVE_ROTATE_SOFT_LIMITS
     );
+
+    System.out.println(1 / ((m_driveMotor.getKind().getMaxRPM() / 60) * m_driveConversionFactor));
 
     // Initialize PID
     m_driveMotor.initializeSparkPID(driveMotorConfig, Spark.FeedbackSensor.NEO_ENCODER);
@@ -186,19 +200,6 @@ public class MAXSwerveModule implements AutoCloseable {
 
     // Reset encoder
     resetDriveEncoder();
-
-    // Set drive encoder conversion factor
-    m_driveConversionFactor = DRIVE_WHEEL_DIAMETER_METERS * Math.PI / m_driveGearRatio.value;
-    m_driveMotor.setPositionConversionFactor(Spark.FeedbackSensor.NEO_ENCODER, m_driveConversionFactor);
-    m_driveMotor.setVelocityConversionFactor(Spark.FeedbackSensor.NEO_ENCODER, m_driveConversionFactor / 60);
-
-    // Set rotate encoder conversion factor
-    m_rotateConversionFactor = 2 * Math.PI;
-    m_rotateMotor.setPositionConversionFactor(Spark.FeedbackSensor.THROUGH_BORE_ENCODER, m_rotateConversionFactor);
-    m_rotateMotor.setVelocityConversionFactor(Spark.FeedbackSensor.THROUGH_BORE_ENCODER, m_rotateConversionFactor / 60);
-
-    // Enable PID wrapping
-    m_rotateMotor.enablePIDWrapping(0.0, m_rotateConversionFactor);
 
     // Add motors to REVPhysicsSim
     m_driveMotor.addToSimulation(DCMotor.getNEO(1));

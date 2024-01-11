@@ -33,6 +33,7 @@ import com.revrobotics.SparkPIDController;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 
@@ -69,6 +70,14 @@ public class Spark implements LoggableHardware, AutoCloseable {
     private MotorKind(MotorType type, DCMotor motor) {
       this.type = type;
       this.motor = motor;
+    }
+
+    /**
+     * Get max RPM of motor
+     * @return Max RPM
+     */
+    public double getMaxRPM() {
+      return Units.radiansPerSecondToRotationsPerMinute(motor.freeSpeedRadPerSec);
     }
   }
 
