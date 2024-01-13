@@ -261,8 +261,8 @@ public class MAXSwerveModule implements AutoCloseable {
    * @param rotateRate Rotate rate of robot (degrees/s)
    * @return Speed of module (m/s)
    */
-  private double calculateRealSpeed(double inertialVelocity, double rotateRate) {
-    return inertialVelocity + Math.toRadians(rotateRate) * m_radius;
+  private Measure<Velocity<Distance>> calculateRealSpeed(double inertialVelocity, double rotateRate) {
+    return Units.MetersPerSecond.of(inertialVelocity + Math.toRadians(rotateRate) * m_radius);
   }
 
   /**
@@ -332,10 +332,10 @@ public class MAXSwerveModule implements AutoCloseable {
   public void set(SwerveModuleState state, Measure<Velocity<Distance>> inertialVelocity, Measure<Velocity<Angle>> rotateRate) {
     // Apply traction control
     state.speedMetersPerSecond = m_tractionControlController.calculate(
-      state.speedMetersPerSecond,
+      Units.MetersPerSecond.of(state.speedMetersPerSecond),
       calculateRealSpeed(inertialVelocity.in(Units.MetersPerSecond), rotateRate.in(Units.DegreesPerSecond)),
-      getDriveVelocity().in(Units.MetersPerSecond)
-    );
+      getDriveVelocity()
+    ).in(Units.MetersPerSecond);
 
     // Set swerve module state
     set(state);

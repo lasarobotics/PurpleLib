@@ -82,29 +82,36 @@ public class TractionControlController {
    * @param wheelSpeed Linear wheel speed (m/s)
    * @return Optimal motor speed output (m/s)
    */
-  public double calculate(double velocityRequest, double inertialVelocity, double wheelSpeed) {
+  public Measure<Velocity<Distance>> calculate(Measure<Velocity<Distance>> velocityRequest,
+                                               Measure<Velocity<Distance>> inertialVelocity,
+                                               Measure<Velocity<Distance>> wheelSpeed) {
+    double velocityRequestMetersPerSecond = velocityRequest.in(Units.MetersPerSecond);
+    double inertialVelocityMetersPerSecond = inertialVelocity.in(Units.MetersPerSecond);
+    double wheelSpeedMetersPerSecond = wheelSpeed.in(Units.MetersPerSecond);
+
     // If velocity request has changed or is near zero, reset speed filter
-    if (Math.abs(velocityRequest) < EPSILON || Math.abs(m_prevVelocityRequest - velocityRequest) > EPSILON)
+    if (Math.abs(velocityRequestMetersPerSecond) < EPSILON || Math.abs(m_prevVelocityRequest - velocityRequestMetersPerSecond) > EPSILON)
       m_speedFilter.reset();
 
     // Initialize velocity output to requested velocity
-    double velocityOutput = velocityRequest;
+    double velocityOutput = velocityRequestMetersPerSecond;
 
     // Make sure wheel speed and inertial velocity are positive
-    wheelSpeed = Math.abs(wheelSpeed);
-    inertialVelocity = Math.abs(inertialVelocity);
+    wheelSpeedMetersPerSecond = Math.abs(wheelSpeedMetersPerSecond);
+    inertialVelocityMetersPerSecond = Math.abs(inertialVelocityMetersPerSecond);
 
     // Apply basic traction control
     // Limit wheel speed if slipping excessively
-    updateSlipRatio(wheelSpeed, inertialVelocity);
+    updateSlipRatio(wheelSpeedMetersPerSecond, inertialVelocityMetersPerSecond);
     if (isSlipping())
-      velocityOutput = Math.copySign(m_optimalSlipRatio * inertialVelocity + m_averageWheelSpeed, velocityRequest);
+      velocityOutput = Math.copySign(inertialVelocityMetersPerSecond * m_optimalSlipRatio + inertialVelocityMetersPerSecond, velocityRequestMetersPerSecond);
 
     // Save velocity request
-    m_prevVelocityRequest = velocityRequest;
+    m_prevVelocityRequest = velocityRequestMetersPerSecond;
 
     // Return corrected velocity output, clamping to max linear speed
-    return MathUtil.clamp(velocityOutput, -m_maxLinearSpeed, +m_maxLinearSpeed);
+    velocityOutput = MathUtil.clamp(velocityOutput, -m_maxLinearSpeed, +m_maxLinearSpeed);
+    return Units.MetersPerSecond.of(velocityOutput);
   }
 
   /**

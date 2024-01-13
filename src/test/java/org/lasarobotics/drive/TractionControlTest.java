@@ -4,7 +4,6 @@
 
 package org.lasarobotics.drive;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -22,8 +21,6 @@ import edu.wpi.first.units.Velocity;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class TractionControlTest {
-  private final double DELTA = 1e-5;
-
   private final Measure<Velocity<Distance>> MAX_LINEAR_SPEED = Units.MetersPerSecond.of(4.30);
   private final double DRIVE_SLIP_RATIO = 0.08;
 
@@ -39,11 +36,11 @@ public class TractionControlTest {
   @DisplayName("Test if traction control controller detects and limits slip")
   public void limitSlip() {
     // Simulate scenario
-    double outputSpeed = m_tractionControlController.calculate(MAX_LINEAR_SPEED.in(Units.MetersPerSecond), 0.0, MAX_LINEAR_SPEED.in(Units.MetersPerSecond) / 2);
+    var outputSpeed = m_tractionControlController.calculate(MAX_LINEAR_SPEED, Units.MetersPerSecond.of(0.0), MAX_LINEAR_SPEED.divide(2));
 
     // Verify behavior
     assertTrue(m_tractionControlController.isSlipping());
-    assertTrue(outputSpeed < MAX_LINEAR_SPEED.in(Units.MetersPerSecond));
+    assertTrue(outputSpeed.lt(MAX_LINEAR_SPEED));
   }
 
   @Test
@@ -54,10 +51,10 @@ public class TractionControlTest {
     m_tractionControlController.disableTractionControl();
 
     // Simulate scenario
-    double outputSpeed = m_tractionControlController.calculate(MAX_LINEAR_SPEED.in(Units.MetersPerSecond), 0.0, MAX_LINEAR_SPEED.in(Units.MetersPerSecond) / 2);
+    var outputSpeed = m_tractionControlController.calculate(MAX_LINEAR_SPEED, Units.MetersPerSecond.of(0.0), MAX_LINEAR_SPEED.divide(2));
 
     // Verify behavior
     assertFalse(m_tractionControlController.isSlipping());
-    assertEquals(MAX_LINEAR_SPEED.in(Units.MetersPerSecond), outputSpeed, DELTA);
+    assertTrue(outputSpeed.isEquivalent(MAX_LINEAR_SPEED));
   }
 }
