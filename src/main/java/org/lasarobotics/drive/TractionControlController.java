@@ -7,7 +7,6 @@ package org.lasarobotics.drive;
 import org.lasarobotics.utils.GlobalConstants;
 
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.units.Distance;
 import edu.wpi.first.units.Measure;
@@ -29,11 +28,12 @@ public class TractionControlController {
     public abstract State toggle();
   }
 
+  private final double VELOCITY_REQUEST_MIN_THRESHOLD;
   private final double MIN_SLIP_RATIO = 0.01;
   private final double MAX_SLIP_RATIO = 0.40;
   private final double EPSILON = 1e-3;
-  private final int FILTER_TIME_CONSTANT_MULTIPLIER = 3;
-  private final int DEBOUNCER_TIME_CONSTANT_MULTIPLIER = 5;
+  private final int WHEEL_FILTER_TIME_CONSTANT_MULTIPLIER = 3;
+  private final int INERTIAL_FILTER_TIME_CONSTANT_MULTIPLIER = 6;
 
   private double m_averageWheelSpeed = 0.0;
   private double m_optimalSlipRatio = 0.0;
@@ -43,8 +43,8 @@ public class TractionControlController {
   private boolean m_isSlipping = false;
   private State m_state = State.ENABLED;
 
-  private LinearFilter m_speedFilter;
-  private Debouncer m_slippingDebouncer;
+  private LinearFilter m_wheelSpeedFilter;
+  private LinearFilter m_inertialVelocityFilter;
 
   /**
    * Create an instance of TractionControlController
@@ -54,25 +54,27 @@ public class TractionControlController {
   public TractionControlController(Measure<Velocity<Distance>> maxLinearSpeed, double optimalSlipRatio) {
     this.m_optimalSlipRatio = MathUtil.clamp(optimalSlipRatio, MIN_SLIP_RATIO, MAX_SLIP_RATIO);
     this.m_maxLinearSpeed = Math.floor(maxLinearSpeed.in(Units.MetersPerSecond) * 1000) / 1000;
-    this.m_speedFilter = LinearFilter.singlePoleIIR(
-      GlobalConstants.ROBOT_LOOP_PERIOD * FILTER_TIME_CONSTANT_MULTIPLIER,
+    this.m_wheelSpeedFilter = LinearFilter.singlePoleIIR(
+      GlobalConstants.ROBOT_LOOP_PERIOD * WHEEL_FILTER_TIME_CONSTANT_MULTIPLIER,
       GlobalConstants.ROBOT_LOOP_PERIOD
     );
-    this.m_slippingDebouncer = new Debouncer(
-      GlobalConstants.ROBOT_LOOP_PERIOD * DEBOUNCER_TIME_CONSTANT_MULTIPLIER,
-      Debouncer.DebounceType.kFalling
+    this.m_inertialVelocityFilter = LinearFilter.singlePoleIIR(
+      GlobalConstants.ROBOT_LOOP_PERIOD * INERTIAL_FILTER_TIME_CONSTANT_MULTIPLIER,
+      GlobalConstants.ROBOT_LOOP_PERIOD
     );
+
+    VELOCITY_REQUEST_MIN_THRESHOLD = m_maxLinearSpeed * m_optimalSlipRatio;
   }
 
   private void updateSlipRatio(double wheelSpeed, double inertialVelocity) {
     // Calculate average speed using single pole IIR filter
-    m_averageWheelSpeed = m_speedFilter.calculate(wheelSpeed);
+    m_averageWheelSpeed = m_wheelSpeedFilter.calculate(wheelSpeed);
 
     // Calculate current slip ratio
     m_currentSlipRatio = ((m_averageWheelSpeed - inertialVelocity) / inertialVelocity);
 
     // Check if wheel is slipping, false if disabled
-    m_isSlipping = m_slippingDebouncer.calculate(m_currentSlipRatio > m_optimalSlipRatio) & isEnabled();
+    m_isSlipping = m_currentSlipRatio > m_optimalSlipRatio & isEnabled();
   }
 
   /**
@@ -89,12 +91,18 @@ public class TractionControlController {
     double inertialVelocityMetersPerSecond = inertialVelocity.in(Units.MetersPerSecond);
     double wheelSpeedMetersPerSecond = wheelSpeed.in(Units.MetersPerSecond);
 
+    // Filter inertial velocity
+    inertialVelocityMetersPerSecond = m_inertialVelocityFilter.calculate(inertialVelocityMetersPerSecond);
+
     // If velocity request has changed or is near zero, reset speed filter
     if (Math.abs(velocityRequestMetersPerSecond) < EPSILON || Math.abs(m_prevVelocityRequest - velocityRequestMetersPerSecond) > EPSILON)
-      m_speedFilter.reset();
+      m_wheelSpeedFilter.reset();
 
     // Initialize velocity output to requested velocity
     double velocityOutput = velocityRequestMetersPerSecond;
+
+    // If input is below treshold, return
+    if (velocityRequestMetersPerSecond < VELOCITY_REQUEST_MIN_THRESHOLD) return Units.MetersPerSecond.of(velocityOutput);
 
     // Make sure wheel speed and inertial velocity are positive
     wheelSpeedMetersPerSecond = Math.abs(wheelSpeedMetersPerSecond);
@@ -127,7 +135,8 @@ public class TractionControlController {
    */
   public void toggleTractionControl() {
     m_state = m_state.toggle();
-    m_speedFilter.reset();
+    m_wheelSpeedFilter.reset();
+    m_inertialVelocityFilter.reset();
   }
 
   /**
@@ -135,7 +144,8 @@ public class TractionControlController {
    */
   public void enableTractionControl() {
     m_state = State.ENABLED;
-    m_speedFilter.reset();
+    m_wheelSpeedFilter.reset();
+    m_inertialVelocityFilter.reset();
   }
 
   /**
@@ -143,7 +153,8 @@ public class TractionControlController {
    */
   public void disableTractionControl() {
     m_state = State.DISABLED;
-    m_speedFilter.reset();
+    m_wheelSpeedFilter.reset();
+    m_inertialVelocityFilter.reset();
   }
 
   /**
