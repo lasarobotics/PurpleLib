@@ -79,10 +79,10 @@ public class TractionControlController {
 
   /**
    * Returns the next output of the traction control controller
-   * @param velocityRequest Velocity request (m/s)
-   * @param inertialVelocity Current inertial velocity (m/s)
-   * @param wheelSpeed Linear wheel speed (m/s)
-   * @return Optimal motor speed output (m/s)
+   * @param velocityRequest Velocity request
+   * @param inertialVelocity Current inertial velocity
+   * @param wheelSpeed Linear wheel speed
+   * @return Optimal motor speed output
    */
   public Measure<Velocity<Distance>> calculate(Measure<Velocity<Distance>> velocityRequest,
                                                Measure<Velocity<Distance>> inertialVelocity,

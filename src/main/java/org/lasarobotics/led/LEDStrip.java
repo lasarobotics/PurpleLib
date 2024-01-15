@@ -18,11 +18,18 @@ import edu.wpi.first.wpilibj.util.Color;
 public class LEDStrip implements AutoCloseable {
   public static final Color TEAM_COLOR = new Color(0x66, 0x33, 0x99);
 
+  /** LED strip ID */
   public static class ID {
     public final String name;
     public final int port;
     public final int length;
 
+    /**
+     * LED strip ID
+     * @param name Device name for logging
+     * @param port PWM output port
+     * @param length Strip length
+     */
     public ID(String name, int port, int length) {
       this.name = name;
       this.port = port;
