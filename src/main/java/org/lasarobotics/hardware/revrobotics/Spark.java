@@ -364,7 +364,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
     status = applyParameter(
       () -> m_spark.restoreFactoryDefaults(),
       () -> true,
-      "Restore factory defaults failure"
+      "Restore factory defaults failure!"
     );
 
     return status;
@@ -442,7 +442,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
   public void initializeSparkPID(SparkPIDConfig config, FeedbackSensor feedbackSensor,
                                  boolean forwardLimitSwitch, boolean reverseLimitSwitch) {
     if (getMotorType() == MotorType.kBrushed && feedbackSensor == FeedbackSensor.NEO_ENCODER)
-      throw new IllegalArgumentException("NEO encoder cannot be used in brushed motor mode!");
+      throw new IllegalArgumentException("NEO encoder cannot be used with a brushed motor!");
 
     m_config = config;
     m_feedbackSensor = feedbackSensor;
@@ -525,7 +525,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
     status = applyParameter(
       () -> m_spark.follow(ExternalFollower.kFollowerSpark, master.getID().deviceID, invert),
       () -> m_spark.isFollower(),
-      "Set motor master failure"
+      "Set motor master failure!"
     );
     return status;
   }
@@ -618,7 +618,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
         break;
     }
 
-    status = applyParameter(parameterSetter, parameterCheckSupplier, "Set position conversion factor failure");
+    status = applyParameter(parameterSetter, parameterCheckSupplier, "Set position conversion factor failure!");
     return status;
   }
 
@@ -652,7 +652,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
         break;
     }
 
-    status = applyParameter(parameterSetter, parameterCheckSupplier, "Set velocity conversion factor failure");
+    status = applyParameter(parameterSetter, parameterCheckSupplier, "Set velocity conversion factor failure!");
     return status;
   }
 
@@ -927,7 +927,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
       m_spark.getPIDController().getPositionPIDWrappingMinInput() == minInput &&
       m_spark.getPIDController().getPositionPIDWrappingMaxInput() == maxInput;
 
-    status = applyParameter(parameterSetter, parameterCheckSupplier, "Enable position PID wrapping failure");
+    status = applyParameter(parameterSetter, parameterCheckSupplier, "Enable position PID wrapping failure!");
     return status;
   }
 
@@ -979,7 +979,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
     status = applyParameter(
       () -> m_spark.setSmartCurrentLimit(limit),
       () -> true,
-      "Set current limit failure"
+      "Set current limit failure!"
     );
     return status;
   }
