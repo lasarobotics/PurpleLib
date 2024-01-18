@@ -33,7 +33,6 @@ public class TractionControlController {
   private final double MAX_SLIP_RATIO = 0.40;
   private final double EPSILON = 1e-3;
   private final int WHEEL_FILTER_TIME_CONSTANT_MULTIPLIER = 3;
-  private final int INERTIAL_FILTER_TIME_CONSTANT_MULTIPLIER = 6;
 
   private double m_averageWheelSpeed = 0.0;
   private double m_optimalSlipRatio = 0.0;
@@ -44,7 +43,6 @@ public class TractionControlController {
   private State m_state = State.ENABLED;
 
   private LinearFilter m_wheelSpeedFilter;
-  private LinearFilter m_inertialVelocityFilter;
 
   /**
    * Create an instance of TractionControlController
@@ -56,10 +54,6 @@ public class TractionControlController {
     this.m_maxLinearSpeed = Math.floor(maxLinearSpeed.in(Units.MetersPerSecond) * 1000) / 1000;
     this.m_wheelSpeedFilter = LinearFilter.singlePoleIIR(
       GlobalConstants.ROBOT_LOOP_PERIOD * WHEEL_FILTER_TIME_CONSTANT_MULTIPLIER,
-      GlobalConstants.ROBOT_LOOP_PERIOD
-    );
-    this.m_inertialVelocityFilter = LinearFilter.singlePoleIIR(
-      GlobalConstants.ROBOT_LOOP_PERIOD * INERTIAL_FILTER_TIME_CONSTANT_MULTIPLIER,
       GlobalConstants.ROBOT_LOOP_PERIOD
     );
 
@@ -90,9 +84,6 @@ public class TractionControlController {
     double velocityRequestMetersPerSecond = velocityRequest.in(Units.MetersPerSecond);
     double inertialVelocityMetersPerSecond = inertialVelocity.in(Units.MetersPerSecond);
     double wheelSpeedMetersPerSecond = wheelSpeed.in(Units.MetersPerSecond);
-
-    // Filter inertial velocity
-    inertialVelocityMetersPerSecond = m_inertialVelocityFilter.calculate(inertialVelocityMetersPerSecond);
 
     // If velocity request has changed or is near zero, reset speed filter
     if (Math.abs(velocityRequestMetersPerSecond) < EPSILON || Math.abs(m_prevVelocityRequest - velocityRequestMetersPerSecond) > EPSILON)
@@ -136,7 +127,6 @@ public class TractionControlController {
   public void toggleTractionControl() {
     m_state = m_state.toggle();
     m_wheelSpeedFilter.reset();
-    m_inertialVelocityFilter.reset();
   }
 
   /**
@@ -145,7 +135,6 @@ public class TractionControlController {
   public void enableTractionControl() {
     m_state = State.ENABLED;
     m_wheelSpeedFilter.reset();
-    m_inertialVelocityFilter.reset();
   }
 
   /**
@@ -154,7 +143,6 @@ public class TractionControlController {
   public void disableTractionControl() {
     m_state = State.DISABLED;
     m_wheelSpeedFilter.reset();
-    m_inertialVelocityFilter.reset();
   }
 
   /**
