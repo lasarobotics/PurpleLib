@@ -4,10 +4,8 @@
 
 package org.lasarobotics.drive;
 
-import org.lasarobotics.utils.GlobalConstants;
-
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.filter.LinearFilter;
+import edu.wpi.first.math.filter.MedianFilter;
 import edu.wpi.first.units.Distance;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Units;
@@ -31,18 +29,16 @@ public class TractionControlController {
   private final double VELOCITY_REQUEST_MIN_THRESHOLD;
   private final double MIN_SLIP_RATIO = 0.01;
   private final double MAX_SLIP_RATIO = 0.40;
-  private final double EPSILON = 1e-3;
-  private final int WHEEL_FILTER_TIME_CONSTANT_MULTIPLIER = 3;
+  private final int WHEEL_FILTER_TAPS = 3;
 
-  private double m_averageWheelSpeed = 0.0;
+  private double m_filteredWheelSpeed = 0.0;
   private double m_optimalSlipRatio = 0.0;
   private double m_currentSlipRatio = 0.0;
   private double m_maxLinearSpeed = 0.0;
-  private double m_prevVelocityRequest = 0.0;
   private boolean m_isSlipping = false;
   private State m_state = State.ENABLED;
 
-  private LinearFilter m_wheelSpeedFilter;
+  private MedianFilter m_wheelSpeedFilter;
 
   /**
    * Create an instance of TractionControlController
@@ -52,20 +48,17 @@ public class TractionControlController {
   public TractionControlController(Measure<Velocity<Distance>> maxLinearSpeed, double optimalSlipRatio) {
     this.m_optimalSlipRatio = MathUtil.clamp(optimalSlipRatio, MIN_SLIP_RATIO, MAX_SLIP_RATIO);
     this.m_maxLinearSpeed = Math.floor(maxLinearSpeed.in(Units.MetersPerSecond) * 1000) / 1000;
-    this.m_wheelSpeedFilter = LinearFilter.singlePoleIIR(
-      GlobalConstants.ROBOT_LOOP_PERIOD * WHEEL_FILTER_TIME_CONSTANT_MULTIPLIER,
-      GlobalConstants.ROBOT_LOOP_PERIOD
-    );
+    this.m_wheelSpeedFilter = new MedianFilter(WHEEL_FILTER_TAPS);
 
     VELOCITY_REQUEST_MIN_THRESHOLD = m_maxLinearSpeed * m_optimalSlipRatio;
   }
 
   private void updateSlipRatio(double wheelSpeed, double inertialVelocity) {
     // Calculate average speed using single pole IIR filter
-    m_averageWheelSpeed = m_wheelSpeedFilter.calculate(wheelSpeed);
+    m_filteredWheelSpeed = m_wheelSpeedFilter.calculate(wheelSpeed);
 
     // Calculate current slip ratio
-    m_currentSlipRatio = ((m_averageWheelSpeed - inertialVelocity) / inertialVelocity);
+    m_currentSlipRatio = ((m_filteredWheelSpeed - inertialVelocity) / inertialVelocity);
 
     // Check if wheel is slipping, false if disabled
     m_isSlipping = m_currentSlipRatio > m_optimalSlipRatio & isEnabled();
@@ -85,32 +78,26 @@ public class TractionControlController {
     double inertialVelocityMetersPerSecond = inertialVelocity.in(Units.MetersPerSecond);
     double wheelSpeedMetersPerSecond = wheelSpeed.in(Units.MetersPerSecond);
 
-    // If velocity request has changed or is near zero, reset speed filter
-    if (Math.abs(velocityRequestMetersPerSecond) < EPSILON || Math.abs(m_prevVelocityRequest - velocityRequestMetersPerSecond) > EPSILON)
-      m_wheelSpeedFilter.reset();
-
     // Initialize velocity output to requested velocity
-    double velocityOutput = velocityRequestMetersPerSecond;
-
-    // If input is below treshold, return
-    if (velocityRequestMetersPerSecond < VELOCITY_REQUEST_MIN_THRESHOLD) return Units.MetersPerSecond.of(velocityOutput);
+    double velocityOutputMetersPerSecond = velocityRequestMetersPerSecond;
 
     // Make sure wheel speed and inertial velocity are positive
     wheelSpeedMetersPerSecond = Math.abs(wheelSpeedMetersPerSecond);
     inertialVelocityMetersPerSecond = Math.abs(inertialVelocityMetersPerSecond);
 
-    // Apply basic traction control
-    // Limit wheel speed if slipping excessively
+    // Update slip ratio given current wheel speed and inertial velocity
     updateSlipRatio(wheelSpeedMetersPerSecond, inertialVelocityMetersPerSecond);
-    if (isSlipping())
-      velocityOutput = Math.copySign(inertialVelocityMetersPerSecond * m_optimalSlipRatio + inertialVelocityMetersPerSecond, velocityRequestMetersPerSecond);
 
-    // Save velocity request
-    m_prevVelocityRequest = velocityRequestMetersPerSecond;
+    // If input is below threshold, return
+    if (Math.abs(velocityRequestMetersPerSecond) < VELOCITY_REQUEST_MIN_THRESHOLD) return Units.MetersPerSecond.of(velocityOutputMetersPerSecond);
+
+    // Limit wheel speed if slipping excessively
+    if (isSlipping())
+      velocityOutputMetersPerSecond = Math.copySign(inertialVelocityMetersPerSecond * m_optimalSlipRatio + inertialVelocityMetersPerSecond, velocityRequestMetersPerSecond);
 
     // Return corrected velocity output, clamping to max linear speed
-    velocityOutput = MathUtil.clamp(velocityOutput, -m_maxLinearSpeed, +m_maxLinearSpeed);
-    return Units.MetersPerSecond.of(velocityOutput);
+    velocityOutputMetersPerSecond = MathUtil.clamp(velocityOutputMetersPerSecond, -m_maxLinearSpeed, +m_maxLinearSpeed);
+    return Units.MetersPerSecond.of(velocityOutputMetersPerSecond);
   }
 
   /**
