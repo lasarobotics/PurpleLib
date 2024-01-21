@@ -54,7 +54,7 @@ public class TractionControlController {
   }
 
   private void updateSlipRatio(double wheelSpeed, double inertialVelocity) {
-    // Calculate average speed using single pole IIR filter
+    // Calculate average speed using median filter
     m_filteredWheelSpeed = m_wheelSpeedFilter.calculate(wheelSpeed);
 
     // Calculate current slip ratio

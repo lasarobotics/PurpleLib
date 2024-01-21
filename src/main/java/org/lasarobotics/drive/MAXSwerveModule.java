@@ -9,6 +9,7 @@ import org.lasarobotics.hardware.revrobotics.Spark.MotorKind;
 import org.lasarobotics.hardware.revrobotics.SparkPIDConfig;
 import org.lasarobotics.utils.GlobalConstants;
 import org.lasarobotics.utils.PIDConstants;
+import org.littletonrobotics.junction.Logger;
 
 import com.revrobotics.CANSparkBase.ControlType;
 import com.revrobotics.CANSparkBase.IdleMode;
@@ -81,6 +82,7 @@ public class MAXSwerveModule implements AutoCloseable {
   private final int ROTATE_MOTOR_CURRENT_LIMIT = 20;
   private final Rotation2d LOCK_POSITION = Rotation2d.fromRadians(Math.PI / 4);
 
+  private static final String IS_SLIPPING_LOG_ENTRY = "/IsSlipping";
   private static final double DRIVE_WHEEL_DIAMETER_METERS = 0.0762; // 3" wheels
   private static final double DRIVETRAIN_EFFICIENCY = 0.90;
   private static final double MAX_AUTO_LOCK_TIME = 10.0;
@@ -269,6 +271,7 @@ public class MAXSwerveModule implements AutoCloseable {
   public void periodic() {
     m_driveMotor.periodic();
     m_rotateMotor.periodic();
+    Logger.recordOutput(m_driveMotor.getID().name + IS_SLIPPING_LOG_ENTRY, isSlipping());
   }
 
   /**
@@ -385,6 +388,14 @@ public class MAXSwerveModule implements AutoCloseable {
       m_driveMotor.getInputs().encoderPosition,
       Rotation2d.fromRadians(m_rotateMotor.getInputs().absoluteEncoderPosition).minus(m_location.offset)
     );
+  }
+
+  /**
+   * Get if drive wheel is slipping
+   * @return True if wheel is slipping excessively
+   */
+  public boolean isSlipping() {
+    return m_tractionControlController.isSlipping();
   }
 
   /**
