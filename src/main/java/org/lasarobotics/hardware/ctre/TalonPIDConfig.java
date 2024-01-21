@@ -6,23 +6,15 @@ package org.lasarobotics.hardware.ctre;
 
 import org.lasarobotics.utils.PIDConstants;
 
-import com.ctre.phoenix.motorcontrol.FeedbackDevice;
-import com.ctre.phoenix.motorcontrol.LimitSwitchNormal;
-import com.ctre.phoenix.motorcontrol.LimitSwitchSource;
-import com.ctre.phoenix.motorcontrol.can.BaseTalon;
-
 import edu.wpi.first.math.MathUtil;
 
 /**
  * Automates the configuration of Talon PID and MotionMagic parameters
  */
 public class TalonPIDConfig {
-  private static final double MAX_VOLTAGE = 12.0;
-  private static final double MOTOR_DEADBAND = 0.01;
   private static final double MIN_TOLERANCE = 1.0;
   private static final int MIN_MOTION_SMOOTHING = 0;
   private static final int MAX_MOTION_SMOOTHING = 8;
-  private static final int PID_SLOT = 0;
 
   private boolean m_motionMagic = false;
   private boolean m_enableSoftLimits = true;
@@ -101,76 +93,6 @@ public class TalonPIDConfig {
     this.m_motionSmoothing = MathUtil.clamp(motionSmoothing, MIN_MOTION_SMOOTHING, MAX_MOTION_SMOOTHING);
 
     this.m_motionMagic = true;
-  }
-
-  /**
-   * Initializes Talon PID and MotionMagic parameters
-   * @param talon Talon motor controller to apply settings to
-   * @param feedbackDevice Feedback device to use for Talon PID
-   * @param forwardLimitSwitch Enable forward limit switch
-   * @param reverseLimitSwitch Enable reverse limit switch
-   */
-  public void initializeTalonPID(BaseTalon talon, FeedbackDevice feedbackDevice,
-                                 boolean forwardLimitSwitch, boolean reverseLimitSwitch) {
-    // Reset Talon to default
-    talon.configFactoryDefault();
-
-    // Configure feedback sensor
-    talon.configSelectedFeedbackSensor(feedbackDevice);
-
-    // Configure forward and reverse soft limits
-    if (m_enableSoftLimits) {
-      talon.configForwardSoftLimitThreshold(m_upperLimit);
-      talon.configForwardSoftLimitEnable(true);
-      talon.configReverseSoftLimitThreshold(m_lowerLimit);
-      talon.configReverseSoftLimitEnable(true);
-    }
-
-    // Configure forward and reverse limit switches if required
-    if (forwardLimitSwitch) {
-      talon.configForwardLimitSwitchSource(LimitSwitchSource.FeedbackConnector, LimitSwitchNormal.NormallyOpen);
-    }
-    if (reverseLimitSwitch) {
-      talon.configReverseLimitSwitchSource(LimitSwitchSource.FeedbackConnector, LimitSwitchNormal.NormallyOpen);
-    }
-
-    // Set sensor phase and invert motor if required
-    talon.setSensorPhase(m_sensorPhase);
-    talon.setInverted(m_invertMotor);
-
-    // Configure PID values
-    talon.config_kP(PID_SLOT, m_kP);
-    talon.config_kI(PID_SLOT, m_kI);
-    talon.config_kD(PID_SLOT, m_kD);
-    talon.config_kF(PID_SLOT, m_kF);
-    talon.configAllowableClosedloopError(PID_SLOT, m_tolerance);
-    talon.configClosedLoopPeakOutput(PID_SLOT, 1.0);
-    talon.config_IntegralZone(PID_SLOT, m_tolerance * 2);
-
-    // Configure motor deadband
-    talon.configNeutralDeadband(MOTOR_DEADBAND);
-
-    // Enable voltage compensation
-    talon.configVoltageCompSaturation(MAX_VOLTAGE);
-    talon.enableVoltageCompensation(true);
-
-    // Configure MotionMagic values
-    if (m_motionMagic) {
-      talon.configMotionCruiseVelocity(rpmToTicksPer100ms(m_velocityRPM));
-      talon.configMotionAcceleration(rpmToTicksPer100ms(m_accelerationRPMPerSec));
-      talon.configMotionSCurveStrength(m_motionSmoothing);
-    }
-  }
-
-  /**
-   * Initializes Talon PID and MotionMagic parameters
-   * <p>
-   * Calls {@link TalonPIDConfig#initializeTalonPID(BaseTalon, FeedbackDevice, boolean, boolean)} with no limit switches
-   * @param talon Talon motor controller to apply settings to
-   * @param feedbackDevice Feedback device to use for Talon PID
-   */
-  public void initializeTalonPID(BaseTalon talon, FeedbackDevice feedbackDevice) {
-    initializeTalonPID(talon, feedbackDevice, false, false);
   }
 
   /**
@@ -255,6 +177,13 @@ public class TalonPIDConfig {
   }
 
   /**
+   * @return Whether soft limits are enabled or not
+   */
+  public boolean getSoftLimitsEnabled() {
+    return m_enableSoftLimits;
+  }
+
+  /**
    * @return MotionMagic cruise velocity in RPM
    */
   public double getVelocityRPM() {
@@ -266,6 +195,13 @@ public class TalonPIDConfig {
    */
   public double getAccelerationRPMPerSec() {
     return m_accelerationRPMPerSec;
+  }
+
+  /**
+   * @return Whether motion magic is enabled or not
+   */
+  public boolean getMotionMagic() {
+    return m_motionMagic;
   }
 
   /**

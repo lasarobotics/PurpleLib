@@ -17,6 +17,8 @@ Note: CTRE will not be as well supported as REV products as our team primarily l
     * CANivore
     * Pidgeon 2.0
     * CANCoder
+    * VictorSPX
+    * TalonSRX
   * Kauai Labs
     * NavX2
   * Generic
@@ -57,6 +59,9 @@ dependencies {
 
 ## Releasing
 * Create a release in GitHub. JitPack does the rest.
+
+## Examples
+Examples can be found [here](https://github.com/lasarobotics/PurpleLibExamples)
 
 ## Documentation
 Javadocs available [here](https://jitpack.io/com/github/lasarobotics/PurpleLib/latest/javadoc/)
