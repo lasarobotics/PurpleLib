@@ -4,9 +4,6 @@
 
 package org.lasarobotics.drive;
 
-import java.time.Duration;
-import java.time.Instant;
-
 import org.lasarobotics.hardware.revrobotics.Spark;
 import org.lasarobotics.hardware.revrobotics.Spark.MotorKind;
 import org.lasarobotics.hardware.revrobotics.SparkPIDConfig;
@@ -28,6 +25,7 @@ import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Time;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.Velocity;
+import edu.wpi.first.wpilibj.Timer;
 
 /** REV MAXSwerve module */
 public class MAXSwerveModule implements AutoCloseable {
@@ -122,7 +120,7 @@ public class MAXSwerveModule implements AutoCloseable {
   private boolean m_autoLock;
 
   private TractionControlController m_tractionControlController;
-  private Instant m_autoLockTimer;
+  private Timer m_autoLockTimer;
 
   /**
    * Create an instance of a MAXSwerveModule
@@ -151,7 +149,7 @@ public class MAXSwerveModule implements AutoCloseable {
     this.m_autoLockTime = MathUtil.clamp(autoLockTime.in(Units.Milliseconds), 0.0, MAX_AUTO_LOCK_TIME * 1000);
     this.m_previousRotatePosition = LOCK_POSITION;
     this.m_tractionControlController =  new TractionControlController(Units.MetersPerSecond.of(DRIVE_MAX_LINEAR_SPEED), slipRatio);
-    this.m_autoLockTimer = Instant.now();
+    this.m_autoLockTimer = new Timer();
 
     // Set drive encoder conversion factor
     m_driveConversionFactor = DRIVE_WHEEL_DIAMETER_METERS * Math.PI / m_driveGearRatio.value;
@@ -290,13 +288,13 @@ public class MAXSwerveModule implements AutoCloseable {
     if (m_autoLock && state.speedMetersPerSecond < EPSILON) {
       state.speedMetersPerSecond = 0.0;
       // Time's up, lock now...
-      if (Duration.between(m_autoLockTimer, Instant.now()).toMillis() > m_autoLockTime)
+      if (m_autoLockTimer.hasElapsed(m_autoLockTime))
         state.angle = LOCK_POSITION.minus(m_location.offset);
       // Waiting to lock...
       else state.angle = m_previousRotatePosition.minus(m_location.offset);
     } else {
       // Not locking this loop, restart timer...
-      m_autoLockTimer = Instant.now();
+      m_autoLockTimer.restart();
     }
 
     // Apply chassis angular offset to the requested state.
