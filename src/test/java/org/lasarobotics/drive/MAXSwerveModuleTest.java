@@ -35,7 +35,7 @@ import edu.wpi.first.units.Distance;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Time;
 import edu.wpi.first.units.Units;
-import edu.wpi.first.util.WPIUtilJNI;
+import edu.wpi.first.wpilibj.Timer;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class MAXSwerveModuleTest {
@@ -174,7 +174,7 @@ public class MAXSwerveModuleTest {
     when(m_rRearRotateMotor.getInputs()).thenReturn(sparkInputs);
 
     // Advance sim time
-    WPIUtilJNI.setMockTime((long)AUTO_LOCK_TIME.in(Units.Seconds));
+    Timer.delay(AUTO_LOCK_TIME.in(Units.Seconds));
 
     // Try to set module state
     SwerveModuleState state = new SwerveModuleState(0.0, Rotation2d.fromRadians(+Math.PI));
