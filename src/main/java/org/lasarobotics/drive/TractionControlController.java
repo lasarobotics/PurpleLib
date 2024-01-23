@@ -4,8 +4,12 @@
 
 package org.lasarobotics.drive;
 
+import org.lasarobotics.utils.GlobalConstants;
+
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.MedianFilter;
+import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.units.Distance;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Units;
@@ -29,7 +33,8 @@ public class TractionControlController {
   private final double VELOCITY_REQUEST_MIN_THRESHOLD;
   private final double MIN_SLIP_RATIO = 0.01;
   private final double MAX_SLIP_RATIO = 0.40;
-  private final int WHEEL_FILTER_TAPS = 3;
+  private final int WHEEL_FILTER_TAPS = 2;
+  private final int SLIPPING_DEBOUNCER_MULTIPLIER = 3;
 
   private double m_filteredWheelSpeed = 0.0;
   private double m_optimalSlipRatio = 0.0;
@@ -39,6 +44,7 @@ public class TractionControlController {
   private State m_state = State.ENABLED;
 
   private MedianFilter m_wheelSpeedFilter;
+  private Debouncer m_slippingDebouncer;
 
   /**
    * Create an instance of TractionControlController
@@ -49,6 +55,7 @@ public class TractionControlController {
     this.m_optimalSlipRatio = MathUtil.clamp(optimalSlipRatio, MIN_SLIP_RATIO, MAX_SLIP_RATIO);
     this.m_maxLinearSpeed = Math.floor(maxLinearSpeed.in(Units.MetersPerSecond) * 1000) / 1000;
     this.m_wheelSpeedFilter = new MedianFilter(WHEEL_FILTER_TAPS);
+    this.m_slippingDebouncer = new Debouncer(GlobalConstants.ROBOT_LOOP_PERIOD * SLIPPING_DEBOUNCER_MULTIPLIER, DebounceType.kBoth);
 
     VELOCITY_REQUEST_MIN_THRESHOLD = m_maxLinearSpeed * m_optimalSlipRatio;
   }
@@ -61,7 +68,7 @@ public class TractionControlController {
     m_currentSlipRatio = ((m_filteredWheelSpeed - inertialVelocity) / inertialVelocity);
 
     // Check if wheel is slipping, false if disabled
-    m_isSlipping = m_currentSlipRatio > m_optimalSlipRatio & isEnabled();
+    m_isSlipping = m_slippingDebouncer.calculate(m_currentSlipRatio > m_optimalSlipRatio) & isEnabled();
   }
 
   /**
