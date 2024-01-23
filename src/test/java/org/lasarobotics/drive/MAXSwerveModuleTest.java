@@ -41,7 +41,8 @@ import edu.wpi.first.wpilibj.Timer;
 public class MAXSwerveModuleTest {
   private final double DELTA = 1e-5;
   private final Rotation2d ROTATION_PI = Rotation2d.fromRadians(Math.PI);
-
+  private final int DRIVE_MOTOR_CURRENT_LIMIT = 50;
+  
   private final GearRatio GEAR_RATIO = MAXSwerveModule.GearRatio.L3;
   private final double SLIP_RATIO = 0.08;
   private final Measure<Distance> WHEELBASE = Units.Meters.of(0.6);
@@ -85,7 +86,8 @@ public class MAXSwerveModuleTest {
       WHEELBASE,
       TRACK_WIDTH,
       AUTO_LOCK_TIME,
-      SLIP_RATIO
+      SLIP_RATIO,
+      DRIVE_MOTOR_CURRENT_LIMIT
     );
     m_rFrontModule = new MAXSwerveModule(
       new MAXSwerveModule.Hardware(m_rFrontDriveMotor, m_rFrontRotateMotor),
@@ -94,7 +96,8 @@ public class MAXSwerveModuleTest {
       WHEELBASE,
       TRACK_WIDTH,
       AUTO_LOCK_TIME,
-      SLIP_RATIO
+      SLIP_RATIO,
+      DRIVE_MOTOR_CURRENT_LIMIT
     );
     m_lRearModule = new MAXSwerveModule(
      new MAXSwerveModule.Hardware(m_lRearDriveMotor, m_lRearRotateMotor),
@@ -103,7 +106,8 @@ public class MAXSwerveModuleTest {
       WHEELBASE,
       TRACK_WIDTH,
       AUTO_LOCK_TIME,
-      SLIP_RATIO
+      SLIP_RATIO,
+      DRIVE_MOTOR_CURRENT_LIMIT
     );
     m_rRearModule = new MAXSwerveModule(
       new MAXSwerveModule.Hardware(m_rRearDriveMotor, m_rRearRotateMotor),
@@ -112,7 +116,8 @@ public class MAXSwerveModuleTest {
       WHEELBASE,
       TRACK_WIDTH,
       AUTO_LOCK_TIME,
-      SLIP_RATIO
+      SLIP_RATIO,
+      DRIVE_MOTOR_CURRENT_LIMIT
     );
 
     // Disable traction control for unit tests

@@ -80,7 +80,7 @@ public class MAXSwerveModule implements AutoCloseable {
   }
 
   private final double EPSILON = 5e-3;
-  private final int DRIVE_MOTOR_CURRENT_LIMIT = 50;
+  private final int DRIVE_MOTOR_CURRENT_LIMIT;
   private final int ROTATE_MOTOR_CURRENT_LIMIT = 20;
   private final Rotation2d LOCK_POSITION = Rotation2d.fromRadians(Math.PI / 4);
 
@@ -135,9 +135,11 @@ public class MAXSwerveModule implements AutoCloseable {
    * @param trackWidth Robot track width
    * @param autoLockTime Time before rotating module to locked position [0.0, 10.0]
    * @param slipRatio Desired slip ratio
+   * @param driveMotorCurrentLimit Desired current limit for the drive motor
    */
   public MAXSwerveModule(Hardware swerveHardware, ModuleLocation location, GearRatio driveGearRatio,
-                         Measure<Distance> wheelbase, Measure<Distance> trackWidth, Measure<Time> autoLockTime, double slipRatio) {
+                         Measure<Distance> wheelbase, Measure<Distance> trackWidth, Measure<Time> autoLockTime, double slipRatio, int driveMotorCurrentLimit) {
+    DRIVE_MOTOR_CURRENT_LIMIT = driveMotorCurrentLimit;
     DRIVE_TICKS_PER_METER = (GlobalConstants.NEO_ENCODER_TICKS_PER_ROTATION * driveGearRatio.value) * (1 / (DRIVE_WHEEL_DIAMETER_METERS * Math.PI));
     DRIVE_METERS_PER_TICK = 1 / DRIVE_TICKS_PER_METER;
     DRIVE_METERS_PER_ROTATION = DRIVE_METERS_PER_TICK * GlobalConstants.NEO_ENCODER_TICKS_PER_ROTATION;
