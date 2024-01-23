@@ -152,12 +152,13 @@ public class MAXSwerveModule implements AutoCloseable {
                          Measure<Distance> wheelbase, Measure<Distance> trackWidth, Measure<Time> autoLockTime,
                          Measure<Current> driveMotorCurrentLimit, double slipRatio) {
     var motorKind = swerveHardware.driveMotor.getKind();
+    int encoderTicksPerRotation = motorKind.equals(MotorKind.NEO) ? GlobalConstants.NEO_ENCODER_TICKS_PER_ROTATION : GlobalConstants.VORTEX_ENCODER_TICKS_PER_ROTATION;
     DRIVE_MOTOR_CURRENT_LIMIT = (int)driveMotorCurrentLimit.in(Units.Amps);
     DRIVE_TICKS_PER_METER =
-      (motorKind == MotorKind.NEO ? GlobalConstants.NEO_ENCODER_TICKS_PER_ROTATION : GlobalConstants.VORTEX_ENCODER_TICKS_PER_ROTATION * driveGearRatio.value)
+      (encoderTicksPerRotation * driveGearRatio.value)
       * (1 / (DRIVE_WHEEL_DIAMETER_METERS * Math.PI));
     DRIVE_METERS_PER_TICK = 1 / DRIVE_TICKS_PER_METER;
-    DRIVE_METERS_PER_ROTATION = DRIVE_METERS_PER_TICK * GlobalConstants.NEO_ENCODER_TICKS_PER_ROTATION;
+    DRIVE_METERS_PER_ROTATION = DRIVE_METERS_PER_TICK * encoderTicksPerRotation;
     DRIVE_MAX_LINEAR_SPEED = (motorKind.getMaxRPM() / 60) * DRIVE_METERS_PER_ROTATION * DRIVETRAIN_EFFICIENCY;
 
     this.m_driveMotor = swerveHardware.driveMotor;
@@ -474,7 +475,7 @@ public class MAXSwerveModule implements AutoCloseable {
 
   /**
    * Get maximum drive speed of module
-   * @return Max linear speed (m/s)
+   * @return Max linear speed
    */
   public Measure<Velocity<Distance>> getMaxLinearSpeed() {
     return Units.MetersPerSecond.of(DRIVE_MAX_LINEAR_SPEED);

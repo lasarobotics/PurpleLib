@@ -5,6 +5,7 @@
 package org.lasarobotics.drive;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -36,11 +37,12 @@ import edu.wpi.first.units.Distance;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Time;
 import edu.wpi.first.units.Units;
+import edu.wpi.first.units.Velocity;
 import edu.wpi.first.wpilibj.Timer;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class MAXSwerveModuleTest {
-  private final double DELTA = 1e-5;
+  private final double DELTA = 1e-3;
   private final Rotation2d ROTATION_PI = Rotation2d.fromRadians(Math.PI);
 
   private final GearRatio GEAR_RATIO = MAXSwerveModule.GearRatio.L3;
@@ -49,6 +51,9 @@ public class MAXSwerveModuleTest {
   private final Measure<Distance> TRACK_WIDTH = Units.Meters.of(0.6);
   private final Measure<Time> AUTO_LOCK_TIME = Units.Seconds.of(3.0);
   private final Measure<Current> DRIVE_CURRENT_LIMIT = Units.Amps.of(50.0);
+
+  private final Measure<Velocity<Distance>> NEO_MAX_LINEAR_SPEED = Units.MetersPerSecond.of(4.327);
+  private final Measure<Velocity<Distance>> VORTEX_MAX_LINEAR_SPEED = Units.MetersPerSecond.of(5.172);
 
   private Spark m_lFrontDriveMotor, m_lFrontRotateMotor;
   private Spark m_rFrontDriveMotor, m_rFrontRotateMotor;
@@ -220,5 +225,21 @@ public class MAXSwerveModuleTest {
 
     // Verify module reports expected position
     assertEquals(new SwerveModulePosition(-desiredState.speedMetersPerSecond * GlobalConstants.ROBOT_LOOP_PERIOD, desiredState.angle.minus(ROTATION_PI)), m_lFrontModule.getPosition());
+  }
+
+  @Test
+  @Order(5)
+  @DisplayName("Test if module calculates correct maximum linear speed")
+  public void maxLinearSpeed() {
+    SparkInputsAutoLogged sparkInputs = new SparkInputsAutoLogged();
+    when(m_lFrontRotateMotor.getInputs()).thenReturn(sparkInputs);
+    when(m_rFrontRotateMotor.getInputs()).thenReturn(sparkInputs);
+    when(m_lRearRotateMotor.getInputs()).thenReturn(sparkInputs);
+    when(m_rRearRotateMotor.getInputs()).thenReturn(sparkInputs);
+
+    assertTrue(m_lFrontModule.getMaxLinearSpeed().isNear(NEO_MAX_LINEAR_SPEED, DELTA));
+    assertTrue(m_rFrontModule.getMaxLinearSpeed().isNear(NEO_MAX_LINEAR_SPEED, DELTA));
+    assertTrue(m_lRearModule.getMaxLinearSpeed().isNear(VORTEX_MAX_LINEAR_SPEED, DELTA));
+    assertTrue(m_rRearModule.getMaxLinearSpeed().isNear(VORTEX_MAX_LINEAR_SPEED, DELTA));
   }
 }
