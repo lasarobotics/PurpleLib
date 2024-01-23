@@ -24,6 +24,7 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.Angle;
+import edu.wpi.first.units.Current;
 import edu.wpi.first.units.Distance;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Time;
@@ -71,7 +72,17 @@ public class MAXSwerveModule implements AutoCloseable {
     /** 5.08:1 */
     L2(5.08),
     /** 4.71:1 */
-    L3(4.71);
+    L3(4.71),
+    /** 4.50:1 */
+    L4(4.50),
+    /** 4.29:1 */
+    L5(4.29),
+    /** 4.00:1 */
+    L6(4.00),
+    /** 3.75:1 */
+    L7(3.75),
+    /** 3.56:1 */
+    L8(3.56);
 
     public final double value;
     private GearRatio(double value) {
@@ -134,16 +145,20 @@ public class MAXSwerveModule implements AutoCloseable {
    * @param wheelbase Robot wheelbase
    * @param trackWidth Robot track width
    * @param autoLockTime Time before rotating module to locked position [0.0, 10.0]
-   * @param slipRatio Desired slip ratio
    * @param driveMotorCurrentLimit Desired current limit for the drive motor
+   * @param slipRatio Desired slip ratio
    */
   public MAXSwerveModule(Hardware swerveHardware, ModuleLocation location, GearRatio driveGearRatio,
-                         Measure<Distance> wheelbase, Measure<Distance> trackWidth, Measure<Time> autoLockTime, double slipRatio, int driveMotorCurrentLimit) {
-    DRIVE_MOTOR_CURRENT_LIMIT = driveMotorCurrentLimit;
-    DRIVE_TICKS_PER_METER = (GlobalConstants.NEO_ENCODER_TICKS_PER_ROTATION * driveGearRatio.value) * (1 / (DRIVE_WHEEL_DIAMETER_METERS * Math.PI));
+                         Measure<Distance> wheelbase, Measure<Distance> trackWidth, Measure<Time> autoLockTime,
+                         Measure<Current> driveMotorCurrentLimit, double slipRatio) {
+    var motorKind = swerveHardware.driveMotor.getKind();
+    DRIVE_MOTOR_CURRENT_LIMIT = (int)driveMotorCurrentLimit.in(Units.Amps);
+    DRIVE_TICKS_PER_METER =
+      (motorKind == MotorKind.NEO ? GlobalConstants.NEO_ENCODER_TICKS_PER_ROTATION : GlobalConstants.VORTEX_ENCODER_TICKS_PER_ROTATION * driveGearRatio.value)
+      * (1 / (DRIVE_WHEEL_DIAMETER_METERS * Math.PI));
     DRIVE_METERS_PER_TICK = 1 / DRIVE_TICKS_PER_METER;
     DRIVE_METERS_PER_ROTATION = DRIVE_METERS_PER_TICK * GlobalConstants.NEO_ENCODER_TICKS_PER_ROTATION;
-    DRIVE_MAX_LINEAR_SPEED = (GlobalConstants.NEO_MAX_RPM / 60) * DRIVE_METERS_PER_ROTATION * DRIVETRAIN_EFFICIENCY;
+    DRIVE_MAX_LINEAR_SPEED = (motorKind.getMaxRPM() / 60) * DRIVE_METERS_PER_ROTATION * DRIVETRAIN_EFFICIENCY;
 
     this.m_driveMotor = swerveHardware.driveMotor;
     this.m_rotateMotor = swerveHardware.rotateMotor;

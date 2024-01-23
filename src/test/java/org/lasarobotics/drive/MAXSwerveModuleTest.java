@@ -31,6 +31,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.units.Current;
 import edu.wpi.first.units.Distance;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Time;
@@ -41,13 +42,13 @@ import edu.wpi.first.wpilibj.Timer;
 public class MAXSwerveModuleTest {
   private final double DELTA = 1e-5;
   private final Rotation2d ROTATION_PI = Rotation2d.fromRadians(Math.PI);
-  private final int DRIVE_MOTOR_CURRENT_LIMIT = 50;
-  
+
   private final GearRatio GEAR_RATIO = MAXSwerveModule.GearRatio.L3;
   private final double SLIP_RATIO = 0.08;
   private final Measure<Distance> WHEELBASE = Units.Meters.of(0.6);
   private final Measure<Distance> TRACK_WIDTH = Units.Meters.of(0.6);
   private final Measure<Time> AUTO_LOCK_TIME = Units.Seconds.of(3.0);
+  private final Measure<Current> DRIVE_CURRENT_LIMIT = Units.Amps.of(50.0);
 
   private Spark m_lFrontDriveMotor, m_lFrontRotateMotor;
   private Spark m_rFrontDriveMotor, m_rFrontRotateMotor;
@@ -86,8 +87,8 @@ public class MAXSwerveModuleTest {
       WHEELBASE,
       TRACK_WIDTH,
       AUTO_LOCK_TIME,
-      SLIP_RATIO,
-      DRIVE_MOTOR_CURRENT_LIMIT
+      DRIVE_CURRENT_LIMIT,
+      SLIP_RATIO
     );
     m_rFrontModule = new MAXSwerveModule(
       new MAXSwerveModule.Hardware(m_rFrontDriveMotor, m_rFrontRotateMotor),
@@ -96,8 +97,8 @@ public class MAXSwerveModuleTest {
       WHEELBASE,
       TRACK_WIDTH,
       AUTO_LOCK_TIME,
-      SLIP_RATIO,
-      DRIVE_MOTOR_CURRENT_LIMIT
+      DRIVE_CURRENT_LIMIT,
+      SLIP_RATIO
     );
     m_lRearModule = new MAXSwerveModule(
      new MAXSwerveModule.Hardware(m_lRearDriveMotor, m_lRearRotateMotor),
@@ -106,8 +107,8 @@ public class MAXSwerveModuleTest {
       WHEELBASE,
       TRACK_WIDTH,
       AUTO_LOCK_TIME,
-      SLIP_RATIO,
-      DRIVE_MOTOR_CURRENT_LIMIT
+      DRIVE_CURRENT_LIMIT,
+      SLIP_RATIO
     );
     m_rRearModule = new MAXSwerveModule(
       new MAXSwerveModule.Hardware(m_rRearDriveMotor, m_rRearRotateMotor),
@@ -116,8 +117,8 @@ public class MAXSwerveModuleTest {
       WHEELBASE,
       TRACK_WIDTH,
       AUTO_LOCK_TIME,
-      SLIP_RATIO,
-      DRIVE_MOTOR_CURRENT_LIMIT
+      DRIVE_CURRENT_LIMIT,
+      SLIP_RATIO
     );
 
     // Disable traction control for unit tests
