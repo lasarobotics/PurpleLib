@@ -20,7 +20,7 @@ Note: CTRE will not be as well supported as REV products as our team primarily l
     * VictorSPX
     * TalonSRX
   * Kauai Labs
-    * NavX2
+    * NavX2 (MXP port only)
   * Generic
     * Analog sensor
     * Compressor
@@ -29,6 +29,7 @@ Note: CTRE will not be as well supported as REV products as our team primarily l
     * Servo
 * MAXSwerve module support
   * Supports NEO v1.0/1.1 or NEO Vortex + NEO 550 configuration only
+  * REV through bore encoder must be used
 * Robot rotation PID
 * Traction control
 * Swerve second order kinematics correction
@@ -43,8 +44,8 @@ Add the following dependencies to your project:
 * AdvantageKit - https://github.com/Mechanical-Advantage/AdvantageKit/blob/main/docs/INSTALLATION.md
 * NavX - https://dev.studica.com/releases/2024/NavX.json
 * REVLib - https://software-metadata.revrobotics.com/REVLib-2024.json
-* CTRE Phoenix5 - https://maven.ctr-electronics.com/release/com/ctre/phoenix/Phoenix5-frc2024-beta-latest.json
-* CTRE Phoenix6 - https://maven.ctr-electronics.com/release/com/ctre/phoenix6/latest/Phoenix6-frc2024-beta-latest.json
+* CTRE Phoenix5 - https://maven.ctr-electronics.com/release/com/ctre/phoenix/Phoenix5-frc2024-latest.json
+* CTRE Phoenix6 - https://maven.ctr-electronics.com/release/com/ctre/phoenix6/latest/Phoenix6-frc2024-latest.json
 
 Add the following to `build.gradle` where VERSION is the release version, e.g. 2023.0.0
 ```
