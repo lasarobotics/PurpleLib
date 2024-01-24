@@ -13,11 +13,13 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.lasarobotics.utils.GlobalConstants;
 
 import edu.wpi.first.units.Distance;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.Velocity;
+import edu.wpi.first.wpilibj.Timer;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class TractionControlTest {
@@ -37,6 +39,11 @@ public class TractionControlTest {
   public void limitSlip() {
     // Simulate scenario
     var outputSpeed = m_tractionControlController.calculate(MAX_LINEAR_SPEED, Units.MetersPerSecond.of(0.0), MAX_LINEAR_SPEED.divide(2));
+
+    for (int i = 0; i < 5; i++) {
+      Timer.delay(GlobalConstants.ROBOT_LOOP_PERIOD);
+      outputSpeed = m_tractionControlController.calculate(MAX_LINEAR_SPEED, Units.MetersPerSecond.of(0.0), MAX_LINEAR_SPEED.divide(2));
+    }
 
     // Verify behavior
     assertTrue(m_tractionControlController.isSlipping());
