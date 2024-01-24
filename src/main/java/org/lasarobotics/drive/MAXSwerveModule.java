@@ -4,6 +4,12 @@
 
 package org.lasarobotics.drive;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 
@@ -122,6 +128,7 @@ public class MAXSwerveModule implements AutoCloseable {
   private double m_radius;
   private double m_autoLockTime;
   private boolean m_autoLock;
+  private double m_runningOdometer;
 
   private TractionControlController m_tractionControlController;
   private Instant m_autoLockTimer;
@@ -156,6 +163,7 @@ public class MAXSwerveModule implements AutoCloseable {
     this.m_previousRotatePosition = LOCK_POSITION;
     this.m_tractionControlController =  new TractionControlController(Units.MetersPerSecond.of(DRIVE_MAX_LINEAR_SPEED), slipRatio);
     this.m_autoLockTimer = Instant.now();
+    this.m_runningOdometer = 0.0;
 
     // Set drive encoder conversion factor
     m_driveConversionFactor = DRIVE_WHEEL_DIAMETER_METERS * Math.PI / m_driveGearRatio.value;
@@ -322,6 +330,7 @@ public class MAXSwerveModule implements AutoCloseable {
 
     // Save drive and rotate position for simulation purposes only
     m_simDrivePosition += desiredState.speedMetersPerSecond * GlobalConstants.ROBOT_LOOP_PERIOD;
+    m_runningOdometer +=  desiredState.speedMetersPerSecond * GlobalConstants.ROBOT_LOOP_PERIOD;
     m_simRotatePosition = desiredState.angle.getRadians();
 
     // Save rotate position
@@ -487,6 +496,33 @@ public class MAXSwerveModule implements AutoCloseable {
   public void stop() {
     m_rotateMotor.stopMotor();
     m_driveMotor.stopMotor();
+  }
+
+  /**
+   * Update swerve odometer on disable
+   */
+  public void disabled() {
+    String outputPath = (m_driveMotor.getID().name + "-odometer.txt").replace('/', '-');
+    File file = new File(outputPath);
+    Measure<Distance> previousDistanceTraveled = Units.Meters.of(0.0);
+    if (file.exists()) {
+      try {
+          previousDistanceTraveled =
+            Units.Meters.of(Double.parseDouble(
+              new String(Files.readAllBytes(Paths.get(outputPath)), StandardCharsets.UTF_8)
+            ));
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    }
+
+    try {   
+      FileWriter fileWriter = new FileWriter(outputPath);
+      fileWriter.write(String.valueOf(m_runningOdometer + previousDistanceTraveled.in(Units.Meters)));
+      fileWriter.close();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
   }
 
   @Override
