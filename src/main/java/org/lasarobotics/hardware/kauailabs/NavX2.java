@@ -41,6 +41,7 @@ public class NavX2 implements LoggableHardware, AutoCloseable {
    */
   @AutoLog
   public static class NavX2Inputs {
+    public boolean isConnected = false;
     public Measure<Angle> pitchAngle = Units.Radians.of(0.0);
     public Measure<Angle> yawAngle = Units.Radians.of(0.0);
     public Measure<Angle> rollAngle = Units.Radians.of(0.0);
@@ -67,6 +68,18 @@ public class NavX2 implements LoggableHardware, AutoCloseable {
     this.m_inputs = new NavX2InputsAutoLogged();
     this.m_simNavXYaw = new SimDouble(SimDeviceDataJNI.getSimValueHandle(SimDeviceDataJNI.getSimDeviceHandle("navX-Sensor[0]"), "Yaw"));
     System.out.println();
+  }
+
+  /**
+   * Indicates whether the sensor is currently connected
+   * to the host computer.  A connection is considered established
+   * whenever communication with the sensor has occurred recently.
+   * <p>
+   * @return Returns true if a valid update has been recently received
+   * from the sensor.
+   */
+  private boolean isConnected() {
+    return m_navx.isConnected();
   }
 
   /**
@@ -166,6 +179,7 @@ public class NavX2 implements LoggableHardware, AutoCloseable {
    * Update NavX input readings
    */
   private void updateInputs() {
+    m_inputs.isConnected = isConnected();
     m_inputs.pitchAngle = Units.Degrees.of(getPitch());
     m_inputs.yawAngle = Units.Degrees.of(getAngle());
     m_inputs.rollAngle = Units.Degrees.of(getRoll());
