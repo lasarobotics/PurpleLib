@@ -29,7 +29,7 @@ public class TractionControlController {
   private final double VELOCITY_REQUEST_MIN_THRESHOLD;
   private final double MIN_SLIP_RATIO = 0.01;
   private final double MAX_SLIP_RATIO = 0.40;
-  private final int WHEEL_FILTER_TAPS = 2;
+  private final int WHEEL_FILTER_TAPS = 3;
 
   private double m_filteredWheelSpeed = 0.0;
   private double m_optimalSlipRatio = 0.0;
