@@ -102,6 +102,7 @@ public class MAXSwerveModule implements AutoCloseable {
   private final Rotation2d LOCK_POSITION = Rotation2d.fromRadians(Math.PI / 4);
 
   private static final String IS_SLIPPING_LOG_ENTRY = "/IsSlipping";
+  private static final String ODOMETER_LOG_ENTRY = "/Odometer";
   private static final double DRIVE_WHEEL_DIAMETER_METERS = 0.0762; // 3" wheels
   private static final double DRIVETRAIN_EFFICIENCY = 0.90;
   private static final double MAX_AUTO_LOCK_TIME = 10.0;
@@ -140,6 +141,7 @@ public class MAXSwerveModule implements AutoCloseable {
   private double m_autoLockTime;
   private boolean m_autoLock;
   private double m_runningOdometer;
+  private String m_odometerOutputPath;
 
   private TractionControlController m_tractionControlController;
   private Instant m_autoLockTimer;
@@ -263,6 +265,22 @@ public class MAXSwerveModule implements AutoCloseable {
     // Make sure settings are burned to flash
     m_driveMotor.burnFlash();
     m_rotateMotor.burnFlash();
+
+    // Read odometer file if exists
+    m_odometerOutputPath = (m_driveMotor.getID().name + "-odometer.txt").replace('/', '-');
+    File file = new File(m_odometerOutputPath);
+    Measure<Distance> previousDistanceTraveled = Units.Meters.of(0.0);
+    if (file.exists()) {
+      try {
+        previousDistanceTraveled =
+          Units.Meters.of(Double.parseDouble(
+            new String(Files.readAllBytes(Paths.get(m_odometerOutputPath)), StandardCharsets.UTF_8)
+          ));
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    }
+    m_runningOdometer += previousDistanceTraveled.in(Units.Meters);
   }
 
   /**
@@ -301,6 +319,7 @@ public class MAXSwerveModule implements AutoCloseable {
     m_driveMotor.periodic();
     m_rotateMotor.periodic();
     Logger.recordOutput(m_driveMotor.getID().name + IS_SLIPPING_LOG_ENTRY, isSlipping());
+    Logger.recordOutput(m_driveMotor.getID().name + ODOMETER_LOG_ENTRY, m_runningOdometer);
   }
 
   /**
@@ -519,23 +538,9 @@ public class MAXSwerveModule implements AutoCloseable {
    * Update swerve odometer on disable
    */
   public void disabled() {
-    String outputPath = (m_driveMotor.getID().name + "-odometer.txt").replace('/', '-');
-    File file = new File(outputPath);
-    Measure<Distance> previousDistanceTraveled = Units.Meters.of(0.0);
-    if (file.exists()) {
-      try {
-          previousDistanceTraveled =
-            Units.Meters.of(Double.parseDouble(
-              new String(Files.readAllBytes(Paths.get(outputPath)), StandardCharsets.UTF_8)
-            ));
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
-    }
-
-    try {   
-      FileWriter fileWriter = new FileWriter(outputPath);
-      fileWriter.write(String.valueOf(m_runningOdometer + previousDistanceTraveled.in(Units.Meters)));
+    try {
+      FileWriter fileWriter = new FileWriter(m_odometerOutputPath);
+      fileWriter.write(String.valueOf(m_runningOdometer));
       fileWriter.close();
     } catch (IOException e) {
       e.printStackTrace();

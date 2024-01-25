@@ -84,6 +84,13 @@ public class MAXSwerveModuleTest {
     when(m_lRearDriveMotor.getKind()).thenReturn(MotorKind.NEO_VORTEX);
     when(m_rRearDriveMotor.getKind()).thenReturn(MotorKind.NEO_VORTEX);
 
+    // Hardcode sample ID
+    Spark.ID id = new Spark.ID("moduleName", 0);
+    when(m_lFrontDriveMotor.getID()).thenReturn(id);
+    when(m_rFrontDriveMotor.getID()).thenReturn(id);
+    when(m_lRearDriveMotor.getID()).thenReturn(id);
+    when(m_rRearDriveMotor.getID()).thenReturn(id);
+
     // Create hardware objects using mock devices
     m_lFrontModule = new MAXSwerveModule(
       new MAXSwerveModule.Hardware(m_lFrontDriveMotor, m_lFrontRotateMotor),
