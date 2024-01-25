@@ -366,11 +366,13 @@ public class MAXSwerveModule implements AutoCloseable {
 
     // Save drive and rotate position for simulation purposes only
     m_simDrivePosition += desiredState.speedMetersPerSecond * GlobalConstants.ROBOT_LOOP_PERIOD;
-    m_runningOdometer +=  desiredState.speedMetersPerSecond * GlobalConstants.ROBOT_LOOP_PERIOD;
     m_simRotatePosition = desiredState.angle.getRadians();
 
     // Save rotate position
     m_previousRotatePosition = desiredState.angle;
+
+    // Increment odometer
+    m_runningOdometer += Math.abs(desiredState.speedMetersPerSecond) * GlobalConstants.ROBOT_LOOP_PERIOD;
   }
 
   /**
