@@ -17,11 +17,10 @@ public class FFConstants {
 
   /**
    * Feed forward constants
-   * @param kP Proportional gain
-   * @param kI Integral gain
-   * @param kD Derivative gain
-   * @param kF Feed-forward gain
-   * @param period PID loop period
+   * @param kS Static gain
+   * @param kG Gravity gain
+   * @param kV Velocity gain
+   * @param kA Acceleration gain
    */
   public FFConstants(double kS, double kG, double kV, double kA) {
     this.kS = kS;
