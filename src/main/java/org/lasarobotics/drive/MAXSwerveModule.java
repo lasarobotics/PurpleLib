@@ -156,7 +156,7 @@ public class MAXSwerveModule implements AutoCloseable {
    * @param autoLockTime Time before rotating module to locked position [0.0, 10.0]
    * @param maxSlippingTime Maximum time that wheel is allowed to slip
    * @param driveMotorCurrentLimit Desired current limit for the drive motor
-   * @param slipRatio Desired slip ratio
+   * @param slipRatio Desired slip ratio [+0.01, +0.40]
    */
   public MAXSwerveModule(Hardware swerveHardware, ModuleLocation location, GearRatio driveGearRatio,
                          Measure<Distance> wheelbase, Measure<Distance> trackWidth, Measure<Time> autoLockTime,
