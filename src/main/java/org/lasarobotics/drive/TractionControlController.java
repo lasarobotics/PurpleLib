@@ -5,9 +5,11 @@
 package org.lasarobotics.drive;
 
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.filter.MedianFilter;
+import edu.wpi.first.math.filter.Debouncer;
+import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.units.Distance;
 import edu.wpi.first.units.Measure;
+import edu.wpi.first.units.Time;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.Velocity;
 
@@ -29,39 +31,35 @@ public class TractionControlController {
   private final double VELOCITY_REQUEST_MIN_THRESHOLD;
   private final double MIN_SLIP_RATIO = 0.01;
   private final double MAX_SLIP_RATIO = 0.40;
-  private final int WHEEL_FILTER_TAPS = 3;
 
-  private double m_filteredWheelSpeed = 0.0;
   private double m_optimalSlipRatio = 0.0;
   private double m_currentSlipRatio = 0.0;
   private double m_maxLinearSpeed = 0.0;
   private boolean m_isSlipping = false;
   private State m_state = State.ENABLED;
 
-  private MedianFilter m_wheelSpeedFilter;
+  private Debouncer m_slippingDebouncer;
 
   /**
    * Create an instance of TractionControlController
    * @param maxLinearSpeed Maximum linear speed of robot
+   * @param maxSlippingTime Maximum time that wheel is allowed to slip
    * @param optimalSlipRatio Desired slip ratio [+0.01, +0.40]
    */
-  public TractionControlController(Measure<Velocity<Distance>> maxLinearSpeed, double optimalSlipRatio) {
+  public TractionControlController(Measure<Velocity<Distance>> maxLinearSpeed, Measure<Time> maxSlippingTime, double optimalSlipRatio) {
     this.m_optimalSlipRatio = MathUtil.clamp(optimalSlipRatio, MIN_SLIP_RATIO, MAX_SLIP_RATIO);
     this.m_maxLinearSpeed = Math.floor(maxLinearSpeed.in(Units.MetersPerSecond) * 1000) / 1000;
-    this.m_wheelSpeedFilter = new MedianFilter(WHEEL_FILTER_TAPS);
+    this.m_slippingDebouncer = new Debouncer(maxSlippingTime.in(Units.Seconds), DebounceType.kRising);
 
     VELOCITY_REQUEST_MIN_THRESHOLD = m_maxLinearSpeed * m_optimalSlipRatio;
   }
 
   private void updateSlipRatio(double wheelSpeed, double inertialVelocity) {
-    // Calculate average speed using median filter
-    m_filteredWheelSpeed = m_wheelSpeedFilter.calculate(wheelSpeed);
-
     // Calculate current slip ratio
-    m_currentSlipRatio = ((m_filteredWheelSpeed - inertialVelocity) / inertialVelocity);
+    m_currentSlipRatio = ((wheelSpeed - inertialVelocity) / inertialVelocity);
 
     // Check if wheel is slipping, false if disabled
-    m_isSlipping = m_currentSlipRatio > m_optimalSlipRatio & isEnabled();
+    m_isSlipping = m_slippingDebouncer.calculate(m_currentSlipRatio > m_optimalSlipRatio) & isEnabled();
   }
 
   /**
@@ -113,7 +111,6 @@ public class TractionControlController {
    */
   public void toggleTractionControl() {
     m_state = m_state.toggle();
-    m_wheelSpeedFilter.reset();
   }
 
   /**
@@ -121,7 +118,6 @@ public class TractionControlController {
    */
   public void enableTractionControl() {
     m_state = State.ENABLED;
-    m_wheelSpeedFilter.reset();
   }
 
   /**
@@ -129,7 +125,6 @@ public class TractionControlController {
    */
   public void disableTractionControl() {
     m_state = State.DISABLED;
-    m_wheelSpeedFilter.reset();
   }
 
   /**

@@ -17,6 +17,7 @@ import org.lasarobotics.utils.GlobalConstants;
 
 import edu.wpi.first.units.Distance;
 import edu.wpi.first.units.Measure;
+import edu.wpi.first.units.Time;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.Velocity;
 import edu.wpi.first.wpilibj.Timer;
@@ -24,13 +25,14 @@ import edu.wpi.first.wpilibj.Timer;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class TractionControlTest {
   private final Measure<Velocity<Distance>> MAX_LINEAR_SPEED = Units.MetersPerSecond.of(4.30);
+  private final Measure<Time> MAX_SLIPPING_TIME = Units.Seconds.of(0.6);
   private final double DRIVE_SLIP_RATIO = 0.08;
 
   private TractionControlController m_tractionControlController;
 
   @BeforeEach
   public void setup() {
-    m_tractionControlController = new TractionControlController(MAX_LINEAR_SPEED, DRIVE_SLIP_RATIO);
+    m_tractionControlController = new TractionControlController(MAX_LINEAR_SPEED, MAX_SLIPPING_TIME, DRIVE_SLIP_RATIO);
   }
 
   @Test
@@ -40,7 +42,7 @@ public class TractionControlTest {
     // Simulate scenario
     var outputSpeed = m_tractionControlController.calculate(MAX_LINEAR_SPEED, Units.MetersPerSecond.of(0.0), MAX_LINEAR_SPEED.divide(2));
 
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 50; i++) {
       Timer.delay(GlobalConstants.ROBOT_LOOP_PERIOD);
       outputSpeed = m_tractionControlController.calculate(MAX_LINEAR_SPEED, Units.MetersPerSecond.of(0.0), MAX_LINEAR_SPEED.divide(2));
     }

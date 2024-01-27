@@ -50,6 +50,7 @@ public class MAXSwerveModuleTest {
   private final Measure<Distance> WHEELBASE = Units.Meters.of(0.6);
   private final Measure<Distance> TRACK_WIDTH = Units.Meters.of(0.6);
   private final Measure<Time> AUTO_LOCK_TIME = Units.Seconds.of(3.0);
+  private final Measure<Time> MAX_SLIPPING_TIME = Units.Seconds.of(0.6);
   private final Measure<Current> DRIVE_CURRENT_LIMIT = Units.Amps.of(50.0);
 
   private final Measure<Velocity<Distance>> NEO_MAX_LINEAR_SPEED = Units.MetersPerSecond.of(4.327);
@@ -99,6 +100,7 @@ public class MAXSwerveModuleTest {
       WHEELBASE,
       TRACK_WIDTH,
       AUTO_LOCK_TIME,
+      MAX_SLIPPING_TIME,
       DRIVE_CURRENT_LIMIT,
       SLIP_RATIO
     );
@@ -109,6 +111,7 @@ public class MAXSwerveModuleTest {
       WHEELBASE,
       TRACK_WIDTH,
       AUTO_LOCK_TIME,
+      MAX_SLIPPING_TIME,
       DRIVE_CURRENT_LIMIT,
       SLIP_RATIO
     );
@@ -119,6 +122,7 @@ public class MAXSwerveModuleTest {
       WHEELBASE,
       TRACK_WIDTH,
       AUTO_LOCK_TIME,
+      MAX_SLIPPING_TIME,
       DRIVE_CURRENT_LIMIT,
       SLIP_RATIO
     );
@@ -129,6 +133,7 @@ public class MAXSwerveModuleTest {
       WHEELBASE,
       TRACK_WIDTH,
       AUTO_LOCK_TIME,
+      MAX_SLIPPING_TIME,
       DRIVE_CURRENT_LIMIT,
       SLIP_RATIO
     );
