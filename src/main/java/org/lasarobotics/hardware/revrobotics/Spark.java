@@ -991,7 +991,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
    *
    * <p>This is the maximum rate at which the motor controller's output is allowed to change.
    *
-   * @param rate Time to go from 0 to full throttle.
+   * @param rampTime Time to go from 0 to full throttle.
    * @return {@link REVLibError#kOk} if successful
    */
   public REVLibError setOpenLoopRampRate(Measure<Time> rampTime) {
@@ -1003,7 +1003,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
    *
    * <p>This is the maximum rate at which the motor controller's output is allowed to change.
    *
-   * @param rate Time to go from 0 to full throttle.
+   * @param rampTime Time to go from 0 to full throttle.
    * @return {@link REVLibError#kOk} if successful
    */
   public REVLibError setClosedLoopRampRate(Measure<Time> rampTime) {
