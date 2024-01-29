@@ -547,8 +547,8 @@ public class MAXSwerveModule implements AutoCloseable {
    * Get the total distance the swerve module has traveled
    * @return Odometer value for the swerve module
    */
-  public double getRunningOdometer() {
-    return m_runningOdometer;
+  public Measure<Distance> getRunningOdometer() {
+    return Units.Meters.of(m_runningOdometer);
   }
 
   /**
