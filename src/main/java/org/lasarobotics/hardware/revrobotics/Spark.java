@@ -375,14 +375,6 @@ public class Spark implements LoggableHardware, AutoCloseable {
   }
 
   /**
-   * Add motor to simulation
-   * @param motor Motor that is connected to this Spark
-   */
-  public void addToSimulation(DCMotor motor) {
-    REVPhysicsSim.getInstance().addSparkMax((CANSparkMax)m_spark, motor);
-  }
-
-  /**
    * Call this method periodically
    */
   @Override

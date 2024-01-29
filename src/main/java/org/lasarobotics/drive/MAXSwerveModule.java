@@ -28,7 +28,6 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
-import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Current;
 import edu.wpi.first.units.Distance;
@@ -236,10 +235,6 @@ public class MAXSwerveModule implements AutoCloseable {
 
     // Reset encoder
     resetDriveEncoder();
-
-    // Add motors to REVPhysicsSim
-    m_driveMotor.addToSimulation(DCMotor.getNEO(1));
-    m_rotateMotor.addToSimulation(DCMotor.getNeo550(1));
 
     // Calculate module coordinate
     switch (location) {
