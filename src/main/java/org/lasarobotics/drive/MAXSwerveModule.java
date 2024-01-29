@@ -530,6 +530,28 @@ public class MAXSwerveModule implements AutoCloseable {
   }
 
   /**
+   * Reset the total distance the swerve module has traveled
+   */
+  public void clearRunningOdometer() {
+    m_runningOdometer = 0.0;
+    try {
+      FileWriter fileWriter = new FileWriter(m_odometerOutputPath);
+      fileWriter.write(String.valueOf(m_runningOdometer));
+      fileWriter.close();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+  }
+
+  /**
+   * Get the total distance the swerve module has traveled
+   * @return Odometer value for the swerve module
+   */
+  public double getRunningOdometer() {
+    return m_runningOdometer;
+  }
+
+  /**
    * Stop swerve module
    */
   public void stop() {

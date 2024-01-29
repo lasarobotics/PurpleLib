@@ -33,7 +33,9 @@ import com.revrobotics.SparkPIDController;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
-import edu.wpi.first.math.util.Units;
+import edu.wpi.first.units.Measure;
+import edu.wpi.first.units.Time;
+import edu.wpi.first.units.Units;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 
@@ -77,7 +79,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
      * @return Max RPM
      */
     public double getMaxRPM() {
-      return Units.radiansPerSecondToRotationsPerMinute(motor.freeSpeedRadPerSec);
+      return edu.wpi.first.math.util.Units.radiansPerSecondToRotationsPerMinute(motor.freeSpeedRadPerSec);
     }
   }
 
@@ -982,6 +984,30 @@ public class Spark implements LoggableHardware, AutoCloseable {
       "Set current limit failure!"
     );
     return status;
+  }
+
+  /**
+   * Sets the ramp rate for open loop control modes.
+   *
+   * <p>This is the maximum rate at which the motor controller's output is allowed to change.
+   *
+   * @param rate Time to go from 0 to full throttle.
+   * @return {@link REVLibError#kOk} if successful
+   */
+  public REVLibError setOpenLoopRampRate(Measure<Time> rampTime) {
+    return m_spark.setOpenLoopRampRate(rampTime.in(Units.Seconds));
+  }
+
+  /**
+   * Sets the ramp rate for closed loop control modes.
+   *
+   * <p>This is the maximum rate at which the motor controller's output is allowed to change.
+   *
+   * @param rate Time to go from 0 to full throttle.
+   * @return {@link REVLibError#kOk} if successful
+   */
+  public REVLibError setClosedLoopRampRate(Measure<Time> rampTime) {
+    return m_spark.setClosedLoopRampRate(rampTime.in(Units.Seconds));
   }
 
   /**
