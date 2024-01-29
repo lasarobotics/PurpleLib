@@ -140,8 +140,12 @@ public class Spark implements LoggableHardware, AutoCloseable {
    * @param kind The kind of motor connected to the controller
    */
   public Spark(ID id, MotorKind kind) {
-    if (kind == MotorKind.NEO_VORTEX) this.m_spark = new CANSparkFlex(id.deviceID, kind.type);
-    else this.m_spark = new CANSparkMax(id.deviceID, kind.type);
+    if (kind == MotorKind.NEO_VORTEX) {
+      this.m_spark = new CANSparkFlex(id.deviceID, kind.type);
+    } else {
+      this.m_spark = new CANSparkMax(id.deviceID, kind.type);
+      REVPhysicsSim.getInstance().addSparkMax((CANSparkMax)m_spark, kind.motor);
+    }
     this.m_id = id;
     this.m_kind = kind;
     this.m_inputs = new SparkInputsAutoLogged();
@@ -149,8 +153,6 @@ public class Spark implements LoggableHardware, AutoCloseable {
 
     m_spark.restoreFactoryDefaults();
     m_spark.enableVoltageCompensation(MAX_VOLTAGE);
-
-    REVPhysicsSim.getInstance().addSparkMax((CANSparkMax)m_spark, kind.motor);
   }
 
   /**
