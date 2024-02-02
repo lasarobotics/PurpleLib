@@ -92,6 +92,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
    */
   @AutoLog
   public static class SparkInputs {
+    public double smoothMotionTime = 0.0;
     public double encoderPosition = 0.0;
     public double encoderVelocity = 0.0;
     public double analogPosition = 0.0;
@@ -181,7 +182,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
    * @param parameterCheckSupplier Method to check for parameter in question
    * @return {@link REVLibError#kOk} if successful
    */
-  REVLibError applyParameter(Supplier<REVLibError> parameterSetter, BooleanSupplier parameterCheckSupplier, String errorMessage) {
+  private REVLibError applyParameter(Supplier<REVLibError> parameterSetter, BooleanSupplier parameterCheckSupplier, String errorMessage) {
     if (RobotBase.isSimulation()) return parameterSetter.get();
 
     REVLibError status = REVLibError.kError;
@@ -202,7 +203,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
    */
   private void checkStatus(REVLibError status, String errorMessage) {
     if (status != REVLibError.kOk)
-      System.out.println(String.join(" ", m_id.name, errorMessage, "-", status.toString()));
+      System.err.println(String.join(" ", m_id.name, errorMessage, "-", status.toString()));
   }
 
   /**
@@ -317,6 +318,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
    * Update sensor input readings
    */
   private void updateInputs() {
+    m_inputs.smoothMotionTime = m_smoothMotionTimer.get();
     m_inputs.analogPosition = getAnalogPosition();
     m_inputs.analogVelocity = getAnalogVelocity();
     m_inputs.absoluteEncoderPosition = getAbsoluteEncoderPosition();
@@ -333,9 +335,12 @@ public class Spark implements LoggableHardware, AutoCloseable {
    * Handle smooth motion
    */
   private void handleSmoothMotion() {
-    if (!m_isSmoothMotionEnabled) return;
+    if (!m_isSmoothMotionEnabled) {
+      m_smoothMotionTimer.stop();
+      return;
+    }
 
-    m_smoothMotionState = m_motionProfile.calculate(m_smoothMotionTimer.get(), m_currentStateSupplier.get(), m_desiredState);
+    m_smoothMotionState = m_motionProfile.calculate(getInputs().smoothMotionTime, m_currentStateSupplier.get(), m_desiredState);
     set(
       m_smoothMotionState.position,
       ControlType.kPosition,
@@ -938,7 +943,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
     status = applyParameter(
       () -> m_spark.getPIDController().setPositionPIDWrappingEnabled(false),
       () -> m_spark.getPIDController().getPositionPIDWrappingEnabled() == false,
-      "Disable position PID wrapping failure"
+      "Disable position PID wrapping failure!"
     );
     return status;
   }
