@@ -9,6 +9,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.lasarobotics.hardware.LoggableHardware;
+import org.lasarobotics.utils.GlobalConstants;
 import org.littletonrobotics.junction.AutoLog;
 import org.littletonrobotics.junction.Logger;
 
@@ -92,7 +93,6 @@ public class Spark implements LoggableHardware, AutoCloseable {
    */
   @AutoLog
   public static class SparkInputs {
-    public double smoothMotionTime = 0.0;
     public double encoderPosition = 0.0;
     public double encoderVelocity = 0.0;
     public double analogPosition = 0.0;
@@ -123,7 +123,6 @@ public class Spark implements LoggableHardware, AutoCloseable {
 
   private boolean m_isSmoothMotionEnabled;
   private Debouncer m_smoothMotionFinishedDebouncer;
-  private Timer m_smoothMotionTimer;
   private TrapezoidProfile.State m_desiredState;
   private TrapezoidProfile.State m_smoothMotionState;
   private Supplier<TrapezoidProfile.State> m_currentStateSupplier;
@@ -151,7 +150,6 @@ public class Spark implements LoggableHardware, AutoCloseable {
     this.m_kind = kind;
     this.m_inputs = new SparkInputsAutoLogged();
     this.m_isSmoothMotionEnabled = false;
-    this.m_smoothMotionTimer = new Timer();
 
     m_spark.restoreFactoryDefaults();
     m_spark.enableVoltageCompensation(MAX_VOLTAGE);
@@ -214,8 +212,6 @@ public class Spark implements LoggableHardware, AutoCloseable {
   private void logOutputs(double value, ControlType ctrl) {
     Logger.recordOutput(m_id.name + VALUE_LOG_ENTRY, value);
     Logger.recordOutput(m_id.name + MODE_LOG_ENTRY, ctrl.toString());
-    Logger.recordOutput(m_id.name + CURRENT_LOG_ENTRY, m_spark.getOutputCurrent());
-    Logger.recordOutput(m_id.name + MOTION_LOG_ENTRY, m_isSmoothMotionEnabled);
   }
 
   /**
@@ -318,7 +314,6 @@ public class Spark implements LoggableHardware, AutoCloseable {
    * Update sensor input readings
    */
   private void updateInputs() {
-    m_inputs.smoothMotionTime = m_smoothMotionTimer.get();
     m_inputs.analogPosition = getAnalogPosition();
     m_inputs.analogVelocity = getAnalogVelocity();
     m_inputs.absoluteEncoderPosition = getAbsoluteEncoderPosition();
@@ -335,12 +330,9 @@ public class Spark implements LoggableHardware, AutoCloseable {
    * Handle smooth motion
    */
   private void handleSmoothMotion() {
-    if (!m_isSmoothMotionEnabled) {
-      m_smoothMotionTimer.stop();
-      return;
-    }
+    if (!m_isSmoothMotionEnabled) return;
 
-    m_smoothMotionState = m_motionProfile.calculate(getInputs().smoothMotionTime, m_currentStateSupplier.get(), m_desiredState);
+    m_smoothMotionState = m_motionProfile.calculate(GlobalConstants.ROBOT_LOOP_PERIOD, m_smoothMotionState, m_desiredState);
     set(
       m_smoothMotionState.position,
       ControlType.kPosition,
@@ -389,6 +381,9 @@ public class Spark implements LoggableHardware, AutoCloseable {
     Logger.processInputs(m_id.name, m_inputs);
 
     handleSmoothMotion();
+
+    Logger.recordOutput(m_id.name + CURRENT_LOG_ENTRY, m_spark.getOutputCurrent());
+    Logger.recordOutput(m_id.name + MOTION_LOG_ENTRY, m_isSmoothMotionEnabled);
   }
 
   /**
@@ -747,8 +742,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
     m_motionConstraint = motionConstraint;
     m_desiredState = new TrapezoidProfile.State(value, 0.0);
     m_motionProfile = new TrapezoidProfile(m_motionConstraint);
-    m_smoothMotionState = m_desiredState;
-    m_smoothMotionTimer.restart();
+    m_smoothMotionState = m_currentStateSupplier.get();
   }
 
   /**
