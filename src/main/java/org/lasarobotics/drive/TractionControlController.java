@@ -54,6 +54,11 @@ public class TractionControlController {
     VELOCITY_REQUEST_MIN_THRESHOLD = m_maxLinearSpeed * m_optimalSlipRatio;
   }
 
+  /**
+   * Update slip ratio, and check if wheel is slipping
+   * @param wheelSpeed Current wheel speed
+   * @param inertialVelocity Inertial velocity
+   */
   private void updateSlipRatio(double wheelSpeed, double inertialVelocity) {
     // Calculate current slip ratio
     m_currentSlipRatio = ((wheelSpeed - inertialVelocity) / inertialVelocity);
