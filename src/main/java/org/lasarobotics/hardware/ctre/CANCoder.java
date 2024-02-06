@@ -17,7 +17,7 @@ public class CANCoder implements LoggableHardware, AutoCloseable {
   /** CANCoder Status Frame */
   public enum CANCoderFrame {
     ABSOLUTE_POSITION,
-    POSITION,
+    RELATIVE_POSITION,
     VELOCITY
   }
 
@@ -207,7 +207,7 @@ public class CANCoder implements LoggableHardware, AutoCloseable {
     switch (statusFrame) {
       case ABSOLUTE_POSITION:
         return m_canCoder.getAbsolutePosition().setUpdateFrequency(frequencyHz);
-      case POSITION:
+      case RELATIVE_POSITION:
         return m_canCoder.getPosition().setUpdateFrequency(frequencyHz);
       case VELOCITY:
         return m_canCoder.getVelocity().setUpdateFrequency(frequencyHz);
