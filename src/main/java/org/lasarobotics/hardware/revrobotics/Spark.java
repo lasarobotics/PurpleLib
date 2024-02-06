@@ -479,15 +479,9 @@ public class Spark implements LoggableHardware, AutoCloseable {
       enableReverseSoftLimit();
     }
 
-    // Configure forward and reverse limit switches if required, and disable soft limit
-    if (forwardLimitSwitch) {
-      enableForwardLimitSwitch();
-      disableForwardSoftLimit();
-    }
-    if (reverseLimitSwitch) {
-      enableReverseLimitSwitch();
-      disableReverseSoftLimit();
-    }
+    // Configure forward and reverse limit switches if required
+    if (forwardLimitSwitch) enableForwardLimitSwitch();
+    if (reverseLimitSwitch) enableReverseLimitSwitch();
 
     // Invert motor if required
     setInverted(config.getInverted());
