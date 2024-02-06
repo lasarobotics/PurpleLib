@@ -68,6 +68,8 @@ public class Pidgeon2 implements LoggableHardware, AutoCloseable {
   public Pidgeon2(ID id) {
     this.m_id = id;
     this.m_pidgeon = new Pigeon2(id.deviceID, id.bus.name);
+
+    periodic();
   }
 
   /**

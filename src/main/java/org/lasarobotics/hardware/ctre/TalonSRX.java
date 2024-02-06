@@ -66,6 +66,8 @@ public class TalonSRX implements LoggableHardware, AutoCloseable {
     this.m_id = id;
     this.m_talon = new com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX(id.deviceID);
     this.m_inputs = new TalonSRXInputsAutoLogged();
+
+    periodic();
   }
 
   /**

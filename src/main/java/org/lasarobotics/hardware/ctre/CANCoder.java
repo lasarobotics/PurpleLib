@@ -59,6 +59,9 @@ public class CANCoder implements LoggableHardware, AutoCloseable {
   public CANCoder(ID id) {
     this.m_id = id;
     this.m_canCoder = new com.ctre.phoenix6.hardware.CANcoder(m_id.deviceID, m_id.bus.name);
+    this.m_inputs = new CANCoderInputsAutoLogged();
+
+    periodic();
   }
 
    /**

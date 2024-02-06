@@ -153,6 +153,8 @@ public class Spark implements LoggableHardware, AutoCloseable {
 
     m_spark.restoreFactoryDefaults();
     m_spark.enableVoltageCompensation(MAX_VOLTAGE);
+
+    periodic();
   }
 
   /**

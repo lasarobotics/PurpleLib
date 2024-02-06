@@ -70,6 +70,8 @@ public class LimitSwitch implements LoggableHardware, AutoCloseable {
     this.m_switchPolarity = switchPolarity;
     this.m_limitSwitch = new DigitalInput(m_id.port);
     this.m_inputs = new LimitSwitchInputsAutoLogged();
+
+    periodic();
   }
 
   /**

@@ -48,6 +48,8 @@ public class DoubleSolenoid implements LoggableHardware, AutoCloseable {
   public DoubleSolenoid(DoubleSolenoid.ID id, int module) {
     this.m_id = id;
     this.m_doubleSolenoid = new edu.wpi.first.wpilibj.DoubleSolenoid(module, m_id.moduleType, m_id.forwardChannel, m_id.reverseChannel);
+
+    periodic();
   }
 
   /**

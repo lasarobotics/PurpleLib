@@ -50,6 +50,8 @@ public class Compressor implements LoggableHardware, AutoCloseable {
   public Compressor(Compressor.ID id, int module) {
     this.m_id = id;
     this.m_compressor = new edu.wpi.first.wpilibj.Compressor(module, m_id.moduleType);
+
+    periodic();
   }
 
   /**

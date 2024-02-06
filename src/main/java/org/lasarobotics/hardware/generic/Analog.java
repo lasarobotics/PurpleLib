@@ -54,6 +54,8 @@ public class Analog implements LoggableHardware, AutoCloseable {
     this.m_id = id;
     this.m_analogInput = new AnalogInput(id.port);
     this.m_inputs = new AnalogInputsAutoLogged();
+
+    periodic();
   }
 
   /**
