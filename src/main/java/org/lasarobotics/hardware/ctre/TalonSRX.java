@@ -63,6 +63,7 @@ public class TalonSRX implements LoggableHardware, AutoCloseable {
   public TalonSRX(TalonSRX.ID id)  {
     this.m_id = id;
     this.m_talon = new com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX(id.deviceID);
+    this.m_inputs = new TalonSRXInputsAutoLogged();
   }
 
   /**
@@ -136,7 +137,7 @@ public class TalonSRX implements LoggableHardware, AutoCloseable {
   public void initializeTalonPID(TalonPIDConfig config, FeedbackDevice feedbackDevice,
                                  boolean forwardLimitSwitch, boolean reverseLimitSwitch) {
     m_config = config;
-    
+
     // Reset Talon to default
     m_talon.configFactoryDefault();
 
