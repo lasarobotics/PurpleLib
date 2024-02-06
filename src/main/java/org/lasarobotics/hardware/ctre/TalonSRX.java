@@ -7,7 +7,6 @@ package org.lasarobotics.hardware.ctre;
 import org.lasarobotics.hardware.LoggableHardware;
 import org.littletonrobotics.junction.AutoLog;
 import org.littletonrobotics.junction.Logger;
-import org.littletonrobotics.junction.inputs.LoggableInputs;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
@@ -19,15 +18,18 @@ public class TalonSRX implements LoggableHardware, AutoCloseable {
   /** TalonSRX ID */
   public static class ID {
     public final String name;
+    public final PhoenixCANBus bus;
     public final int deviceID;
 
     /**
      * TalonSRX ID
      * @param name Device name for logging
+     * @param bus CAN bus device is connected to
      * @param deviceID CAN ID
      */
-    public ID(String name, int deviceID) {
+    public ID(String name, PhoenixCANBus bus, int deviceID) {
       this.name = name;
+      this.bus = bus;
       this.deviceID = deviceID;
     }
   }
@@ -115,7 +117,7 @@ public class TalonSRX implements LoggableHardware, AutoCloseable {
    * @return Latest sensor data
    */
   @Override
-  public LoggableInputs getInputs() {
+  public TalonSRXInputsAutoLogged getInputs() {
     return m_inputs;
   }
 

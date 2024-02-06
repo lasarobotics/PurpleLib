@@ -15,15 +15,18 @@ public class VictorSPX implements LoggableHardware, AutoCloseable {
   /** VictorSPX ID */
   public static class ID {
     public final String name;
+    public final PhoenixCANBus bus;
     public final int deviceID;
 
     /**
      * WPI_VictorSPX ID
      * @param name Device name for logging
+     * @param bus CAN bus device is connected to
      * @param deviceID CAN ID
      */
-    public ID(String name, int deviceID) {
+    public ID(String name, PhoenixCANBus bus, int deviceID) {
       this.name = name;
+      this.bus = bus;
       this.deviceID = deviceID;
     }
   }
