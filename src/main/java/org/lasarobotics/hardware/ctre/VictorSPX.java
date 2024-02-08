@@ -45,6 +45,9 @@ public class VictorSPX implements LoggableHardware, AutoCloseable {
   public VictorSPX(VictorSPX.ID id)  {
     this.m_id = id;
     this.m_victor = new com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX(id.deviceID);
+
+    // Disable motor safety
+    m_victor.setSafetyEnabled(false);
   }
 
   /**
