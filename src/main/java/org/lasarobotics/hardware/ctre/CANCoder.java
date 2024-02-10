@@ -14,13 +14,6 @@ import com.ctre.phoenix6.signals.SensorDirectionValue;
 
 /** CTRE CANCoder */
 public class CANCoder implements LoggableHardware, AutoCloseable {
-  /** CANCoder Status Frame */
-  public enum CANCoderFrame {
-    ABSOLUTE_POSITION,
-    RELATIVE_POSITION,
-    VELOCITY
-  }
-
   /** CANCoder ID */
   public static class ID {
     public final String name;
@@ -38,6 +31,13 @@ public class CANCoder implements LoggableHardware, AutoCloseable {
       this.bus = bus;
       this.deviceID = deviceID;
     }
+  }
+
+  /** CANCoder Status Frame */
+  public enum CANCoderFrame {
+    ABSOLUTE_POSITION,
+    RELATIVE_POSITION,
+    VELOCITY
   }
 
   @AutoLog
