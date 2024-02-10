@@ -73,7 +73,7 @@ public class Compressor implements LoggableHardware, AutoCloseable {
    *
    * @return The pressure (in PSI) read by the analog pressure sensor.
    */
-  public double getPressure() {
+  private double getPressure() {
     return m_compressor.getPressure();
   }
 
@@ -82,7 +82,7 @@ public class Compressor implements LoggableHardware, AutoCloseable {
    *
    * @return True if pressure switch indicates that the system is not full, otherwise false.
    */
-  public boolean getPressureSwitchValue() {
+  private boolean getPressureSwitchValue() {
     return m_compressor.getPressureSwitchValue();
   }
 
@@ -91,7 +91,7 @@ public class Compressor implements LoggableHardware, AutoCloseable {
    *
    * @return true if the compressor is on - otherwise false.
    */
-  public boolean isEnabled() {
+  private boolean isEnabled() {
     return m_compressor.isEnabled();
   }
 
