@@ -17,5 +17,11 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
+    - name: Check and print all dependencies
+      run: ./gradlew dependencies
+
+    - name: Check and print all Java toolchains
+      run: ./gradlew javaToolchains
+
     - name: Build and test robot code
       run: ./gradlew build
