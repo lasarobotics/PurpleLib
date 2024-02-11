@@ -104,7 +104,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
   }
 
   private static final int PID_SLOT = 0;
-  private static final int MAX_ATTEMPTS = 5;
+  private static final int MAX_ATTEMPTS = 20;
   private static final double MAX_VOLTAGE = 12.0;
   private static final double BURN_FLASH_WAIT_TIME = 0.5;
   private static final double APPLY_PARAMETER_WAIT_TIME = 0.1;
