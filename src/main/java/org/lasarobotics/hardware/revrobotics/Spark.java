@@ -153,6 +153,9 @@ public class Spark implements LoggableHardware, AutoCloseable {
     this.m_inputs = new SparkInputsAutoLogged();
     this.m_isSmoothMotionEnabled = false;
 
+    // Make get and set calls non-blocking
+    m_spark.setCANTimeout(0);
+
     // Restore defaults
     m_spark.restoreFactoryDefaults();
     m_spark.enableVoltageCompensation(MAX_VOLTAGE);
