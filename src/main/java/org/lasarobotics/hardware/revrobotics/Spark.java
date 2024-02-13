@@ -105,6 +105,8 @@ public class Spark implements LoggableHardware, AutoCloseable {
 
   private static final int PID_SLOT = 0;
   private static final int MAX_ATTEMPTS = 20;
+  private static final int MEASUREMENT_PERIOD = 16;
+  private static final int AVERAGE_DEPTH = 2;
   private static final double MAX_VOLTAGE = 12.0;
   private static final double BURN_FLASH_WAIT_TIME = 0.5;
   private static final double APPLY_PARAMETER_WAIT_TIME = 0.1;
@@ -151,9 +153,17 @@ public class Spark implements LoggableHardware, AutoCloseable {
     this.m_inputs = new SparkInputsAutoLogged();
     this.m_isSmoothMotionEnabled = false;
 
+    // Restore defaults
     m_spark.restoreFactoryDefaults();
     m_spark.enableVoltageCompensation(MAX_VOLTAGE);
 
+    // Fix velocity measurements
+    if (getMotorType() == MotorType.kBrushless) {
+      setMeasurementPeriod();
+      setAverageDepth();
+    }
+
+    // Refresh inputs on initialization
     periodic();
   }
 
@@ -310,6 +320,34 @@ public class Spark implements LoggableHardware, AutoCloseable {
    */
   private SparkLimitSwitch getReverseLimitSwitch() {
     return m_spark.getReverseLimitSwitch(m_limitSwitchType);
+  }
+
+  /**
+   * Set encoder velocity measurement period to {@value Spark#MEASUREMENT_PERIOD} milliseconds
+   * @return {@link REVLibError#kOk} if successful
+   */
+  private REVLibError setMeasurementPeriod() {
+    REVLibError status;
+    status = applyParameter(
+      () -> m_spark.getEncoder().setMeasurementPeriod(MEASUREMENT_PERIOD),
+      () -> m_spark.getEncoder().getMeasurementPeriod() == MEASUREMENT_PERIOD,
+      "Set encoder measurement period failure!"
+    );
+    return status;
+  }
+
+  /**
+   * Set encoder velocity average depth to {@value Spark#AVERAGE_DEPTH} samples
+   * @return {@link REVLibError#kOk} if successful
+   */
+  private REVLibError setAverageDepth() {
+    REVLibError status;
+    status = applyParameter(
+      () -> m_spark.getEncoder().setAverageDepth(AVERAGE_DEPTH),
+      () -> m_spark.getEncoder().getAverageDepth() == AVERAGE_DEPTH,
+      "Set encoder average depth failure!"
+    );
+    return status;
   }
 
   /**
