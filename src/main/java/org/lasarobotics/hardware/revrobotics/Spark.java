@@ -427,8 +427,10 @@ public class Spark implements LoggableHardware, AutoCloseable {
     handleSmoothMotion();
 
     Logger.recordOutput(m_id.name + CURRENT_LOG_ENTRY, m_spark.getOutputCurrent());
-    Logger.recordOutput(m_id.name + TEMPERATURE_LOG_ENTRY, m_spark.getMotorTemperature());
     Logger.recordOutput(m_id.name + MOTION_LOG_ENTRY, m_isSmoothMotionEnabled);
+
+    if (getMotorType() == MotorType.kBrushed) return;
+    Logger.recordOutput(m_id.name + TEMPERATURE_LOG_ENTRY, m_spark.getMotorTemperature());
   }
 
   /**
