@@ -198,6 +198,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
    */
   private REVLibError applyParameter(Supplier<REVLibError> parameterSetter, BooleanSupplier parameterCheckSupplier, String errorMessage) {
     if (RobotBase.isSimulation()) return parameterSetter.get();
+    if (parameterCheckSupplier.getAsBoolean()) return parameterSetter.get();
 
     REVLibError status = REVLibError.kError;
     for (int i = 0; i < MAX_ATTEMPTS; i++) {
