@@ -139,6 +139,8 @@ public class Spark implements LoggableHardware, AutoCloseable {
 
   /**
    * Create a Spark with built-in logging and is unit-testing friendly
+   * <p>
+   * Defaults to normally-open limit switches
    * @param id Spark ID
    * @param kind The kind of motor connected to the controller
    */
@@ -153,6 +155,44 @@ public class Spark implements LoggableHardware, AutoCloseable {
     this.m_kind = kind;
     this.m_inputs = new SparkInputsAutoLogged();
     this.m_isSmoothMotionEnabled = false;
+
+    // Make get and set calls non-blocking
+    m_spark.setCANTimeout(0);
+
+    // Restore defaults
+    m_spark.restoreFactoryDefaults();
+    m_spark.enableVoltageCompensation(MAX_VOLTAGE);
+
+    // Fix velocity measurements
+    if (getMotorType() == MotorType.kBrushless) {
+      setMeasurementPeriod();
+      setAverageDepth();
+    }
+
+    // Refresh inputs on initialization
+    periodic();
+  }
+
+  /**
+   * Create a Spark with built-in logging and is unit-testing friendly
+   * <p>
+   * Defaults to normally-open limit switches
+   * @param id Spark ID
+   * @param kind The kind of motor connected to the controller
+   * @param limitSwitchType
+   */
+  public Spark(ID id, MotorKind kind, SparkLimitSwitch.Type limitSwitchType) {
+    if (kind == MotorKind.NEO_VORTEX) {
+      this.m_spark = new CANSparkFlex(id.deviceID, kind.type);
+    } else {
+      this.m_spark = new CANSparkMax(id.deviceID, kind.type);
+      REVPhysicsSim.getInstance().addSparkMax((CANSparkMax)m_spark, kind.motor);
+    }
+    this.m_id = id;
+    this.m_kind = kind;
+    this.m_inputs = new SparkInputsAutoLogged();
+    this.m_isSmoothMotionEnabled = false;
+    this.m_limitSwitchType = limitSwitchType;
 
     // Make get and set calls non-blocking
     m_spark.setCANTimeout(0);
@@ -617,14 +657,6 @@ public class Spark implements LoggableHardware, AutoCloseable {
   public void set(double value, ControlType ctrl, double arbFeedforward, SparkPIDController.ArbFFUnits arbFFUnits) {
     m_spark.getPIDController().setReference(value, ctrl, PID_SLOT, arbFeedforward, arbFFUnits);
     logOutputs(value, ctrl);
-  }
-
-  /**
-   * Change the limit switch type
-   * @param type The desired limit switch type
-   */
-  public void setLimitSwitchType(SparkLimitSwitch.Type type) {
-    m_limitSwitchType = type;
   }
 
   /**
