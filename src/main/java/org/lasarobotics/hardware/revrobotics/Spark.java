@@ -105,7 +105,8 @@ public class Spark implements LoggableHardware, AutoCloseable {
 
   private static final int PID_SLOT = 0;
   private static final int MAX_ATTEMPTS = 20;
-  private static final int MEASUREMENT_PERIOD = 8;
+  private static final int SPARK_MAX_MEASUREMENT_PERIOD = 8;
+  private static final int SPARK_FLEX_MEASUREMENT_PERIOD = 1;
   private static final int AVERAGE_DEPTH = 1;
   private static final double MAX_VOLTAGE = 12.0;
   private static final double BURN_FLASH_WAIT_TIME = 0.5;
@@ -143,43 +144,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
    * Defaults to normally-open limit switches
    * @param id Spark ID
    * @param kind The kind of motor connected to the controller
-   */
-  public Spark(ID id, MotorKind kind) {
-    if (kind == MotorKind.NEO_VORTEX) {
-      this.m_spark = new CANSparkFlex(id.deviceID, kind.type);
-    } else {
-      this.m_spark = new CANSparkMax(id.deviceID, kind.type);
-      REVPhysicsSim.getInstance().addSparkMax((CANSparkMax)m_spark, kind.motor);
-    }
-    this.m_id = id;
-    this.m_kind = kind;
-    this.m_inputs = new SparkInputsAutoLogged();
-    this.m_isSmoothMotionEnabled = false;
-
-    // Make get and set calls non-blocking
-    m_spark.setCANTimeout(0);
-
-    // Restore defaults
-    m_spark.restoreFactoryDefaults();
-    m_spark.enableVoltageCompensation(MAX_VOLTAGE);
-
-    // Fix velocity measurements
-    if (getMotorType() == MotorType.kBrushless) {
-      setMeasurementPeriod();
-      setAverageDepth();
-    }
-
-    // Refresh inputs on initialization
-    periodic();
-  }
-
-  /**
-   * Create a Spark with built-in logging and is unit-testing friendly
-   * <p>
-   * Defaults to normally-open limit switches
-   * @param id Spark ID
-   * @param kind The kind of motor connected to the controller
-   * @param limitSwitchType
+   * @param limitSwitchType Polarity of connected limit switches
    */
   public Spark(ID id, MotorKind kind, SparkLimitSwitch.Type limitSwitchType) {
     if (kind == MotorKind.NEO_VORTEX) {
@@ -212,13 +177,25 @@ public class Spark implements LoggableHardware, AutoCloseable {
   }
 
   /**
+   * Create a Spark with built-in logging and is unit-testing friendly
+   * <p>
+   * Defaults to normally-open limit switches
+   * @param id Spark ID
+   * @param kind The kind of motor connected to the controller
+   */
+  public Spark(ID id, MotorKind kind) {
+    this(id, kind, SparkLimitSwitch.Type.kNormallyOpen);
+  }
+
+  /**
    * Create a Spark with built-in logging, is unit-testing friendly and configure PID
    * @param id Spark ID
    * @param kind The kind of motor connected to the controller
+   * @param limitSwitchType Polarity of connected limit switches
    * @param config PID config for Spark
    * @param feedbackSensor Feedback device to use for Spark PID
    */
-  public Spark(ID id, MotorKind kind, SparkPIDConfig config, FeedbackSensor feedbackSensor) {
+  public Spark(ID id, MotorKind kind, SparkLimitSwitch.Type limitSwitchType, SparkPIDConfig config, FeedbackSensor feedbackSensor) {
     this(id, kind);
 
     this.m_config = config;
@@ -228,6 +205,19 @@ public class Spark implements LoggableHardware, AutoCloseable {
     this.m_feedforwardSupplier = (motionProfileState) -> 0.0;
     this.m_currentStateSupplier = () -> new TrapezoidProfile.State(getInputs().encoderPosition, getInputs().encoderVelocity);
     initializeSparkPID(m_config, feedbackSensor);
+  }
+
+  /**
+   * Create a Spark with built-in logging, is unit-testing friendly and configure PID
+   * <p>
+   * Defaults to normally-open limit switches
+   * @param id Spark ID
+   * @param kind The kind of motor connected to the controller
+   * @param config PID config for Spark
+   * @param feedbackSensor Feedback device to use for Spark PID
+   */
+  public Spark(ID id, MotorKind kind, SparkPIDConfig config, FeedbackSensor feedbackSensor) {
+    this(id, kind, SparkLimitSwitch.Type.kNormallyOpen, config, feedbackSensor);
   }
 
   /**
@@ -368,14 +358,17 @@ public class Spark implements LoggableHardware, AutoCloseable {
   }
 
   /**
-   * Set encoder velocity measurement period to {@value Spark#MEASUREMENT_PERIOD} milliseconds
+   * Set encoder velocity measurement period in milliseconds
+   * <p>
+   * Sets to {@value Spark#SPARK_FLEX_MEASUREMENT_PERIOD} for Vortex, {@value Spark#SPARK_MAX_MEASUREMENT_PERIOD} for NEO
    * @return {@link REVLibError#kOk} if successful
    */
   private REVLibError setMeasurementPeriod() {
     REVLibError status;
+    int period = getKind().equals(MotorKind.NEO_VORTEX) ? SPARK_FLEX_MEASUREMENT_PERIOD : SPARK_MAX_MEASUREMENT_PERIOD;
     status = applyParameter(
-      () -> m_spark.getEncoder().setMeasurementPeriod(MEASUREMENT_PERIOD),
-      () -> m_spark.getEncoder().getMeasurementPeriod() == MEASUREMENT_PERIOD,
+      () -> m_spark.getEncoder().setMeasurementPeriod(period),
+      () -> m_spark.getEncoder().getMeasurementPeriod() == period,
       "Set encoder measurement period failure!"
     );
     return status;
