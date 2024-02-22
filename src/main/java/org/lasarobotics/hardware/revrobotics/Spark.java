@@ -105,8 +105,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
 
   private static final int PID_SLOT = 0;
   private static final int MAX_ATTEMPTS = 20;
-  private static final int SPARK_MAX_MEASUREMENT_PERIOD = 8;
-  private static final int SPARK_FLEX_MEASUREMENT_PERIOD = 1;
+  private static final int MEASUREMENT_PERIOD = 8;
   private static final int AVERAGE_DEPTH = 1;
   private static final double MAX_VOLTAGE = 12.0;
   private static final double BURN_FLASH_WAIT_TIME = 0.5;
@@ -358,17 +357,14 @@ public class Spark implements LoggableHardware, AutoCloseable {
   }
 
   /**
-   * Set encoder velocity measurement period in milliseconds
-   * <p>
-   * Sets to {@value Spark#SPARK_FLEX_MEASUREMENT_PERIOD} for Vortex, {@value Spark#SPARK_MAX_MEASUREMENT_PERIOD} for NEO
+   * Set encoder velocity measurement period to {@value Spark#MEASUREMENT_PERIOD} milliseconds
    * @return {@link REVLibError#kOk} if successful
    */
   private REVLibError setMeasurementPeriod() {
     REVLibError status;
-    int period = getKind().equals(MotorKind.NEO_VORTEX) ? SPARK_FLEX_MEASUREMENT_PERIOD : SPARK_MAX_MEASUREMENT_PERIOD;
     status = applyParameter(
-      () -> m_spark.getEncoder().setMeasurementPeriod(period),
-      () -> m_spark.getEncoder().getMeasurementPeriod() == period,
+      () -> m_spark.getEncoder().setMeasurementPeriod(MEASUREMENT_PERIOD),
+      () -> m_spark.getEncoder().getMeasurementPeriod() == MEASUREMENT_PERIOD,
       "Set encoder measurement period failure!"
     );
     return status;
