@@ -31,7 +31,6 @@ import com.revrobotics.SparkAbsoluteEncoder;
 import com.revrobotics.SparkAnalogSensor;
 import com.revrobotics.SparkLimitSwitch;
 import com.revrobotics.SparkPIDController;
-import com.revrobotics.SparkRelativeEncoder;
 
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.system.plant.DCMotor;
@@ -142,8 +141,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
   private SparkPIDConfig m_config;
   private FeedbackSensor m_feedbackSensor;
   private SparkLimitSwitch.Type m_limitSwitchType = SparkLimitSwitch.Type.kNormallyOpen;
-  private SparkRelativeEncoder.Type m_encoderType;
-  private int m_encoderTicksPerRevolution;
+  private RelativeEncoder m_encoder;
 
   /**
    * Create a Spark with built-in logging and is unit-testing friendly
@@ -156,12 +154,10 @@ public class Spark implements LoggableHardware, AutoCloseable {
   public Spark(ID id, MotorKind kind, SparkLimitSwitch.Type limitSwitchType) {
     if (kind.equals(MotorKind.NEO_VORTEX)) {
       this.m_spark = new CANSparkFlex(id.deviceID, kind.type);
-      this.m_encoderType = SparkRelativeEncoder.Type.kQuadrature;
-      this.m_encoderTicksPerRevolution = GlobalConstants.VORTEX_ENCODER_TICKS_PER_ROTATION;
+      this.m_encoder = m_spark.getEncoder();
     } else {
       this.m_spark = new CANSparkMax(id.deviceID, kind.type);
-      this.m_encoderType = SparkRelativeEncoder.Type.kHallSensor;
-      this.m_encoderTicksPerRevolution = GlobalConstants.NEO_ENCODER_TICKS_PER_ROTATION;
+      this.m_encoder = m_spark.getEncoder();
       REVPhysicsSim.getInstance().addSparkMax((CANSparkMax)m_spark, kind.motor);
     }
     this.m_id = id;
@@ -277,7 +273,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
    * @return
    */
   private RelativeEncoder getEncoder() {
-    return m_spark.getEncoder(m_encoderType, m_encoderTicksPerRevolution);
+    return m_encoder;
   }
 
   /**
