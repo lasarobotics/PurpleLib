@@ -26,10 +26,12 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.MotorFeedbackSensor;
 import com.revrobotics.REVLibError;
 import com.revrobotics.REVPhysicsSim;
+import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkAbsoluteEncoder;
 import com.revrobotics.SparkAnalogSensor;
 import com.revrobotics.SparkLimitSwitch;
 import com.revrobotics.SparkPIDController;
+import com.revrobotics.SparkRelativeEncoder;
 
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.system.plant.DCMotor;
@@ -140,6 +142,8 @@ public class Spark implements LoggableHardware, AutoCloseable {
   private SparkPIDConfig m_config;
   private FeedbackSensor m_feedbackSensor;
   private SparkLimitSwitch.Type m_limitSwitchType = SparkLimitSwitch.Type.kNormallyOpen;
+  private SparkRelativeEncoder.Type m_encoderType;
+  private int m_encoderTicksPerRevolution;
 
   /**
    * Create a Spark with built-in logging and is unit-testing friendly
@@ -152,8 +156,12 @@ public class Spark implements LoggableHardware, AutoCloseable {
   public Spark(ID id, MotorKind kind, SparkLimitSwitch.Type limitSwitchType) {
     if (kind.equals(MotorKind.NEO_VORTEX)) {
       this.m_spark = new CANSparkFlex(id.deviceID, kind.type);
+      this.m_encoderType = SparkRelativeEncoder.Type.kQuadrature;
+      this.m_encoderTicksPerRevolution = GlobalConstants.VORTEX_ENCODER_TICKS_PER_ROTATION;
     } else {
       this.m_spark = new CANSparkMax(id.deviceID, kind.type);
+      this.m_encoderType = SparkRelativeEncoder.Type.kQuadrature;
+      this.m_encoderTicksPerRevolution = GlobalConstants.NEO_ENCODER_TICKS_PER_ROTATION;
       REVPhysicsSim.getInstance().addSparkMax((CANSparkMax)m_spark, kind.motor);
     }
     this.m_id = id;
@@ -265,12 +273,20 @@ public class Spark implements LoggableHardware, AutoCloseable {
   }
 
   /**
+   * Returns an object for interfacing with the built-in encoder
+   * @return
+   */
+  private RelativeEncoder getEncoder() {
+    return m_spark.getEncoder(m_encoderType, m_encoderTicksPerRevolution);
+  }
+
+  /**
    * Get the position of the motor encoder. This returns the native units of 'rotations' by default, and can
    * be changed by a scale factor using setPositionConversionFactor().
    * @return Number of rotations of the motor
    */
   private double getEncoderPosition() {
-    return m_spark.getEncoder().getPosition();
+    return getEncoder().getPosition();
   }
 
   /**
@@ -279,7 +295,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
    * @return Number the RPM of the motor
    */
   private double getEncoderVelocity() {
-    return m_spark.getEncoder().getVelocity();
+    return getEncoder().getVelocity();
   }
 
   /**
@@ -370,8 +386,8 @@ public class Spark implements LoggableHardware, AutoCloseable {
     REVLibError status;
     int period = getKind().equals(MotorKind.NEO_VORTEX) ? SPARK_FLEX_MEASUREMENT_PERIOD : SPARK_MAX_MEASUREMENT_PERIOD;
     status = applyParameter(
-      () -> m_spark.getEncoder().setMeasurementPeriod(period),
-      () -> m_spark.getEncoder().getMeasurementPeriod() == period,
+      () -> getEncoder().setMeasurementPeriod(period),
+      () -> getEncoder().getMeasurementPeriod() == period,
       "Set encoder measurement period failure!"
     );
     return status;
@@ -387,8 +403,8 @@ public class Spark implements LoggableHardware, AutoCloseable {
     REVLibError status;
     int averageDepth = getKind().equals(MotorKind.NEO_VORTEX) ? SPARK_FLEX_AVERAGE_DEPTH : SPARK_MAX_AVERAGE_DEPTH;
     status = applyParameter(
-      () -> m_spark.getEncoder().setAverageDepth(averageDepth),
-      () -> m_spark.getEncoder().getAverageDepth() == averageDepth,
+      () -> getEncoder().setAverageDepth(averageDepth),
+      () -> getEncoder().getAverageDepth() == averageDepth,
       "Set encoder average depth failure!"
     );
     return status;
@@ -538,16 +554,16 @@ public class Spark implements LoggableHardware, AutoCloseable {
     MotorFeedbackSensor selectedSensor;
     switch (m_feedbackSensor) {
       case ANALOG:
-        selectedSensor = m_spark.getAnalog(SparkAnalogSensor.Mode.kAbsolute);
+        selectedSensor = getAnalog();
         m_currentStateSupplier = () -> new TrapezoidProfile.State(getInputs().analogPosition, getInputs().analogVelocity);
         break;
       case THROUGH_BORE_ENCODER:
-        selectedSensor = m_spark.getAbsoluteEncoder(SparkAbsoluteEncoder.Type.kDutyCycle);
+        selectedSensor = getAbsoluteEncoder();
         m_currentStateSupplier = () -> new TrapezoidProfile.State(getInputs().absoluteEncoderPosition, getInputs().absoluteEncoderVelocity);
         break;
       case NEO_ENCODER:
       default:
-        selectedSensor = m_spark.getEncoder();
+        selectedSensor = getEncoder();
         m_currentStateSupplier = () -> new TrapezoidProfile.State(getInputs().encoderPosition, getInputs().encoderVelocity);
         break;
     }
@@ -675,8 +691,8 @@ public class Spark implements LoggableHardware, AutoCloseable {
     BooleanSupplier parameterCheckSupplier;
     switch (sensor) {
       case NEO_ENCODER:
-        parameterSetter = () -> m_spark.getEncoder().setPositionConversionFactor(factor);
-        parameterCheckSupplier = () -> Precision.equals(m_spark.getEncoder().getPositionConversionFactor(), factor, EPSILON);
+        parameterSetter = () -> getEncoder().setPositionConversionFactor(factor);
+        parameterCheckSupplier = () -> Precision.equals(getEncoder().getPositionConversionFactor(), factor, EPSILON);
         break;
       case ANALOG:
         parameterSetter = () -> getAnalog().setPositionConversionFactor(factor);
@@ -709,8 +725,8 @@ public class Spark implements LoggableHardware, AutoCloseable {
     BooleanSupplier parameterCheckSupplier;
     switch (sensor) {
       case NEO_ENCODER:
-        parameterSetter = () -> m_spark.getEncoder().setVelocityConversionFactor(factor);
-        parameterCheckSupplier = () -> Precision.equals(m_spark.getEncoder().getVelocityConversionFactor(), factor, EPSILON);
+        parameterSetter = () -> getEncoder().setVelocityConversionFactor(factor);
+        parameterCheckSupplier = () -> Precision.equals(getEncoder().getVelocityConversionFactor(), factor, EPSILON);
         break;
       case ANALOG:
         parameterSetter = () -> getAnalog().setVelocityConversionFactor(factor);
@@ -837,7 +853,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
   public REVLibError resetEncoder() {
     REVLibError status;
     status = applyParameter(
-      () -> m_spark.getEncoder().setPosition(0.0),
+      () -> getEncoder().setPosition(0.0),
       () -> Precision.equals(getEncoderPosition(), 0.0, EPSILON),
       "Reset encoder failure!"
     );
