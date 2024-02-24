@@ -8,6 +8,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import org.apache.commons.math3.util.Precision;
 import org.lasarobotics.hardware.LoggableHardware;
 import org.lasarobotics.utils.GlobalConstants;
 import org.littletonrobotics.junction.AutoLog;
@@ -104,11 +105,12 @@ public class Spark implements LoggableHardware, AutoCloseable {
   }
 
   private static final int PID_SLOT = 0;
-  private static final int MAX_ATTEMPTS = 20;
+  private static final int MAX_ATTEMPTS = 10;
   private static final int SPARK_MAX_MEASUREMENT_PERIOD = 16;
   private static final int SPARK_FLEX_MEASUREMENT_PERIOD = 1;
   private static final int SPARK_MAX_AVERAGE_DEPTH = 2;
   private static final int SPARK_FLEX_AVERAGE_DEPTH = 1;
+  private static final double EPSILON = 2e-8;
   private static final double MAX_VOLTAGE = 12.0;
   private static final double BURN_FLASH_WAIT_TIME = 0.5;
   private static final double APPLY_PARAMETER_WAIT_TIME = 0.1;
@@ -510,7 +512,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
    */
   public boolean isSmoothMotionFinished() {
     return m_smoothMotionFinishedDebouncer.calculate(
-      Math.abs(m_currentStateSupplier.get().position - m_desiredState.position) < m_config.getTolerance()
+      Precision.equals(m_currentStateSupplier.get().position, m_desiredState.position, m_config.getTolerance())
     );
   }
 
@@ -553,7 +555,11 @@ public class Spark implements LoggableHardware, AutoCloseable {
     // Configure feedback sensor and set sensor phase
     try {
       m_spark.getPIDController().setFeedbackDevice(selectedSensor);
-      selectedSensor.setInverted(m_config.getSensorPhase());
+      applyParameter(
+        () -> selectedSensor.setInverted(m_config.getSensorPhase()),
+        () -> selectedSensor.getInverted() == m_config.getSensorPhase(),
+      "Set sensor phase failure!"
+      );
     } catch (IllegalArgumentException e) {}
 
     // Configure forward and reverse soft limits
@@ -576,7 +582,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
     setI(config.getI());
     setD(config.getD());
     setF(config.getF());
-    setIzone(config.getI() != 0.0 ? config.getTolerance() * 2 : 0.0);
+    setIZone(config.getIZone());
   }
 
   /**
@@ -670,15 +676,15 @@ public class Spark implements LoggableHardware, AutoCloseable {
     switch (sensor) {
       case NEO_ENCODER:
         parameterSetter = () -> m_spark.getEncoder().setPositionConversionFactor(factor);
-        parameterCheckSupplier = () -> m_spark.getEncoder().getPositionConversionFactor() == factor;
+        parameterCheckSupplier = () -> Precision.equals(m_spark.getEncoder().getPositionConversionFactor(), factor, EPSILON);
         break;
       case ANALOG:
         parameterSetter = () -> getAnalog().setPositionConversionFactor(factor);
-        parameterCheckSupplier = () -> getAnalog().getPositionConversionFactor() == factor;
+        parameterCheckSupplier = () -> Precision.equals(getAnalog().getPositionConversionFactor(), factor, EPSILON);
         break;
       case THROUGH_BORE_ENCODER:
         parameterSetter = () -> getAbsoluteEncoder().setPositionConversionFactor(factor);
-        parameterCheckSupplier = () -> getAbsoluteEncoder().getPositionConversionFactor() == factor;
+        parameterCheckSupplier = () -> Precision.equals(getAbsoluteEncoder().getPositionConversionFactor(), factor, EPSILON);
         break;
       default:
         parameterSetter = () -> REVLibError.kOk;
@@ -704,15 +710,15 @@ public class Spark implements LoggableHardware, AutoCloseable {
     switch (sensor) {
       case NEO_ENCODER:
         parameterSetter = () -> m_spark.getEncoder().setVelocityConversionFactor(factor);
-        parameterCheckSupplier = () -> m_spark.getEncoder().getVelocityConversionFactor() == factor;
+        parameterCheckSupplier = () -> Precision.equals(m_spark.getEncoder().getVelocityConversionFactor(), factor, EPSILON);
         break;
       case ANALOG:
         parameterSetter = () -> getAnalog().setVelocityConversionFactor(factor);
-        parameterCheckSupplier = () -> getAnalog().getVelocityConversionFactor() == factor;
+        parameterCheckSupplier = () -> Precision.equals(getAnalog().getVelocityConversionFactor(), factor, EPSILON);
         break;
       case THROUGH_BORE_ENCODER:
         parameterSetter = () -> getAbsoluteEncoder().setVelocityConversionFactor(factor);
-        parameterCheckSupplier = () -> getAnalog().getVelocityConversionFactor() == factor;
+        parameterCheckSupplier = () -> Precision.equals(getAnalog().getVelocityConversionFactor(), factor, EPSILON);
         break;
       default:
         parameterSetter = () -> REVLibError.kOk;
@@ -733,7 +739,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
     REVLibError status;
     status = applyParameter(
       () -> m_spark.getPIDController().setP(value),
-      () -> m_spark.getPIDController().getP() == value,
+      () -> Precision.equals(m_spark.getPIDController().getP(), value, EPSILON),
       "Set kP failure!"
     );
     return status;
@@ -748,7 +754,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
     REVLibError status;
     status = applyParameter(
       () -> m_spark.getPIDController().setI(value),
-      () -> m_spark.getPIDController().getI() == value,
+      () -> Precision.equals(m_spark.getPIDController().getI(), value, EPSILON),
       "Set kI failure!"
     );
     return status;
@@ -763,7 +769,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
     REVLibError status;
     status = applyParameter(
       () -> m_spark.getPIDController().setD(value),
-      () -> m_spark.getPIDController().getD() == value,
+      () -> Precision.equals(m_spark.getPIDController().getD(), value, EPSILON),
       "Set kD failure!"
     );
     return status;
@@ -778,7 +784,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
     REVLibError status;
     status = applyParameter(
       () -> m_spark.getPIDController().setFF(value),
-      () -> m_spark.getPIDController().getFF() == value,
+      () -> Precision.equals(m_spark.getPIDController().getFF(), value, EPSILON),
       "Set kF failure!"
     );
     return status;
@@ -791,11 +797,11 @@ public class Spark implements LoggableHardware, AutoCloseable {
    * @param value Value to set
    * @return {@link REVLibError#kOk} if successful
    */
-  public REVLibError setIzone(double value) {
+  public REVLibError setIZone(double value) {
     REVLibError status;
     status = applyParameter(
       () -> m_spark.getPIDController().setIZone(value),
-      () -> m_spark.getPIDController().getIZone() == value,
+      () -> Precision.equals(m_spark.getPIDController().getIZone(), value, EPSILON),
       "Set Izone failure!"
     );
     return status;
@@ -828,9 +834,15 @@ public class Spark implements LoggableHardware, AutoCloseable {
   /**
    * Reset NEO built-in encoder
    */
-  public void resetEncoder() {
-    m_spark.getEncoder().setPosition(0.0);
+  public REVLibError resetEncoder() {
+    REVLibError status;
+    status = applyParameter(
+      () -> m_spark.getEncoder().setPosition(0.0),
+      () -> Precision.equals(getEncoderPosition(), 0.0, EPSILON),
+      "Reset encoder failure!"
+    );
     System.out.println(String.join(" ", m_id.name, "Encoder reset!"));
+    return status;
   }
 
   /**
@@ -898,7 +910,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
     REVLibError status;
     status = applyParameter(
       () -> m_spark.setSoftLimit(SoftLimitDirection.kForward, (float)limit),
-      () -> m_spark.getSoftLimit(SoftLimitDirection.kForward) == limit,
+      () -> Precision.equals(m_spark.getSoftLimit(SoftLimitDirection.kForward), limit, EPSILON),
       "Set forward soft limit failure!"
     );
     return status;
@@ -913,7 +925,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
     REVLibError status;
     status = applyParameter(
       () -> m_spark.setSoftLimit(SoftLimitDirection.kReverse, (float)limit),
-      () -> m_spark.getSoftLimit(SoftLimitDirection.kReverse) == limit,
+      () -> Precision.equals(m_spark.getSoftLimit(SoftLimitDirection.kReverse), limit, EPSILON),
       "Set reverse soft limit failure!"
     );
     return status;
@@ -992,8 +1004,8 @@ public class Spark implements LoggableHardware, AutoCloseable {
     };
     BooleanSupplier parameterCheckSupplier = () ->
       m_spark.getPIDController().getPositionPIDWrappingEnabled() == true &&
-      m_spark.getPIDController().getPositionPIDWrappingMinInput() == minInput &&
-      m_spark.getPIDController().getPositionPIDWrappingMaxInput() == maxInput;
+      Precision.equals(m_spark.getPIDController().getPositionPIDWrappingMinInput(), minInput, EPSILON) &&
+      Precision.equals(m_spark.getPIDController().getPositionPIDWrappingMaxInput(), maxInput, EPSILON);
 
     status = applyParameter(parameterSetter, parameterCheckSupplier, "Enable position PID wrapping failure!");
     return status;

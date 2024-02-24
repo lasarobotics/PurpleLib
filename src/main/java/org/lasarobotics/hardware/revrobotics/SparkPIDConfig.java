@@ -17,6 +17,7 @@ public class SparkPIDConfig {
   private double m_kI = 0.0;
   private double m_kD = 0.0;
   private double m_kF = 0.0;
+  private double m_kIZone = 0.0;
   private double m_tolerance = 1.0;
   private double m_lowerLimit = 0.0;
   private double m_upperLimit = 0.0;
@@ -35,6 +36,7 @@ public class SparkPIDConfig {
     this.m_kI = pidf.kI;
     this.m_kD = pidf.kD;
     this.m_kF = pidf.kF;
+    this.m_kIZone = pidf.kIZone;
     this.m_sensorPhase = sensorPhase;
     this.m_invertMotor = invertMotor;
     this.m_tolerance = tolerance;
@@ -60,6 +62,7 @@ public class SparkPIDConfig {
     this.m_kI = pidf.kI;
     this.m_kD = pidf.kD;
     this.m_kF = pidf.kF;
+    this.m_kIZone = pidf.kIZone;
     this.m_sensorPhase = sensorPhase;
     this.m_invertMotor = invertMotor;
     this.m_tolerance = tolerance;
@@ -108,6 +111,13 @@ public class SparkPIDConfig {
    */
   public double getF() {
     return m_kF;
+  }
+
+  /**
+   * @return Integral zone
+   */
+  public double getIZone() {
+    return m_kIZone;
   }
 
   /**

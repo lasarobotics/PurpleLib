@@ -14,6 +14,8 @@ public class PIDConstants {
   public final double kD;
   /** Feed-forward gain */
   public final double kF;
+  /** I-zone */
+  public final double kIZone;
   /** Loop period */
   public final double period;
 
@@ -23,13 +25,15 @@ public class PIDConstants {
    * @param kI Integral gain
    * @param kD Derivative gain
    * @param kF Feed-forward gain
+   * @param kIZone Integral zone
    * @param period PID loop period
    */
-  public PIDConstants(double kP, double kI, double kD, double kF, double period) {
+  public PIDConstants(double kP, double kI, double kD, double kF, double kIZone, double period) {
     this.kP = kP;
     this.kI = kI;
     this.kD = kD;
     this.kF = kF;
+    this.kIZone = kIZone;
     this.period = period;
   }
 
@@ -40,7 +44,7 @@ public class PIDConstants {
    * @param kD Derivative gain
    * @param kF Feed-forward gain
    */
-  public PIDConstants(double kP, double kI, double kD, double kF) {
-    this(kP, kI, kD, kF, GlobalConstants.ROBOT_LOOP_PERIOD);
+  public PIDConstants(double kP, double kI, double kD, double kF, double kIZone) {
+    this(kP, kI, kD, kF, kIZone, GlobalConstants.ROBOT_LOOP_PERIOD);
   }
 }

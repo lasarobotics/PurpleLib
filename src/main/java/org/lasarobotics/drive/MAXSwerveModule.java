@@ -117,7 +117,7 @@ public class MAXSwerveModule implements AutoCloseable {
   private static final boolean DRIVE_INVERT_MOTOR = false;
 
   // Swerve rotate PID settings
-  private static final PIDConstants DRIVE_ROTATE_PID = new PIDConstants(1.0, 0.0, 0.0, 0.0);
+  private static final PIDConstants DRIVE_ROTATE_PID = new PIDConstants(1.0, 0.0, 0.0, 0.0, 0.0);
   private static final double DRIVE_ROTATE_TOLERANCE = 0.01;
   private static final double DRIVE_ROTATE_LOWER_LIMIT = 0.0;
   private static final double DRIVE_ROTATE_UPPER_LIMIT = 0.0;
@@ -203,7 +203,8 @@ public class MAXSwerveModule implements AutoCloseable {
         DRIVE_VELOCITY_kP,
         0.0,
         0.0,
-        1 / ((m_driveMotor.getKind().getMaxRPM() / 60) * m_driveConversionFactor)
+        1 / ((m_driveMotor.getKind().getMaxRPM() / 60) * m_driveConversionFactor),
+        0.0
       ),
       DRIVE_VELOCITY_SENSOR_PHASE,
       DRIVE_INVERT_MOTOR,
