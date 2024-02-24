@@ -160,7 +160,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
       this.m_encoderTicksPerRevolution = GlobalConstants.VORTEX_ENCODER_TICKS_PER_ROTATION;
     } else {
       this.m_spark = new CANSparkMax(id.deviceID, kind.type);
-      this.m_encoderType = SparkRelativeEncoder.Type.kQuadrature;
+      this.m_encoderType = SparkRelativeEncoder.Type.kHallSensor;
       this.m_encoderTicksPerRevolution = GlobalConstants.NEO_ENCODER_TICKS_PER_ROTATION;
       REVPhysicsSim.getInstance().addSparkMax((CANSparkMax)m_spark, kind.motor);
     }
