@@ -108,9 +108,9 @@ public class Spark implements LoggableHardware, AutoCloseable {
   private static final int PID_SLOT = 0;
   private static final int MAX_ATTEMPTS = 10;
   private static final int SPARK_MAX_MEASUREMENT_PERIOD = 16;
-  private static final int SPARK_FLEX_MEASUREMENT_PERIOD = 2;
+  private static final int SPARK_FLEX_MEASUREMENT_PERIOD = 32;
   private static final int SPARK_MAX_AVERAGE_DEPTH = 2;
-  private static final int SPARK_FLEX_AVERAGE_DEPTH = 2;
+  private static final int SPARK_FLEX_AVERAGE_DEPTH = 8;
   private static final double EPSILON = 2e-8;
   private static final double MAX_VOLTAGE = 12.0;
   private static final double BURN_FLASH_WAIT_TIME = 0.5;
@@ -154,14 +154,13 @@ public class Spark implements LoggableHardware, AutoCloseable {
   public Spark(ID id, MotorKind kind, SparkLimitSwitch.Type limitSwitchType) {
     if (kind.equals(MotorKind.NEO_VORTEX)) {
       this.m_spark = new CANSparkFlex(id.deviceID, kind.type);
-      this.m_encoder = m_spark.getEncoder();
     } else {
       this.m_spark = new CANSparkMax(id.deviceID, kind.type);
-      this.m_encoder = m_spark.getEncoder();
       REVPhysicsSim.getInstance().addSparkMax((CANSparkMax)m_spark, kind.motor);
     }
     this.m_id = id;
     this.m_kind = kind;
+    this.m_encoder = m_spark.getEncoder();
     this.m_inputs = new SparkInputsAutoLogged();
     this.m_isSmoothMotionEnabled = false;
     this.m_limitSwitchType = limitSwitchType;
@@ -814,7 +813,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
     status = applyParameter(
       () -> m_spark.getPIDController().setIZone(value),
       () -> Precision.equals(m_spark.getPIDController().getIZone(), value, EPSILON),
-      "Set Izone failure!"
+      "Set IZone failure!"
     );
     return status;
   }
