@@ -13,6 +13,9 @@ Note: CTRE will not be as well supported as REV products as our team primarily l
     * Spark Flex with SmoothMotion<sup>TM</sup>
     * Through bore encoder connected to Spark Max/Flex in absolute mode ONLY!
     * Spark Flex and NEO Vortex MUST be paired together!
+    * 3-way communication to ensure parameters are set
+    * Improved velocity PID performance
+    * More accurate velocity readings
   * CTRE
     * CANivore
     * Pidgeon 2.0
@@ -30,6 +33,7 @@ Note: CTRE will not be as well supported as REV products as our team primarily l
 * MAXSwerve module support
   * Supports NEO v1.0/1.1 or NEO Vortex + NEO 550 configuration only
   * REV through bore encoder must be used
+  * Module must be calibrated using [REV MAXSwerve calibration tool](https://docs.revrobotics.com/sparkmax/software-resources/calibration-for-maxswerve)
 * Robot rotation PID
 * Traction control
 * Swerve second order kinematics correction
@@ -62,7 +66,8 @@ dependencies {
 * Create a release in GitHub. JitPack does the rest.
 
 ## Examples
-Examples can be found [here](https://github.com/lasarobotics/PurpleLibExamples)
+Usage examples can be found [here](https://github.com/lasarobotics/PurpleLibExamples)
+An example swerve project is [here](https://github.com/lasarobotics/PurpleSwerve)
 
 ## Documentation
 Javadocs available [here](https://jitpack.io/com/github/lasarobotics/PurpleLib/latest/javadoc/)
