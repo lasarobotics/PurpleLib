@@ -63,10 +63,11 @@ dependencies {
 ```
 
 ## Releasing
-* Create a release in GitHub. JitPack does the rest.
+Create a release in GitHub. JitPack does the rest.
 
 ## Examples
 Usage examples can be found [here](https://github.com/lasarobotics/PurpleLibExamples)
+
 An example swerve project is [here](https://github.com/lasarobotics/PurpleSwerve)
 
 ## Documentation
