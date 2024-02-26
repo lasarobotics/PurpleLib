@@ -96,8 +96,8 @@ public class MAXSwerveModule implements AutoCloseable {
   }
 
   private final double EPSILON = 5e-3;
-  private final int DRIVE_MOTOR_CURRENT_LIMIT;
-  private final int ROTATE_MOTOR_CURRENT_LIMIT = 20;
+  private final Measure<Current> DRIVE_MOTOR_CURRENT_LIMIT;
+  private final Measure<Current> ROTATE_MOTOR_CURRENT_LIMIT = Units.Amps.of(20.0);
   private final Rotation2d LOCK_POSITION = Rotation2d.fromRadians(Math.PI / 4);
 
   private static final String IS_SLIPPING_LOG_ENTRY = "/IsSlipping";
@@ -163,7 +163,7 @@ public class MAXSwerveModule implements AutoCloseable {
     int encoderTicksPerRotation = swerveHardware.driveMotor.getKind().equals(MotorKind.NEO)
       ? GlobalConstants.NEO_ENCODER_TICKS_PER_ROTATION
       : GlobalConstants.VORTEX_ENCODER_TICKS_PER_ROTATION;
-    DRIVE_MOTOR_CURRENT_LIMIT = (int)driveMotorCurrentLimit.in(Units.Amps);
+    DRIVE_MOTOR_CURRENT_LIMIT = driveMotorCurrentLimit;
     DRIVE_TICKS_PER_METER =
       (encoderTicksPerRotation * driveGearRatio.value)
       * (1 / (DRIVE_WHEEL_DIAMETER_METERS * Math.PI));

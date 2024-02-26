@@ -35,6 +35,7 @@ import com.revrobotics.SparkPIDController;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.units.Current;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Time;
 import edu.wpi.first.units.Units;
@@ -245,6 +246,23 @@ public class Spark implements LoggableHardware, AutoCloseable {
 
     checkStatus(status, errorMessage);
     return status;
+  }
+
+  /**
+   * Attempt to apply parameter and check if specified parameter is set correctly, for void setters
+   * @param parameterSetter Method to set desired parameter
+   * @param parameterCheckSupplier Method to check for parameter in question
+   */
+  private void applyParameter(Runnable parameterSetter, BooleanSupplier parameterCheckSupplier, String errorMessage) {
+    if (RobotBase.isSimulation()) return;
+    if (parameterCheckSupplier.getAsBoolean()) return;
+
+    for (int i = 0; i < MAX_ATTEMPTS; i++) {
+      if (parameterCheckSupplier.getAsBoolean()) return;
+      Timer.delay(APPLY_PARAMETER_WAIT_TIME);
+    }
+
+    System.err.println(String.join(" ", m_id.name, errorMessage));
   }
 
   /**
@@ -536,7 +554,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
    */
   public void initializeSparkPID(SparkPIDConfig config, FeedbackSensor feedbackSensor,
                                  boolean forwardLimitSwitch, boolean reverseLimitSwitch) {
-    if (getMotorType() == MotorType.kBrushed && feedbackSensor == FeedbackSensor.NEO_ENCODER)
+    if (getMotorType().equals(MotorType.kBrushed) && feedbackSensor.equals(FeedbackSensor.NEO_ENCODER))
       throw new IllegalArgumentException("NEO encoder cannot be used with a brushed motor!");
 
     m_config = config;
@@ -564,14 +582,14 @@ public class Spark implements LoggableHardware, AutoCloseable {
     }
 
     // Configure feedback sensor and set sensor phase
-    try {
-      m_spark.getPIDController().setFeedbackDevice(selectedSensor);
+    m_spark.getPIDController().setFeedbackDevice(selectedSensor);
+    if (!m_feedbackSensor.equals(FeedbackSensor.NEO_ENCODER)) {
       applyParameter(
         () -> selectedSensor.setInverted(m_config.getSensorPhase()),
         () -> selectedSensor.getInverted() == m_config.getSensorPhase(),
       "Set sensor phase failure!"
       );
-    } catch (IllegalArgumentException e) {}
+    }
 
     // Configure forward and reverse soft limits
     if (config.isSoftLimitEnabled()) {
@@ -640,7 +658,11 @@ public class Spark implements LoggableHardware, AutoCloseable {
    * @param isInverted The state of inversion, true is inverted.
    */
   public void setInverted(boolean isInverted) {
-    m_spark.setInverted(isInverted);
+    applyParameter(
+      () -> m_spark.setInverted(isInverted),
+      () -> m_spark.getInverted() == isInverted,
+      "Set motor inverted failure!"
+    );
   }
 
   /**
@@ -1058,17 +1080,17 @@ public class Spark implements LoggableHardware, AutoCloseable {
    * limit. This limit is enabled by default and used for brushless only. This limit is highly
    * recommended when using the NEO brushless motor.
    *
-   * <p>The NEO Brushless Motor has a low internal resistance, which can mean large current spikes
+   * <p>The motor controller has a low internal resistance, which can mean large current spikes
    * that could be enough to cause damage to the motor and controller. This current limit provides a
    * smarter strategy to deal with high current draws and keep the motor and controller operating in
    * a safe region.
    *
-   * @param limit The current limit in Amps.
+   * @param limit The desired current limit
    */
-  public REVLibError setSmartCurrentLimit(int limit) {
+  public REVLibError setSmartCurrentLimit(Measure<Current> limit) {
     REVLibError status;
     status = applyParameter(
-      () -> m_spark.setSmartCurrentLimit(limit),
+      () -> m_spark.setSmartCurrentLimit((int)limit.in(Units.Amps)),
       () -> true,
       "Set current limit failure!"
     );
