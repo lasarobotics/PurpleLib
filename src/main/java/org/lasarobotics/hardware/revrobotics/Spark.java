@@ -145,9 +145,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
   private RelativeEncoder m_encoder;
 
   /**
-   * Create a Spark with built-in logging and is unit-testing friendly
-   * <p>
-   * Defaults to normally-open limit switches
+   * Create a Spark that is unit-testing friendly with built-in logging
    * @param id Spark ID
    * @param kind The kind of motor connected to the controller
    * @param limitSwitchType Polarity of connected limit switches
@@ -184,7 +182,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
   }
 
   /**
-   * Create a Spark with built-in logging and is unit-testing friendly
+   * Create a Spark that is unit-testing friendly with built-in logging
    * <p>
    * Defaults to normally-open limit switches
    * @param id Spark ID
@@ -195,7 +193,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
   }
 
   /**
-   * Create a Spark with built-in logging, is unit-testing friendly and configure PID
+   * Create a Spark that is unit-testing friendly with built-in logging and configure PID
    * @param id Spark ID
    * @param kind The kind of motor connected to the controller
    * @param limitSwitchType Polarity of connected limit switches
@@ -215,7 +213,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
   }
 
   /**
-   * Create a Spark with built-in logging, is unit-testing friendly and configure PID
+   * Create a Spark that is unit-testing friendly with built-in logging and configure PID
    * <p>
    * Defaults to normally-open limit switches
    * @param id Spark ID
