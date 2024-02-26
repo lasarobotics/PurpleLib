@@ -31,6 +31,7 @@ import com.revrobotics.SparkAbsoluteEncoder;
 import com.revrobotics.SparkAnalogSensor;
 import com.revrobotics.SparkLimitSwitch;
 import com.revrobotics.SparkPIDController;
+import com.revrobotics.SparkRelativeEncoder;
 
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.system.plant.DCMotor;
@@ -153,13 +154,14 @@ public class Spark implements LoggableHardware, AutoCloseable {
   public Spark(ID id, MotorKind kind, SparkLimitSwitch.Type limitSwitchType) {
     if (kind.equals(MotorKind.NEO_VORTEX)) {
       this.m_spark = new CANSparkFlex(id.deviceID, kind.type);
+      this.m_encoder = m_spark.getEncoder(SparkRelativeEncoder.Type.kQuadrature, GlobalConstants.VORTEX_ENCODER_TICKS_PER_ROTATION);
     } else {
       this.m_spark = new CANSparkMax(id.deviceID, kind.type);
+      this.m_encoder = m_spark.getEncoder(SparkRelativeEncoder.Type.kHallSensor, GlobalConstants.NEO_ENCODER_TICKS_PER_ROTATION);
       REVPhysicsSim.getInstance().addSparkMax((CANSparkMax)m_spark, kind.motor);
     }
     this.m_id = id;
     this.m_kind = kind;
-    this.m_encoder = m_spark.getEncoder();
     this.m_inputs = new SparkInputsAutoLogged();
     this.m_isSmoothMotionEnabled = false;
     this.m_limitSwitchType = limitSwitchType;
