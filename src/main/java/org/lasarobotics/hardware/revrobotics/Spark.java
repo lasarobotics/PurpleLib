@@ -258,6 +258,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
     if (parameterCheckSupplier.getAsBoolean()) return;
 
     for (int i = 0; i < MAX_ATTEMPTS; i++) {
+      parameterSetter.run();
       if (parameterCheckSupplier.getAsBoolean()) return;
       Timer.delay(APPLY_PARAMETER_WAIT_TIME);
     }
@@ -658,7 +659,11 @@ public class Spark implements LoggableHardware, AutoCloseable {
    * @param isInverted The state of inversion, true is inverted.
    */
   public void setInverted(boolean isInverted) {
-    m_spark.setInverted(isInverted);
+    applyParameter(
+      () -> m_spark.setInverted(isInverted),
+      () -> m_spark.getInverted() == isInverted,
+      "Set motor inverted failure!"
+    );
   }
 
   /**
