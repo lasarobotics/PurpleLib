@@ -108,7 +108,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
   }
 
   private static final int PID_SLOT = 0;
-  private static final int MAX_ATTEMPTS = 10;
+  private static final int MAX_ATTEMPTS = 20;
   private static final int SPARK_MAX_MEASUREMENT_PERIOD = 16;
   private static final int SPARK_FLEX_MEASUREMENT_PERIOD = 32;
   private static final int SPARK_MAX_AVERAGE_DEPTH = 2;
