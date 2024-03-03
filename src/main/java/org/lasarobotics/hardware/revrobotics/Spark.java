@@ -854,6 +854,8 @@ public class Spark implements LoggableHardware, AutoCloseable {
     m_desiredState = new TrapezoidProfile.State(value, 0.0);
     m_motionProfile = new TrapezoidProfile(m_motionConstraint);
     m_smoothMotionState = m_currentStateSupplier.get();
+
+    handleSmoothMotion();
   }
 
   /**
