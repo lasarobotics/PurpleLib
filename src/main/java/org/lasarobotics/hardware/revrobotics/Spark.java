@@ -29,6 +29,7 @@ import com.revrobotics.REVPhysicsSim;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkAbsoluteEncoder;
 import com.revrobotics.SparkAnalogSensor;
+import com.revrobotics.SparkHelpers;
 import com.revrobotics.SparkLimitSwitch;
 import com.revrobotics.SparkPIDController;
 import com.revrobotics.SparkRelativeEncoder;
@@ -107,6 +108,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
     public boolean reverseLimitSwitch = false;
   }
 
+  private static final int CAN_TIMEOUT_MS = 50;
   private static final int PID_SLOT = 0;
   private static final int MAX_ATTEMPTS = 20;
   private static final int SPARK_MAX_MEASUREMENT_PERIOD = 16;
@@ -166,8 +168,8 @@ public class Spark implements LoggableHardware, AutoCloseable {
     this.m_isSmoothMotionEnabled = false;
     this.m_limitSwitchType = limitSwitchType;
 
-    // Make get and set calls non-blocking
-    m_spark.setCANTimeout(0);
+    // Set CAN timeout
+    m_spark.setCANTimeout(CAN_TIMEOUT_MS);
 
     // Restore defaults
     m_spark.restoreFactoryDefaults();
@@ -1094,7 +1096,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
     REVLibError status;
     status = applyParameter(
       () -> m_spark.setSmartCurrentLimit((int)limit.in(Units.Amps)),
-      () -> true,
+      () -> SparkHelpers.getSmartCurrentLimit(m_spark) == (int)limit.in(Units.Amps),
       "Set current limit failure!"
     );
     return status;
