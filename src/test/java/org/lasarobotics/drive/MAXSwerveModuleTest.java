@@ -161,11 +161,19 @@ public class MAXSwerveModuleTest {
   @DisplayName("Test if module can set state")
   public void set() {
     // Hardcode sensor values
-    SparkInputsAutoLogged sparkInputs = new SparkInputsAutoLogged();
-    when(m_lFrontRotateMotor.getInputs()).thenReturn(sparkInputs);
-    when(m_rFrontRotateMotor.getInputs()).thenReturn(sparkInputs);
-    when(m_lRearRotateMotor.getInputs()).thenReturn(sparkInputs);
-    when(m_rRearRotateMotor.getInputs()).thenReturn(sparkInputs);
+    SparkInputsAutoLogged lFrontSparkInputs = new SparkInputsAutoLogged();
+    SparkInputsAutoLogged rFrontSparkInputs = new SparkInputsAutoLogged();
+    SparkInputsAutoLogged lRearSparkInputs = new SparkInputsAutoLogged();
+    SparkInputsAutoLogged rRearSparkInputs = new SparkInputsAutoLogged();
+
+    lFrontSparkInputs.absoluteEncoderPosition = GlobalConstants.ROTATION_PI.minus(MAXSwerveModule.ModuleLocation.LeftFront.offset).getRadians();
+    when(m_lFrontRotateMotor.getInputs()).thenReturn(lFrontSparkInputs);
+    rFrontSparkInputs.absoluteEncoderPosition = GlobalConstants.ROTATION_PI.minus(MAXSwerveModule.ModuleLocation.RightFront.offset).getRadians();
+    when(m_rFrontRotateMotor.getInputs()).thenReturn(rFrontSparkInputs);
+    lRearSparkInputs.absoluteEncoderPosition = GlobalConstants.ROTATION_PI.minus(MAXSwerveModule.ModuleLocation.LeftRear.offset).getRadians();
+    when(m_lRearRotateMotor.getInputs()).thenReturn(lRearSparkInputs);
+    rRearSparkInputs.absoluteEncoderPosition = GlobalConstants.ROTATION_PI.minus(MAXSwerveModule.ModuleLocation.RightRear.offset).getRadians();
+    when(m_rRearRotateMotor.getInputs()).thenReturn(rRearSparkInputs);
 
     // Try to set module state
     SwerveModuleState state = new SwerveModuleState(+2.0, Rotation2d.fromRadians(+Math.PI));
@@ -175,10 +183,10 @@ public class MAXSwerveModuleTest {
     m_rRearModule.set(state);
 
     // Verify that motors are being driven with expected values
-    verify(m_lFrontDriveMotor, times(1)).set(AdditionalMatchers.eq(+2.0, DELTA), ArgumentMatchers.eq(ControlType.kVelocity));
-    verify(m_lFrontRotateMotor, times(1)).set(AdditionalMatchers.eq(+Math.PI / 2, DELTA), ArgumentMatchers.eq(ControlType.kPosition));
-    verify(m_rFrontDriveMotor, times(1)).set(AdditionalMatchers.eq(-2.0, DELTA), ArgumentMatchers.eq(ControlType.kVelocity));
-    verify(m_rFrontRotateMotor, times(1)).set(AdditionalMatchers.eq(0.0, DELTA), ArgumentMatchers.eq(ControlType.kPosition));
+    verify(m_lFrontDriveMotor, times(1)).set(AdditionalMatchers.eq(-2.0, DELTA), ArgumentMatchers.eq(ControlType.kVelocity));
+    verify(m_lFrontRotateMotor, times(1)).set(AdditionalMatchers.eq(-Math.PI / 2, DELTA), ArgumentMatchers.eq(ControlType.kPosition));
+    verify(m_rFrontDriveMotor, times(1)).set(AdditionalMatchers.eq(+2.0, DELTA), ArgumentMatchers.eq(ControlType.kVelocity));
+    verify(m_rFrontRotateMotor, times(1)).set(AdditionalMatchers.eq(+Math.PI, DELTA), ArgumentMatchers.eq(ControlType.kPosition));
     verify(m_lRearDriveMotor, times(1)).set(AdditionalMatchers.eq(+2.0, DELTA), ArgumentMatchers.eq(ControlType.kVelocity));
     verify(m_lRearRotateMotor, times(1)).set(AdditionalMatchers.eq(0.0, DELTA), ArgumentMatchers.eq(ControlType.kPosition));
     verify(m_rRearDriveMotor, times(1)).set(AdditionalMatchers.eq(-2.0, DELTA), ArgumentMatchers.eq(ControlType.kVelocity));

@@ -111,13 +111,14 @@ public class MAXSwerveModule implements AutoCloseable {
   private final double DRIVE_MAX_LINEAR_SPEED;
 
   // Swerve velocity PID settings
-  private static final double DRIVE_VELOCITY_kP = 0.04;
+  private static final double DRIVE_VELOCITY_kP = 0.18;
+  private static final double DRIVE_VELOCITY_kD = 0.001;
   private static final double DRIVE_VELOCITY_TOLERANCE = 0.01;
   private static final boolean DRIVE_VELOCITY_SENSOR_PHASE = false;
   private static final boolean DRIVE_INVERT_MOTOR = false;
 
   // Swerve rotate PID settings
-  private static final PIDConstants DRIVE_ROTATE_PID = new PIDConstants(0.2, 0.0, 0.0, 0.0, 0.0);
+  private static final PIDConstants DRIVE_ROTATE_PID = new PIDConstants(2.1, 0.0, 0.2, 0.0, 0.0);
   private static final double DRIVE_ROTATE_TOLERANCE = 0.01;
   private static final double DRIVE_ROTATE_LOWER_LIMIT = 0.0;
   private static final double DRIVE_ROTATE_UPPER_LIMIT = 0.0;
@@ -202,7 +203,7 @@ public class MAXSwerveModule implements AutoCloseable {
       new PIDConstants(
         DRIVE_VELOCITY_kP,
         0.0,
-        0.0,
+        DRIVE_VELOCITY_kD,
         1 / ((m_driveMotor.getKind().getMaxRPM() / 60) * m_driveConversionFactor),
         0.0
       ),
@@ -300,6 +301,33 @@ public class MAXSwerveModule implements AutoCloseable {
   }
 
   /**
+   * Get desired swerve module state
+   * @param requestedState Requested state
+   * @return Actual desired state for module
+   */
+  private SwerveModuleState getDesiredState(SwerveModuleState requestedState) {
+    // Apply chassis angular offset to the requested state.
+    var desiredState = new SwerveModuleState(
+      requestedState.speedMetersPerSecond,
+      requestedState.angle.plus(m_location.offset)
+    );
+
+    // Get current module angle
+    var currentAngle = Rotation2d.fromRadians(m_rotateMotor.getInputs().absoluteEncoderPosition);
+
+    // Optimize swerve module rotation state
+    // REV encoder returns an angle in radians
+    desiredState = SwerveModuleState.optimize(desiredState, currentAngle);
+
+    // Scale speed by cosine of angle error. This scales down movement perpendicular to the desired
+    // direction of travel that can occur when modules change directions. This results in smoother driving.
+    desiredState.speedMetersPerSecond *= desiredState.angle.minus(currentAngle).getCos();
+
+    // Return corrected desired swerve module state
+    return desiredState;
+  }
+
+  /**
    * Get real speed of module
    * @param inertialVelocity Inertial velocity of robot (m/s)
    * @param rotateRate Rotate rate of robot (degrees/s)
@@ -345,15 +373,8 @@ public class MAXSwerveModule implements AutoCloseable {
       m_autoLockTimer = Instant.now();
     }
 
-    // Apply chassis angular offset to the requested state.
-    SwerveModuleState desiredState = new SwerveModuleState(
-      state.speedMetersPerSecond,
-      state.angle.plus(m_location.offset)
-    );
-
-    // Optimize swerve module rotation state
-    // REV encoder returns an angle in radians
-    desiredState = SwerveModuleState.optimize(desiredState, Rotation2d.fromRadians(m_rotateMotor.getInputs().absoluteEncoderPosition));
+    // Get desired state
+    var desiredState = getDesiredState(state);
 
     // Set rotate motor position
     m_rotateMotor.set(desiredState.angle.getRadians(), ControlType.kPosition);

@@ -16,4 +16,25 @@ public class SparkHelpers {
   public static int getSmartCurrentLimit(CANSparkBase spark) {
     return CANSparkMaxJNI.c_SparkMax_GetSmartCurrentStallLimit(spark.sparkMaxHandle);
   }
+
+  /** Enable center aligned mode for the duty cycle sensor. */
+  public static REVLibError enableCenterAlignedMode(CANSparkBase spark) {
+    return REVLibError.fromInt(
+        CANSparkMaxJNI.c_SparkMax_SetParameterBool(spark.sparkMaxHandle, 152, true));
+  }
+
+  /** Disable center aligned mode for the duty cycle sensor. */
+  public static REVLibError disableCenterAlignedMode(CANSparkBase spark) {
+    return REVLibError.fromInt(
+        CANSparkMaxJNI.c_SparkMax_SetParameterBool(spark.sparkMaxHandle, 152, false));
+  }
+
+  /**
+   * Enable mode which sets the output of the PID controllers to be voltage instead of duty cycle.
+   *
+   * <p>To disable, change or disable voltage compensation. Those settings will overwrite this one
+   */
+  public static REVLibError enablePIDVoltageOutput(CANSparkBase spark) {
+    return REVLibError.fromInt(CANSparkMaxJNI.c_SparkMax_SetParameterUint32(spark.sparkMaxHandle, 74, 1));
+  }
 }
