@@ -498,7 +498,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
 
     handleSmoothMotion();
 
-    Logger.recordOutput(m_id.name + CURRENT_LOG_ENTRY, m_spark.getOutputCurrent());
+    Logger.recordOutput(m_id.name + CURRENT_LOG_ENTRY, getOutputCurrent());
     Logger.recordOutput(m_id.name + MOTION_LOG_ENTRY, m_isSmoothMotionEnabled);
 
     if (getMotorType() == MotorType.kBrushed) return;
@@ -1124,6 +1124,14 @@ public class Spark implements LoggableHardware, AutoCloseable {
    */
   public REVLibError setClosedLoopRampRate(Measure<Time> rampTime) {
     return m_spark.setClosedLoopRampRate(rampTime.in(Units.Seconds));
+  }
+
+  /**
+   * Spark output current
+   * @return Output current
+   */
+  public Measure<Current> getOutputCurrent() {
+    return Units.Amps.of(m_spark.getOutputCurrent());
   }
 
   /**
