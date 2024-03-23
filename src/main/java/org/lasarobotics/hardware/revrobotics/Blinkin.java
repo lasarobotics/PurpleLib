@@ -1,6 +1,6 @@
-// Copyright (c) FIRST and other WPILib contributors.
+// Copyright (c) LASA Robotics and other contributors
 // Open Source Software; you can modify and/or share it under the terms of
-// the WPILib BSD license file in the root directory of this project.
+// the MIT license file in the root directory of this project.
 
 package org.lasarobotics.hardware.revrobotics;
 
@@ -10,8 +10,8 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.motorcontrol.Spark;
 
-/** Control REV Robotics Blinkin LED controller */
-public class Blinkin{
+/** REV Blinkin */
+public class Blinkin {
   public enum BlinkinPattern {
     /*
      * Fixed Palette Pattern
@@ -137,7 +137,7 @@ public class Blinkin{
 
   private static Blinkin m_controller = null;
   private static Spark m_blinkin;
-  private static int channel;
+  private static int m_channel = 0;
   private static BlinkinPattern m_currentPattern;
   private static BlinkinPattern m_teamPattern;
   private static HashMap<Alliance, BlinkinPattern[]> m_allianceColors = new HashMap<Alliance, BlinkinPattern[]>();
@@ -157,7 +157,7 @@ public class Blinkin{
   };
 
   private Blinkin() {
-    m_blinkin = new Spark(channel);
+    m_blinkin = new Spark(m_channel);
 
     m_allianceColors.put(Alliance.Red, RED_ALLIANCE_PATTERNS);
     m_allianceColors.put(Alliance.Blue, BLUE_ALLIANCE_PATTERNS);
@@ -181,6 +181,15 @@ public class Blinkin{
   }
 
   /**
+   * Get current alliance color
+   */
+  private DriverStation.Alliance getAlliance() {
+    var alliance = DriverStation.getAlliance();
+    if (alliance.isPresent()) return alliance.get();
+    return DriverStation.Alliance.Blue;
+  }
+
+  /**
    * Set LEDs to preset team pattern
    */
   public void setTeamColor() {
@@ -189,10 +198,10 @@ public class Blinkin{
 
   /**
    * Set LED channel
-   * @param newChannel
+   * @param channel PWM channel that Blinkin is connected to
    */
-  public static void setChannel(int newChannel) {
-    channel = newChannel;
+  public static void setChannel(int channel) {
+    m_channel = channel;
   }
 
   /**
@@ -202,15 +211,6 @@ public class Blinkin{
   public void setPattern(BlinkinPattern pattern) {
     m_currentPattern = pattern;
     m_blinkin.set(m_currentPattern.value);
-  }
-
-  /** 
-   * Get current alliance color
-  */
-  public DriverStation.Alliance getAlliance() {
-    var alliance = DriverStation.getAlliance();
-    if (alliance.isPresent()) return alliance.get();
-    return DriverStation.Alliance.Blue;
   }
 
   /**
