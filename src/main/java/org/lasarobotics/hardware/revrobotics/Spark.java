@@ -125,6 +125,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
   private static final String CURRENT_LOG_ENTRY = "/Current";
   private static final String TEMPERATURE_LOG_ENTRY = "/Temperature";
   private static final String MOTION_LOG_ENTRY = "/SmoothMotion";
+  private static final String IDLE_MODE_LOG_ENTRY = "/IdleMode";
 
 
   private CANSparkBase m_spark;
@@ -285,7 +286,8 @@ public class Spark implements LoggableHardware, AutoCloseable {
    */
   private void logOutputs(double value, ControlType ctrl) {
     Logger.recordOutput(m_id.name + VALUE_LOG_ENTRY, value);
-    Logger.recordOutput(m_id.name + MODE_LOG_ENTRY, ctrl.toString());
+    Logger.recordOutput(m_id.name + MODE_LOG_ENTRY, ctrl.toString()); 
+    Logger.recordOutput(m_id.name + IDLE_MODE_LOG_ENTRY, m_spark.getIdleMode().equals(IdleMode.kCoast));
   }
 
   /**
