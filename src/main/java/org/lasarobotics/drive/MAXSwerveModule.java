@@ -356,20 +356,6 @@ public class MAXSwerveModule implements AutoCloseable {
   }
 
   /**
-   * Call method during initialization of disabled mode to set drive motor to brake mode
-   */
-  public void disabledInit() {
-    m_driveMotor.setIdleMode(IdleMode.kBrake);
-  }
-
-  /**
-   * Call method when exiting disabled mode to set drive motor to coast mode
-   */
-  public void disabledExit() {
-    m_driveMotor.setIdleMode(IdleMode.kCoast);
-  }
-
-  /**
    * Set swerve module direction and speed
    * @param state Desired swerve module state
    */
