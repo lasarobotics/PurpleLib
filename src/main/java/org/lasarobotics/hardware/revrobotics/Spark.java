@@ -122,6 +122,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
   private static final double SMOOTH_MOTION_DEBOUNCE_TIME = 0.1;
   private static final String VALUE_LOG_ENTRY = "/OutputValue";
   private static final String MODE_LOG_ENTRY = "/OutputMode";
+  private static final String IDLE_MODE_LOG_ENTRY = "/IdleMode";
   private static final String CURRENT_LOG_ENTRY = "/Current";
   private static final String TEMPERATURE_LOG_ENTRY = "/Temperature";
   private static final String MOTION_LOG_ENTRY = "/SmoothMotion";
@@ -1075,6 +1076,9 @@ public class Spark implements LoggableHardware, AutoCloseable {
       () -> m_spark.getIdleMode() == mode,
       "Set idle mode failure!"
     );
+    // Log idle mode
+    Logger.recordOutput(IDLE_MODE_LOG_ENTRY, m_spark.getIdleMode() == IdleMode.kCoast);
+
     return status;
   }
 
