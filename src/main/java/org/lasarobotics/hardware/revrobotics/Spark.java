@@ -1077,7 +1077,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
       "Set idle mode failure!"
     );
     // Log idle mode
-    Logger.recordOutput(IDLE_MODE_LOG_ENTRY, m_spark.getIdleMode() == IdleMode.kCoast);
+    Logger.recordOutput(m_id.name + IDLE_MODE_LOG_ENTRY, m_spark.getIdleMode() == IdleMode.kCoast);
 
     return status;
   }
