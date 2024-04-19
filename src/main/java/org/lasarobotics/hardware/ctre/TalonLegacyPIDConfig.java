@@ -9,9 +9,9 @@ import org.lasarobotics.utils.PIDConstants;
 import edu.wpi.first.math.MathUtil;
 
 /**
- * Automates the configuration of Talon PID and MotionMagic parameters
+ * Automates the configuration of Talon Legacy PID and MotionMagic parameters
  */
-public class TalonPIDConfig {
+public class TalonLegacyPIDConfig {
   private static final double MIN_TOLERANCE = 1.0;
   private static final int MIN_MOTION_SMOOTHING = 0;
   private static final int MAX_MOTION_SMOOTHING = 8;
@@ -35,16 +35,17 @@ public class TalonPIDConfig {
   private int m_motionSmoothing = 0;
 
   /**
-   * Create a TalonPIDConfig, without MotionMagic parameters
+   * Create a TalonLegacyPIDConfig, without MotionMagic parameters
    * <p>
    * USE FOR VELOCITY PID ONLY!
    * @param pidf PID constants
+   * @param ff Feedforward constants
    * @param sensorPhase set sensor phase of encoder
    * @param invertMotor invert motor or not
    * @param ticksPerRotation number of ticks in one encoder revolution
    * @param tolerance tolerance of PID loop in ticks per 100ms
    */
-  public TalonPIDConfig(PIDConstants pidf, boolean sensorPhase, boolean invertMotor, double ticksPerRotation, double tolerance) {
+  public TalonLegacyPIDConfig(PIDConstants pidf, boolean sensorPhase, boolean invertMotor, double ticksPerRotation, double tolerance) {
     this.m_kP = pidf.kP;
     this.m_kI = pidf.kI;
     this.m_kD = pidf.kD;
@@ -58,7 +59,7 @@ public class TalonPIDConfig {
   }
 
   /**
-   * Create a TalonPIDConfig, with MotionMagic parameters
+   * Create a TalonLegacyPIDConfig, with MotionMagic parameters
    * <p>
    * USE FOR POSITION PID ONLY!
    * @param pidf PID constants
@@ -73,7 +74,7 @@ public class TalonPIDConfig {
    * @param acceleration MotionMagic acceleration in RPM per second
    * @param motionSmoothing MotionMagic smoothing factor [0, 8]
    */
-  public TalonPIDConfig(PIDConstants pidf, boolean sensorPhase, boolean invertMotor, double ticksPerRotation,
+  public TalonLegacyPIDConfig(PIDConstants pidf, boolean sensorPhase, boolean invertMotor, double ticksPerRotation,
                         double tolerance, double lowerLimit, double upperLimit, boolean enableSoftLimits,
                         double velocity, double acceleration, int motionSmoothing) {
     this.m_kP = pidf.kP;

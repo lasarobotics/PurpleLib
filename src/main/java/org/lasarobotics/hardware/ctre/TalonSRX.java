@@ -55,7 +55,7 @@ public class TalonSRX extends LoggableHardware {
   private ID m_id;
   private TalonSRXInputsAutoLogged m_inputs;
 
-  private TalonPIDConfig m_config;
+  private TalonLegacyPIDConfig m_config;
 
   /**
    * Create a TalonSRX object with built-in logging
@@ -144,7 +144,7 @@ public class TalonSRX extends LoggableHardware {
    * @param forwardLimitSwitch Enable forward limit switch
    * @param reverseLimitSwitch Enable reverse limit switch
    */
-  public void initializeTalonPID(TalonPIDConfig config, FeedbackDevice feedbackDevice,
+  public void initializeTalonPID(TalonLegacyPIDConfig config, FeedbackDevice feedbackDevice,
                                  boolean forwardLimitSwitch, boolean reverseLimitSwitch) {
     m_config = config;
 
@@ -205,7 +205,7 @@ public class TalonSRX extends LoggableHardware {
    * @param config Configuration to apply
    * @param feedbackDevice Feedback device to use for Talon PID
    */
-  public void initializeTalonPID(TalonPIDConfig config, FeedbackDevice feedbackDevice) {
+  public void initializeTalonPID(TalonLegacyPIDConfig config, FeedbackDevice feedbackDevice) {
     initializeTalonPID(config, feedbackDevice, false, false);
   }
 
