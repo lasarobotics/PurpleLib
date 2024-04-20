@@ -7,9 +7,13 @@ package org.lasarobotics.hardware;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import edu.wpi.first.wpilibj.RobotBase;
+
 /** PurpleLib Hardware Logging Manager */
 public class PurpleManager {
   private static ArrayList<LoggableHardware> m_hardware = new ArrayList<>();
+  private static ArrayList<Runnable> m_callbacks = new ArrayList<>();
+  private static ArrayList<Runnable> m_simCallbacks = new ArrayList<>();
 
   /**
    * Add hardware device to PurpleLib hardware logging manager
@@ -32,12 +36,34 @@ public class PurpleManager {
   }
 
   /**
+   * Add custom callback to PurpleLib hardware logging manager to be called every loop
+   * @param callback Desired callback
+   */
+  public static void addCallback(Runnable callback) {
+    m_callbacks.add(callback);
+  }
+
+  /**
+   * Add custom callback to PurpleLib hardware logging manager
+   * <p>
+   * Callbacks added using this method will only be called in simulation
+   * @param callback
+   */
+  public static void addCallbackSim(Runnable callback) {
+    m_simCallbacks.add(callback);
+  }
+
+  /**
    * Update all hardware devices
    * <p>
    * Call this peridically, preferably in the beginning of <code>robotPeriodic()</code> every loop
    */
   public static void update() {
     m_hardware.stream().forEach((device) -> device.periodic());
+    m_callbacks.stream().forEach(Runnable::run);
+
+    if (RobotBase.isReal()) return;
+    m_simCallbacks.stream().forEach(Runnable::run);
   }
 
   /**

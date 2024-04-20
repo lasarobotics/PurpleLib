@@ -13,6 +13,7 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 
+import org.lasarobotics.hardware.PurpleManager;
 import org.lasarobotics.hardware.revrobotics.Spark;
 import org.lasarobotics.hardware.revrobotics.Spark.MotorKind;
 import org.lasarobotics.hardware.revrobotics.SparkPIDConfig;
@@ -257,6 +258,10 @@ public class MAXSwerveModule implements AutoCloseable {
         break;
     }
 
+    // Add callbacks to PurpleManager
+    PurpleManager.addCallback(() -> periodic());
+    PurpleManager.addCallbackSim(() -> simulationPeriodic());
+
     // Get distance from center of robot
     m_radius = m_moduleCoordinate.getNorm();
 
@@ -340,7 +345,7 @@ public class MAXSwerveModule implements AutoCloseable {
   /**
    * Call this method periodically
    */
-  public void periodic() {
+  private void periodic() {
     Logger.recordOutput(m_driveMotor.getID().name + IS_SLIPPING_LOG_ENTRY, isSlipping());
     Logger.recordOutput(m_driveMotor.getID().name + ODOMETER_LOG_ENTRY, m_runningOdometer);
   }
@@ -348,7 +353,7 @@ public class MAXSwerveModule implements AutoCloseable {
   /**
    * Call this method periodically during simulation
    */
-  public void simulationPeriodic() {
+  private void simulationPeriodic() {
     m_driveMotor.getInputs().encoderPosition = m_simDrivePosition;
     m_rotateMotor.getInputs().absoluteEncoderPosition = m_simRotatePosition;
   }
