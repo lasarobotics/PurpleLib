@@ -36,6 +36,8 @@ import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Time;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.Velocity;
+import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 
 /** REV MAXSwerve module */
 public class MAXSwerveModule implements AutoCloseable {
@@ -262,6 +264,10 @@ public class MAXSwerveModule implements AutoCloseable {
     PurpleManager.addCallback(() -> periodic());
     PurpleManager.addCallbackSim(() -> simulationPeriodic());
 
+    // Setup disabled triggers
+    RobotModeTriggers.disabled().onTrue(Commands.runOnce(() -> disabledInit()));
+    RobotModeTriggers.disabled().onFalse(Commands.runOnce(() -> disabledExit()));
+
     // Get distance from center of robot
     m_radius = m_moduleCoordinate.getNorm();
 
@@ -361,14 +367,14 @@ public class MAXSwerveModule implements AutoCloseable {
   /**
    * Call method during initialization of disabled mode to set drive motor to brake mode
    */
-  public void disabledInit() {
+  private void disabledInit() {
     m_driveMotor.setIdleMode(IdleMode.kBrake);
   }
 
   /**
    * Call method when exiting disabled mode to set drive motor to coast mode
    */
-  public void disabledExit() {
+  private void disabledExit() {
     m_driveMotor.setIdleMode(IdleMode.kCoast);
   }
 
