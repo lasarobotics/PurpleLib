@@ -5,11 +5,12 @@
 package org.lasarobotics.hardware.generic;
 
 import org.lasarobotics.hardware.LoggableHardware;
+import org.lasarobotics.hardware.PurpleManager;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.inputs.LoggableInputs;
 
 /** Servo */
-public class Servo implements LoggableHardware {
+public class Servo extends LoggableHardware {
   /** Servo ID */
   public static class ID {
     public final String name;
@@ -42,6 +43,12 @@ public class Servo implements LoggableHardware {
     this.m_id = id;
     this.m_conversionFactor = conversionFactor;
     this.m_servo = new edu.wpi.first.wpilibj.Servo(m_id.port);
+
+    // Update inputs on init
+    periodic();
+
+    // Register device with manager
+    PurpleManager.add(this);
   }
 
   /**
@@ -79,5 +86,11 @@ public class Servo implements LoggableHardware {
   public void setPosition(double value) {
     m_servo.set(value / m_conversionFactor);
     logOutputs(value);
+  }
+
+  @Override
+  public void close() {
+    PurpleManager.remove(this);
+    m_servo.close();
   }
 }

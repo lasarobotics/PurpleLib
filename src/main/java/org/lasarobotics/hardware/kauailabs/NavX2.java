@@ -5,6 +5,7 @@
 package org.lasarobotics.hardware.kauailabs;
 
 import org.lasarobotics.hardware.LoggableHardware;
+import org.lasarobotics.hardware.PurpleManager;
 import org.lasarobotics.utils.GlobalConstants;
 import org.littletonrobotics.junction.AutoLog;
 import org.littletonrobotics.junction.Logger;
@@ -22,7 +23,7 @@ import edu.wpi.first.units.Velocity;
 import edu.wpi.first.wpilibj.SPI;
 
 /** NavX2 */
-public class NavX2 implements LoggableHardware, AutoCloseable {
+public class NavX2 extends LoggableHardware {
   /** NavX2 ID */
   public static class ID {
     public final String name;
@@ -68,7 +69,11 @@ public class NavX2 implements LoggableHardware, AutoCloseable {
     this.m_simNavXYaw = new SimDouble(SimDeviceDataJNI.getSimValueHandle(SimDeviceDataJNI.getSimDeviceHandle("navX-Sensor[0]"), "Yaw"));
     System.out.println();
 
+    // Update inputs on init
     periodic();
+
+    // Register device with manager
+    PurpleManager.add(this);
   }
 
   /**
@@ -181,7 +186,7 @@ public class NavX2 implements LoggableHardware, AutoCloseable {
    * Call this method periodically
    */
   @Override
-  public void periodic() {
+  protected void periodic() {
     updateInputs();
     Logger.processInputs(m_name, m_inputs);
   }
@@ -245,6 +250,7 @@ public class NavX2 implements LoggableHardware, AutoCloseable {
    */
   @Override
   public void close() {
+    PurpleManager.remove(this);
     m_navx = null;
   }
 }

@@ -5,13 +5,14 @@
 package org.lasarobotics.hardware.generic;
 
 import org.lasarobotics.hardware.LoggableHardware;
+import org.lasarobotics.hardware.PurpleManager;
 import org.littletonrobotics.junction.AutoLog;
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.wpilibj.DigitalInput;
 
 /** Limit switch */
-public class LimitSwitch implements LoggableHardware, AutoCloseable {
+public class LimitSwitch extends LoggableHardware {
   /** Limit switch ID */
   public static class ID {
     public final String name;
@@ -71,7 +72,11 @@ public class LimitSwitch implements LoggableHardware, AutoCloseable {
     this.m_limitSwitch = new DigitalInput(m_id.port);
     this.m_inputs = new LimitSwitchInputsAutoLogged();
 
+    // Update inputs on init
     periodic();
+
+    // Register device with manager
+    PurpleManager.add(this);
   }
 
   /**
@@ -85,7 +90,7 @@ public class LimitSwitch implements LoggableHardware, AutoCloseable {
    * Call this method periodically
    */
   @Override
-  public void periodic() {
+  protected void periodic() {
     updateInputs();
     Logger.processInputs(m_id.name, m_inputs);
   }
@@ -101,6 +106,7 @@ public class LimitSwitch implements LoggableHardware, AutoCloseable {
 
   @Override
   public void close() {
+    PurpleManager.remove(this);
     m_limitSwitch.close();
   }
 }

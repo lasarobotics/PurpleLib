@@ -5,13 +5,14 @@
 package org.lasarobotics.hardware.generic;
 
 import org.lasarobotics.hardware.LoggableHardware;
+import org.lasarobotics.hardware.PurpleManager;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.inputs.LoggableInputs;
 
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 
 /** Solenoid */
-public class Solenoid implements LoggableHardware, AutoCloseable {
+public class Solenoid extends LoggableHardware {
   /** Solenoid ID */
   public static class ID {
     public final String name;
@@ -45,6 +46,12 @@ public class Solenoid implements LoggableHardware, AutoCloseable {
   public Solenoid(Solenoid.ID id, int module) {
     this.m_id = id;
     this.m_solenoid = new edu.wpi.first.wpilibj.Solenoid(module, m_id.moduleType, m_id.channel);
+
+    // Update inputs on init
+    periodic();
+
+    // Register device with manager
+    PurpleManager.add(this);
   }
 
   /**
@@ -61,7 +68,7 @@ public class Solenoid implements LoggableHardware, AutoCloseable {
   }
 
   @Override
-  public void periodic() {}
+  protected void periodic() {}
 
   @Override
   public LoggableInputs getInputs() {
@@ -91,6 +98,7 @@ public class Solenoid implements LoggableHardware, AutoCloseable {
 
   @Override
   public void close() {
+    PurpleManager.remove(this);
     m_solenoid.close();
   }
 }

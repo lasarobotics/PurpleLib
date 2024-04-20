@@ -5,13 +5,14 @@
 package org.lasarobotics.hardware.ctre;
 
 import org.lasarobotics.hardware.LoggableHardware;
+import org.lasarobotics.hardware.PurpleManager;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.inputs.LoggableInputs;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
 
 /** VictorSPX */
-public class VictorSPX implements LoggableHardware, AutoCloseable {
+public class VictorSPX extends LoggableHardware {
   /** VictorSPX ID */
   public static class ID {
     public final String name;
@@ -45,6 +46,12 @@ public class VictorSPX implements LoggableHardware, AutoCloseable {
 
     // Disable motor safety
     m_victor.setSafetyEnabled(false);
+
+    // Update inputs on init
+    periodic();
+
+    // Register device with manager
+    PurpleManager.add(this);
   }
 
   /**
@@ -58,7 +65,7 @@ public class VictorSPX implements LoggableHardware, AutoCloseable {
   }
 
   @Override
-  public void periodic() {}
+  protected void periodic() {}
 
   @Override
   public LoggableInputs getInputs() {
@@ -139,6 +146,7 @@ public class VictorSPX implements LoggableHardware, AutoCloseable {
    */
   @Override
   public void close() {
+    PurpleManager.remove(this);
     m_victor.close();
   }
 }

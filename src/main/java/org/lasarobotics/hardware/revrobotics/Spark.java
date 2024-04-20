@@ -10,6 +10,7 @@ import java.util.function.Supplier;
 
 import org.apache.commons.math3.util.Precision;
 import org.lasarobotics.hardware.LoggableHardware;
+import org.lasarobotics.hardware.PurpleManager;
 import org.lasarobotics.utils.GlobalConstants;
 import org.littletonrobotics.junction.AutoLog;
 import org.littletonrobotics.junction.Logger;
@@ -45,7 +46,7 @@ import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 
 /** REV Spark */
-public class Spark implements LoggableHardware, AutoCloseable {
+public class Spark extends LoggableHardware {
   /** Spark ID */
   public static class ID {
     public final String name;
@@ -182,8 +183,11 @@ public class Spark implements LoggableHardware, AutoCloseable {
       setAverageDepth();
     }
 
-    // Refresh inputs on initialization
+    // Update inputs on init
     periodic();
+
+    // Register device with manager
+    PurpleManager.add(this);
   }
 
   /**
@@ -493,7 +497,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
    * Call this method periodically
    */
   @Override
-  public void periodic() {
+  protected void periodic() {
     updateInputs();
     Logger.processInputs(m_id.name, m_inputs);
 
@@ -1152,6 +1156,7 @@ public class Spark implements LoggableHardware, AutoCloseable {
    */
   @Override
   public void close() {
+    PurpleManager.remove(this);
     m_spark.close();
   }
 }

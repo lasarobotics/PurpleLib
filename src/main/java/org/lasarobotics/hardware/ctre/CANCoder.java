@@ -5,6 +5,7 @@
 package org.lasarobotics.hardware.ctre;
 
 import org.lasarobotics.hardware.LoggableHardware;
+import org.lasarobotics.hardware.PurpleManager;
 import org.littletonrobotics.junction.AutoLog;
 import org.littletonrobotics.junction.Logger;
 
@@ -13,7 +14,7 @@ import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
 
 /** CTRE CANCoder */
-public class CANCoder implements LoggableHardware, AutoCloseable {
+public class CANCoder extends LoggableHardware {
   /** CANCoder ID */
   public static class ID {
     public final String name;
@@ -61,7 +62,11 @@ public class CANCoder implements LoggableHardware, AutoCloseable {
     this.m_canCoder = new com.ctre.phoenix6.hardware.CANcoder(m_id.deviceID, m_id.bus.name);
     this.m_inputs = new CANCoderInputsAutoLogged();
 
+    // Update inputs on init
     periodic();
+
+    // Register device with manager
+    PurpleManager.add(this);
   }
 
    /**
@@ -108,7 +113,7 @@ public class CANCoder implements LoggableHardware, AutoCloseable {
    * Call this method periodically
    */
   @Override
-  public void periodic() {
+  protected void periodic() {
     updateInputs();
     Logger.processInputs(m_id.name, m_inputs);
   }
@@ -218,6 +223,7 @@ public class CANCoder implements LoggableHardware, AutoCloseable {
 
   @Override
   public void close() {
+    PurpleManager.remove(this);
     m_canCoder = null;
   }
 }

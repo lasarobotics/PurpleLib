@@ -5,6 +5,7 @@
 package org.lasarobotics.hardware.ctre;
 
 import org.lasarobotics.hardware.LoggableHardware;
+import org.lasarobotics.hardware.PurpleManager;
 import org.lasarobotics.utils.GlobalConstants;
 import org.littletonrobotics.junction.AutoLog;
 import org.littletonrobotics.junction.Logger;
@@ -20,7 +21,7 @@ import edu.wpi.first.units.Units;
 import edu.wpi.first.units.Velocity;
 
 /** CTRE Pigeon 2.0 */
-public class Pigeon2 implements LoggableHardware, AutoCloseable {
+public class Pigeon2 extends LoggableHardware {
   /** Pigeon ID */
   public static class ID {
     public final String name;
@@ -69,7 +70,11 @@ public class Pigeon2 implements LoggableHardware, AutoCloseable {
     this.m_pigeon = new com.ctre.phoenix6.hardware.Pigeon2(id.deviceID, id.bus.name);
     this.m_inputs = new Pigeon2InputsAutoLogged();
 
+    // Update inputs on init
     periodic();
+
+    // Register device with manager
+    PurpleManager.add(this);
   }
 
   /**
@@ -149,7 +154,7 @@ public class Pigeon2 implements LoggableHardware, AutoCloseable {
    * Call this method periodically
    */
   @Override
-  public void periodic() {
+  protected void periodic() {
     updateInputs();
     Logger.processInputs(m_id.name, m_inputs);
   }
@@ -230,6 +235,7 @@ public class Pigeon2 implements LoggableHardware, AutoCloseable {
 
   @Override
   public void close() {
+    PurpleManager.remove(this);
     m_pigeon.close();
   }
 }

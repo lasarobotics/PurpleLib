@@ -341,8 +341,6 @@ public class MAXSwerveModule implements AutoCloseable {
    * Call this method periodically
    */
   public void periodic() {
-    m_driveMotor.periodic();
-    m_rotateMotor.periodic();
     Logger.recordOutput(m_driveMotor.getID().name + IS_SLIPPING_LOG_ENTRY, isSlipping());
     Logger.recordOutput(m_driveMotor.getID().name + ODOMETER_LOG_ENTRY, m_runningOdometer);
   }

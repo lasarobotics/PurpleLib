@@ -5,12 +5,13 @@
 package org.lasarobotics.hardware.generic;
 
 import org.lasarobotics.hardware.LoggableHardware;
+import org.lasarobotics.hardware.PurpleManager;
 import org.littletonrobotics.junction.AutoLog;
 
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 
 /** Compressor */
-public class Compressor implements LoggableHardware, AutoCloseable {
+public class Compressor extends LoggableHardware {
   /** Compressor ID */
   public static class ID {
     public final String name;
@@ -52,7 +53,11 @@ public class Compressor implements LoggableHardware, AutoCloseable {
     this.m_compressor = new edu.wpi.first.wpilibj.Compressor(module, m_id.moduleType);
     this.m_inputs = new CompressorInputsAutoLogged();
 
+    // Update inputs on init
     periodic();
+
+    // Register device with manager
+    PurpleManager.add(this);
   }
 
   /**
@@ -108,7 +113,7 @@ public class Compressor implements LoggableHardware, AutoCloseable {
    * Call this method periodically
    */
   @Override
-  public void periodic() {
+  protected void periodic() {
     updateInputs();
   }
 
@@ -173,6 +178,7 @@ public class Compressor implements LoggableHardware, AutoCloseable {
 
   @Override
   public void close() {
+    PurpleManager.remove(this);
     m_compressor.close();
   }
 }

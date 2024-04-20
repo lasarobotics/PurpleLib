@@ -5,6 +5,7 @@
 package org.lasarobotics.hardware.ctre;
 
 import org.lasarobotics.hardware.LoggableHardware;
+import org.lasarobotics.hardware.PurpleManager;
 import org.littletonrobotics.junction.AutoLog;
 import org.littletonrobotics.junction.Logger;
 
@@ -15,7 +16,7 @@ import com.ctre.phoenix.motorcontrol.LimitSwitchNormal;
 import com.ctre.phoenix.motorcontrol.LimitSwitchSource;
 
 /** TalonSRX */
-public class TalonSRX implements LoggableHardware, AutoCloseable {
+public class TalonSRX extends LoggableHardware {
   /** TalonSRX ID */
   public static class ID {
     public final String name;
@@ -68,7 +69,11 @@ public class TalonSRX implements LoggableHardware, AutoCloseable {
     // Disable motor safety
     m_talon.setSafetyEnabled(false);
 
+    // Update inputs on init
     periodic();
+
+    // Register device with manager
+    PurpleManager.add(this);
   }
 
   /**
@@ -110,7 +115,7 @@ public class TalonSRX implements LoggableHardware, AutoCloseable {
   }
 
   @Override
-  public void periodic() {
+  protected void periodic() {
     updateInputs();
     Logger.processInputs(m_id.name, m_inputs);
   }
@@ -332,6 +337,7 @@ public class TalonSRX implements LoggableHardware, AutoCloseable {
    */
   @Override
   public void close() {
+    PurpleManager.remove(this);
     m_talon.close();
   }
 }

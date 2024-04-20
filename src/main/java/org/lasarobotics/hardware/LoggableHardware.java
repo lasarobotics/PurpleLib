@@ -6,15 +6,23 @@ package org.lasarobotics.hardware;
 
 import org.littletonrobotics.junction.inputs.LoggableInputs;
 
-public interface LoggableHardware {
+public class LoggableHardware implements AutoCloseable {
   /**
    * Call this method periodically
    */
-  public void periodic();
+  protected void periodic() {}
 
   /**
    * Get latest sensor input data
    * @return Latest sensor data
    */
-  public LoggableInputs getInputs();
+  public LoggableInputs getInputs() {
+    return null;
+  }
+
+  /**
+   * Closes the hardware device
+   */
+  @Override
+  public void close() {}
 }
