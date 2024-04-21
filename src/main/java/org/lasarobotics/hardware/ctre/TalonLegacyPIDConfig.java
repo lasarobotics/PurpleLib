@@ -39,7 +39,6 @@ public class TalonLegacyPIDConfig {
    * <p>
    * USE FOR VELOCITY PID ONLY!
    * @param pidf PID constants
-   * @param ff Feedforward constants
    * @param sensorPhase set sensor phase of encoder
    * @param invertMotor invert motor or not
    * @param ticksPerRotation number of ticks in one encoder revolution

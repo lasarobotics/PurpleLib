@@ -201,7 +201,7 @@ public class TalonSRX extends LoggableHardware {
   /**
    * Initializes Talon PID and MotionMagic parameters
    * <p>
-   * Calls {@link TalonSRX#initializeTalonPID(TalonPIDConfig, FeedbackDevice, boolean, boolean)} with no limit switches
+   * Calls {@link TalonSRX#initializeTalonPID(TalonLegacyPIDConfig, FeedbackDevice, boolean, boolean)} with no limit switches
    * @param config Configuration to apply
    * @param feedbackDevice Feedback device to use for Talon PID
    */
