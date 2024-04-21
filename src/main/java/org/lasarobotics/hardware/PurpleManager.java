@@ -35,14 +35,21 @@ public class PurpleManager {
    * @param robot Robot object
    * @param projectName Project name
    * @param gitSHA Git SHA
+   * @param buildDate Build date string
    * @param logPath Path for log file
    * @param batteryTrackingEnabled True to enable battery tracking
    */
   @SuppressWarnings("resource")
-  public static void initialize(LoggedRobot robot, String projectName, String gitSHA, String logPath, boolean batteryTrackingEnabled) {
+  public static void initialize(LoggedRobot robot,
+                                String projectName,
+                                String gitSHA,
+                                String buildDate,
+                                String logPath,
+                                boolean batteryTrackingEnabled) {
     // AdvantageKit Logging
     Logger.recordMetadata("ProjectName", projectName);
     Logger.recordMetadata("gitSHA", gitSHA);
+    Logger.recordMetadata("BuildDate", buildDate);
 
     if (RobotBase.isReal()) {
       // If robot is real, log to USB drive and publish data to NetworkTables
