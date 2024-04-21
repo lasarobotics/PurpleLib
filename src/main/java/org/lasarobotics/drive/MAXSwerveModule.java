@@ -351,7 +351,7 @@ public class MAXSwerveModule implements AutoCloseable {
   /**
    * Call this method periodically
    */
-  private void periodic() {
+  public void periodic() {
     Logger.recordOutput(m_driveMotor.getID().name + IS_SLIPPING_LOG_ENTRY, isSlipping());
     Logger.recordOutput(m_driveMotor.getID().name + ODOMETER_LOG_ENTRY, m_runningOdometer);
   }
@@ -359,7 +359,7 @@ public class MAXSwerveModule implements AutoCloseable {
   /**
    * Call this method periodically during simulation
    */
-  private void simulationPeriodic() {
+  public void simulationPeriodic() {
     m_driveMotor.getInputs().encoderPosition = m_simDrivePosition;
     m_rotateMotor.getInputs().absoluteEncoderPosition = m_simRotatePosition;
   }

@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.lasarobotics.drive.MAXSwerveModule.GearRatio;
 import org.lasarobotics.drive.MAXSwerveModule.ModuleLocation;
+import org.lasarobotics.hardware.PurpleManager;
 import org.lasarobotics.hardware.revrobotics.Spark;
 import org.lasarobotics.hardware.revrobotics.Spark.MotorKind;
 import org.lasarobotics.hardware.revrobotics.SparkInputsAutoLogged;
@@ -241,7 +242,7 @@ public class MAXSwerveModuleTest {
     m_lFrontModule.set(desiredState);
 
     // Run in simulation
-    m_lFrontModule.simulationPeriodic();
+    PurpleManager.update();
 
     // Verify module reports expected position
     assertEquals(new SwerveModulePosition(-desiredState.speedMetersPerSecond * GlobalConstants.ROBOT_LOOP_PERIOD, desiredState.angle.minus(ROTATION_PI)), m_lFrontModule.getPosition());

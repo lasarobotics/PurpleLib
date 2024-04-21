@@ -72,5 +72,7 @@ public class PurpleManager {
   public static void clear() {
     m_hardware.stream().forEach((device) -> device.close());
     m_hardware.clear();
+    m_callbacks.clear();
+    m_simCallbacks.clear();
   }
 }
