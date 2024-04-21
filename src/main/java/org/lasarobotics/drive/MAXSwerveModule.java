@@ -17,6 +17,7 @@ import org.lasarobotics.hardware.PurpleManager;
 import org.lasarobotics.hardware.revrobotics.Spark;
 import org.lasarobotics.hardware.revrobotics.Spark.MotorKind;
 import org.lasarobotics.hardware.revrobotics.SparkPIDConfig;
+import org.lasarobotics.utils.DisabledCommand;
 import org.lasarobotics.utils.GlobalConstants;
 import org.lasarobotics.utils.PIDConstants;
 import org.littletonrobotics.junction.Logger;
@@ -36,7 +37,6 @@ import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Time;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.Velocity;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 
 /** REV MAXSwerve module */
@@ -265,8 +265,8 @@ public class MAXSwerveModule implements AutoCloseable {
     PurpleManager.addCallbackSim(() -> simulationPeriodic());
 
     // Setup disabled triggers
-    RobotModeTriggers.disabled().onTrue(Commands.runOnce(() -> disabledInit()));
-    RobotModeTriggers.disabled().onFalse(Commands.runOnce(() -> disabledExit()));
+    RobotModeTriggers.disabled().onTrue(new DisabledCommand(() -> disabledInit()));
+    RobotModeTriggers.disabled().onFalse(new DisabledCommand(() -> disabledExit()));
 
     // Get distance from center of robot
     m_radius = m_moduleCoordinate.getNorm();
@@ -364,10 +364,11 @@ public class MAXSwerveModule implements AutoCloseable {
     Logger.recordOutput(m_driveMotor.getID().name + IS_SLIPPING_LOG_ENTRY, isSlipping());
     Logger.recordOutput(m_driveMotor.getID().name + ODOMETER_LOG_ENTRY, m_runningOdometer);
   }
+
   /**
    * Call method during initialization of disabled mode to set drive motor to brake mode and log odometry
    */
-  private void disabledInit() {
+  public void disabledInit() {
     m_driveMotor.setIdleMode(IdleMode.kBrake);
 
     try {
@@ -382,7 +383,7 @@ public class MAXSwerveModule implements AutoCloseable {
   /**
    * Call method when exiting disabled mode to set drive motor to coast mode
    */
-  private void disabledExit() {
+  public void disabledExit() {
     m_driveMotor.setIdleMode(IdleMode.kCoast);
   }
 
