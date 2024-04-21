@@ -7,6 +7,17 @@ package org.lasarobotics.hardware;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import org.lasarobotics.battery.BatteryTracker;
+import org.lasarobotics.utils.GlobalConstants;
+import org.littletonrobotics.junction.LogFileUtil;
+import org.littletonrobotics.junction.LoggedRobot;
+import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.networktables.NT4Publisher;
+import org.littletonrobotics.junction.wpilog.WPILOGReader;
+import org.littletonrobotics.junction.wpilog.WPILOGWriter;
+
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.RobotBase;
 
 /** PurpleLib Hardware Logging Manager */
@@ -14,6 +25,56 @@ public class PurpleManager {
   private static ArrayList<LoggableHardware> m_hardware = new ArrayList<>();
   private static ArrayList<Runnable> m_callbacks = new ArrayList<>();
   private static ArrayList<Runnable> m_simCallbacks = new ArrayList<>();
+
+  /**
+   * Initialize and start logging
+   * <p>
+   * Call this at the beginning of <code>robotInit()</code>.
+   * @param robot Robot object
+   * @param projectName Project name
+   * @param gitSHA Git SHA
+   * @param logPath Path for log file
+   * @param batteryTrackingEnabled True to enable battery tracking
+   */
+  @SuppressWarnings("resource")
+  public static void initialize(LoggedRobot robot, String projectName, String gitSHA, String logPath, boolean batteryTrackingEnabled) {
+    // AdvantageKit Logging
+    Logger.recordMetadata("ProjectName", projectName);
+    Logger.recordMetadata("gitSHA", gitSHA);
+
+    if (RobotBase.isReal()) {
+      // If robot is real, log to USB drive and publish data to NetworkTables
+      Logger.addDataReceiver(new WPILOGWriter(logPath));
+      Logger.addDataReceiver(new NT4Publisher());
+      new PowerDistribution();
+
+      // Battery Tracking
+      if (batteryTrackingEnabled) {
+        BatteryTracker batteryTracker = new BatteryTracker(BatteryTracker.initializeHardware());
+        Logger.recordMetadata("BatteryName", batteryTracker.scanBattery());
+        if (batteryTracker.isBatteryReused())
+          DriverStation.reportError(batteryTracker.scanBattery() + " is being reused!", false);
+        else batteryTracker.writeCurrentBattery();
+      }
+    } else {
+      // Else just publish to NetworkTables for simulation or replay log file if var is set
+      String replay = System.getenv(GlobalConstants.REPLAY_ENVIRONMENT_VAR);
+      if (replay == null || replay.isBlank()) Logger.addDataReceiver(new NT4Publisher());
+      else {
+        // Run as fast as possible
+        robot.setUseTiming(false);
+        // Pull the replay log from AdvantageScope (or prompt the user)
+        String replayLogPath = LogFileUtil.findReplayLog();
+        // Read replay log
+        Logger.setReplaySource(new WPILOGReader(replayLogPath));
+        // Save outputs to a new log
+        Logger.addDataReceiver(new WPILOGWriter(LogFileUtil.addPathSuffix(replayLogPath, "_sim")));
+      }
+    }
+
+    // Start logging! No more data receivers, replay sources, or metadata values may be added.
+    Logger.start();
+  }
 
   /**
    * Add hardware device to PurpleLib hardware logging manager
