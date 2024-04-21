@@ -30,6 +30,8 @@ public class PurpleManager {
    * Initialize and start logging
    * <p>
    * Call this at the beginning of <code>robotInit()</code>.
+   * <p>
+   * To enable replay, set the environment variable <code>ROBOT_REPLAY=1</code>, otherwise simply unset this variable.
    * @param robot Robot object
    * @param projectName Project name
    * @param gitSHA Git SHA
