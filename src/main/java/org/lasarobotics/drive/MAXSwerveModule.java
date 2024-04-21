@@ -312,6 +312,15 @@ public class MAXSwerveModule implements AutoCloseable {
   }
 
   /**
+   * Call this method periodically during simulation
+   * (package-private)
+   */
+   void simulationPeriodic() {
+    m_driveMotor.getInputs().encoderPosition = m_simDrivePosition;
+    m_rotateMotor.getInputs().absoluteEncoderPosition = m_simRotatePosition;
+  }
+
+  /**
    * Get desired swerve module state
    * @param requestedState Requested state
    * @return Actual desired state for module
@@ -351,24 +360,23 @@ public class MAXSwerveModule implements AutoCloseable {
   /**
    * Call this method periodically
    */
-  public void periodic() {
+  private void periodic() {
     Logger.recordOutput(m_driveMotor.getID().name + IS_SLIPPING_LOG_ENTRY, isSlipping());
     Logger.recordOutput(m_driveMotor.getID().name + ODOMETER_LOG_ENTRY, m_runningOdometer);
   }
-
   /**
-   * Call this method periodically during simulation
-   */
-  public void simulationPeriodic() {
-    m_driveMotor.getInputs().encoderPosition = m_simDrivePosition;
-    m_rotateMotor.getInputs().absoluteEncoderPosition = m_simRotatePosition;
-  }
-
-  /**
-   * Call method during initialization of disabled mode to set drive motor to brake mode
+   * Call method during initialization of disabled mode to set drive motor to brake mode and log odometry
    */
   private void disabledInit() {
     m_driveMotor.setIdleMode(IdleMode.kBrake);
+
+    try {
+      FileWriter fileWriter = new FileWriter(m_odometerOutputPath);
+      fileWriter.write(String.valueOf(m_runningOdometer));
+      fileWriter.close();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
   }
 
   /**
@@ -597,19 +605,6 @@ public class MAXSwerveModule implements AutoCloseable {
   public void stop() {
     m_rotateMotor.stopMotor();
     m_driveMotor.stopMotor();
-  }
-
-  /**
-   * Update swerve odometer on disable
-   */
-  public void disabled() {
-    try {
-      FileWriter fileWriter = new FileWriter(m_odometerOutputPath);
-      fileWriter.write(String.valueOf(m_runningOdometer));
-      fileWriter.close();
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
   }
 
   @Override

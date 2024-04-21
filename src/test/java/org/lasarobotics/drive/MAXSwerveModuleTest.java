@@ -19,7 +19,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.lasarobotics.drive.MAXSwerveModule.GearRatio;
 import org.lasarobotics.drive.MAXSwerveModule.ModuleLocation;
-import org.lasarobotics.hardware.PurpleManager;
 import org.lasarobotics.hardware.revrobotics.Spark;
 import org.lasarobotics.hardware.revrobotics.Spark.MotorKind;
 import org.lasarobotics.hardware.revrobotics.SparkInputsAutoLogged;
@@ -236,13 +235,19 @@ public class MAXSwerveModuleTest {
     lFrontRotateMotorInputs.absoluteEncoderPosition = ModuleLocation.LeftFront.offset.getRadians();
     when(m_lFrontDriveMotor.getInputs()).thenReturn(defaultInputs);
     when(m_lFrontRotateMotor.getInputs()).thenReturn(lFrontRotateMotorInputs);
+    when(m_rFrontDriveMotor.getInputs()).thenReturn(defaultInputs);
+    when(m_rFrontRotateMotor.getInputs()).thenReturn(defaultInputs);
+    when(m_lRearDriveMotor.getInputs()).thenReturn(defaultInputs);
+    when(m_lRearRotateMotor.getInputs()).thenReturn(defaultInputs);
+    when(m_rRearDriveMotor.getInputs()).thenReturn(defaultInputs);
+    when(m_rRearRotateMotor.getInputs()).thenReturn(defaultInputs);
 
     // Set state
     SwerveModuleState desiredState = new SwerveModuleState(2.0, Rotation2d.fromRadians(+Math.PI));
     m_lFrontModule.set(desiredState);
 
     // Run in simulation
-    PurpleManager.update();
+    m_lFrontModule.simulationPeriodic();
 
     // Verify module reports expected position
     assertEquals(new SwerveModulePosition(-desiredState.speedMetersPerSecond * GlobalConstants.ROBOT_LOOP_PERIOD, desiredState.angle.minus(ROTATION_PI)), m_lFrontModule.getPosition());

@@ -67,6 +67,13 @@ public class PurpleManager {
   }
 
   /**
+   * Only update all sim callbacks
+   */
+  public static void updateSim() {
+    m_simCallbacks.stream().forEach(Runnable::run);
+  }
+
+  /**
    * Remove all hardware devices from logging manager
    */
   public static void clear() {
