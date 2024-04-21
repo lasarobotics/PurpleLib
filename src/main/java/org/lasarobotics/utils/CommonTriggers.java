@@ -7,7 +7,7 @@ package org.lasarobotics.utils;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 
-/** Add your docs here. */
+/** Common useful triggers */
 public class CommonTriggers {
 
   /**
