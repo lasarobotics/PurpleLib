@@ -18,8 +18,8 @@ import edu.wpi.first.math.MathUtil;
  */
 public class TalonPIDConfig {
   private static final double MIN_TOLERANCE = 1.0;
-  private static final double MIN_JERK_SMOOTHING = 0;
-  private static final double MAX_JERK_SMOOTHING = 9999;
+  private static final double MIN_JERK = 0;
+  private static final double MAX_JERK = 9999;
 
 
   private boolean m_motionMagic = false;
@@ -112,7 +112,7 @@ public class TalonPIDConfig {
 
     this.m_velocityRPM = velocity;
     this.m_accelerationRPMPerSec = acceleration;
-    this.m_jerk = MathUtil.clamp(jerk, MIN_JERK_SMOOTHING, MAX_JERK_SMOOTHING);
+    this.m_jerk = MathUtil.clamp(jerk, MIN_JERK, MAX_JERK);
 
 
     this.m_motionMagic = true;
