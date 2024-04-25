@@ -42,6 +42,7 @@ import edu.wpi.first.units.Current;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Time;
 import edu.wpi.first.units.Units;
+import edu.wpi.first.units.Voltage;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 
@@ -174,8 +175,8 @@ public class Spark extends LoggableHardware {
     m_spark.setCANTimeout(CAN_TIMEOUT_MS);
 
     // Restore defaults
-    m_spark.restoreFactoryDefaults();
-    m_spark.enableVoltageCompensation(MAX_VOLTAGE);
+    restoreFactoryDefaults();
+    enableVoltageCompensation(Units.Volts.of(MAX_VOLTAGE));
 
     // Fix velocity measurements
     if (getMotorType() == MotorType.kBrushless) {
@@ -432,6 +433,22 @@ public class Spark extends LoggableHardware {
   }
 
   /**
+   * Enable voltage compensation
+   * @param nominalVoltage Nominal voltage to compensate output to
+   * @return {@link REVLibError#kOk} if successful
+   */
+  private REVLibError enableVoltageCompensation(Measure<Voltage> nominalVoltage) {
+    REVLibError status;
+    status = applyParameter(
+      () -> m_spark.enableVoltageCompensation(nominalVoltage.in(Units.Volts)),
+      () -> Precision.equals(m_spark.getVoltageCompensationNominalVoltage(), nominalVoltage.in(Units.Volts), EPSILON),
+      "Enable voltage compensation failure!"
+    );
+
+    return status;
+  }
+
+  /**
    * Update sensor input readings
    */
   private void updateInputs() {
@@ -465,6 +482,32 @@ public class Spark extends LoggableHardware {
   }
 
   /**
+   * Call this method periodically
+   */
+  @Override
+  protected void periodic() {
+    updateInputs();
+    Logger.processInputs(m_id.name, m_inputs);
+
+    handleSmoothMotion();
+
+    Logger.recordOutput(m_id.name + CURRENT_LOG_ENTRY, getOutputCurrent());
+    Logger.recordOutput(m_id.name + MOTION_LOG_ENTRY, m_isSmoothMotionEnabled);
+
+    if (getMotorType() == MotorType.kBrushed) return;
+    Logger.recordOutput(m_id.name + TEMPERATURE_LOG_ENTRY, m_spark.getMotorTemperature());
+  }
+
+  /**
+   * Get latest sensor input data
+   * @return Latest sensor data
+   */
+  @Override
+  public SparkInputsAutoLogged getInputs() {
+    return m_inputs;
+  }
+
+  /**
    * Writes all settings to flash
    * @return {@link REVLibError#kOk} if successful
    */
@@ -491,32 +534,6 @@ public class Spark extends LoggableHardware {
     );
 
     return status;
-  }
-
-  /**
-   * Call this method periodically
-   */
-  @Override
-  protected void periodic() {
-    updateInputs();
-    Logger.processInputs(m_id.name, m_inputs);
-
-    handleSmoothMotion();
-
-    Logger.recordOutput(m_id.name + CURRENT_LOG_ENTRY, getOutputCurrent());
-    Logger.recordOutput(m_id.name + MOTION_LOG_ENTRY, m_isSmoothMotionEnabled);
-
-    if (getMotorType() == MotorType.kBrushed) return;
-    Logger.recordOutput(m_id.name + TEMPERATURE_LOG_ENTRY, m_spark.getMotorTemperature());
-  }
-
-  /**
-   * Get latest sensor input data
-   * @return Latest sensor data
-   */
-  @Override
-  public SparkInputsAutoLogged getInputs() {
-    return m_inputs;
   }
 
   /**
@@ -862,7 +879,7 @@ public class Spark extends LoggableHardware {
     m_motionProfile = new TrapezoidProfile(m_motionConstraint);
     m_smoothMotionState = m_currentStateSupplier.get();
 
-    handleSmoothMotion();
+    periodic();
   }
 
   /**

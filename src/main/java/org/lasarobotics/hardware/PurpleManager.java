@@ -144,7 +144,7 @@ public class PurpleManager {
   }
 
   /**
-   * Remove all hardware devices from logging manager
+   * Remove all hardware devices and callbacks from logging manager
    */
   public static void clear() {
     m_hardware.stream().forEach((device) -> device.close());

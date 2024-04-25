@@ -17,7 +17,6 @@ import org.lasarobotics.hardware.PurpleManager;
 import org.lasarobotics.hardware.revrobotics.Spark;
 import org.lasarobotics.hardware.revrobotics.Spark.MotorKind;
 import org.lasarobotics.hardware.revrobotics.SparkPIDConfig;
-import org.lasarobotics.utils.DisabledCommand;
 import org.lasarobotics.utils.GlobalConstants;
 import org.lasarobotics.utils.PIDConstants;
 import org.littletonrobotics.junction.Logger;
@@ -37,6 +36,7 @@ import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Time;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.Velocity;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 
 /** REV MAXSwerve module */
@@ -265,8 +265,8 @@ public class MAXSwerveModule implements AutoCloseable {
     PurpleManager.addCallbackSim(() -> simulationPeriodic());
 
     // Setup disabled triggers
-    RobotModeTriggers.disabled().onTrue(new DisabledCommand(() -> disabledInit()));
-    RobotModeTriggers.disabled().onFalse(new DisabledCommand(() -> disabledExit()));
+    RobotModeTriggers.disabled().onTrue(Commands.runOnce(() -> disabledInit()).ignoringDisable(true));
+    RobotModeTriggers.disabled().onFalse(Commands.runOnce(() -> disabledExit()).ignoringDisable(true));
 
     // Get distance from center of robot
     m_radius = m_moduleCoordinate.getNorm();
