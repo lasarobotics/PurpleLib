@@ -368,7 +368,7 @@ public class MAXSwerveModule implements AutoCloseable {
   /**
    * Call method during initialization of disabled mode to set drive motor to brake mode and log odometry
    */
-  public void disabledInit() {
+  private void disabledInit() {
     m_driveMotor.setIdleMode(IdleMode.kBrake);
 
     try {
@@ -383,7 +383,7 @@ public class MAXSwerveModule implements AutoCloseable {
   /**
    * Call method when exiting disabled mode to set drive motor to coast mode
    */
-  public void disabledExit() {
+  private void disabledExit() {
     m_driveMotor.setIdleMode(IdleMode.kCoast);
   }
 
