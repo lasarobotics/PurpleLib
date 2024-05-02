@@ -4,6 +4,8 @@
 
 package org.lasarobotics.hardware;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -15,6 +17,9 @@ import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.NT4Publisher;
 import org.littletonrobotics.junction.wpilog.WPILOGReader;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
+import org.littletonrobotics.urcl.URCL;
+
+import com.ctre.phoenix6.SignalLogger;
 
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.PowerDistribution;
@@ -41,10 +46,10 @@ public class PurpleManager {
    */
   @SuppressWarnings("resource")
   public static void initialize(LoggedRobot robot,
+                                Path logPath,
                                 String projectName,
                                 String gitSHA,
                                 String buildDate,
-                                String logPath,
                                 boolean batteryTrackingEnabled) {
     // AdvantageKit Logging
     Logger.recordMetadata("ProjectName", projectName);
@@ -53,9 +58,12 @@ public class PurpleManager {
 
     if (RobotBase.isReal()) {
       // If robot is real, log to USB drive and publish data to NetworkTables
-      Logger.addDataReceiver(new WPILOGWriter(logPath));
+      Logger.addDataReceiver(new WPILOGWriter(logPath.toAbsolutePath().toString()));
       Logger.addDataReceiver(new NT4Publisher());
       new PowerDistribution();
+
+      // Set CTRE log path
+      SignalLogger.setPath(Paths.get(logPath.toAbsolutePath().toString(), "ctre-logs").toAbsolutePath().toString());
 
       // Battery Tracking
       if (batteryTrackingEnabled) {
@@ -80,6 +88,12 @@ public class PurpleManager {
         Logger.addDataReceiver(new WPILOGWriter(LogFileUtil.addPathSuffix(replayLogPath, "_sim")));
       }
     }
+
+    // Register URCL for logging REV devices
+    Logger.registerURCL(URCL.startExternal());
+
+    // Start CTRE signal logging
+    SignalLogger.start();
 
     // Start logging! No more data receivers, replay sources, or metadata values may be added.
     Logger.start();
