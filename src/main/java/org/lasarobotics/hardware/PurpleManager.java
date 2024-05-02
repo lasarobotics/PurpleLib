@@ -5,7 +5,6 @@
 package org.lasarobotics.hardware;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -63,7 +62,7 @@ public class PurpleManager {
       new PowerDistribution();
 
       // Set CTRE log path
-      SignalLogger.setPath(Paths.get(logPath.toAbsolutePath().toString(), "ctre-logs").toAbsolutePath().toString());
+      SignalLogger.setPath(Path.of(logPath.toAbsolutePath().toString(), "ctre-logs").toAbsolutePath().toString());
 
       // Battery Tracking
       if (batteryTrackingEnabled) {
