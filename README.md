@@ -46,6 +46,7 @@ Note: CTRE will not be as well supported as REV products as our team primarily l
 ## Installing
 Add the following dependencies to your project:
 * AdvantageKit - https://github.com/Mechanical-Advantage/AdvantageKit/blob/main/docs/INSTALLATION.md
+* URCL - https://raw.githubusercontent.com/Mechanical-Advantage/URCL/maven/URCL.json
 * NavX - https://dev.studica.com/releases/2024/NavX.json
 * REVLib - https://software-metadata.revrobotics.com/REVLib-2024.json
 * CTRE Phoenix5 - https://maven.ctr-electronics.com/release/com/ctre/phoenix/Phoenix5-frc2024-latest.json
