@@ -892,17 +892,24 @@ public class Spark extends LoggableHardware {
   }
 
   /**
+   * Set NEO built-in encoder
+   */
+  public REVLibError setEncoder(double value) {
+    REVLibError status;
+    status = applyParameter(
+      () -> getEncoder().setPosition(value),
+      () -> Precision.equals(getEncoderPosition(), value, EPSILON),
+      "Set encoder failure!"
+    );
+    System.out.println(String.join(" ", m_id.name, "Encoder set to " + value + "!"));
+    return status;
+  }
+
+  /**
    * Reset NEO built-in encoder
    */
   public REVLibError resetEncoder() {
-    REVLibError status;
-    status = applyParameter(
-      () -> getEncoder().setPosition(0.0),
-      () -> Precision.equals(getEncoderPosition(), 0.0, EPSILON),
-      "Reset encoder failure!"
-    );
-    System.out.println(String.join(" ", m_id.name, "Encoder reset!"));
-    return status;
+    return setEncoder(0.0);
   }
 
   /**
