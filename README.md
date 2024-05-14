@@ -18,7 +18,7 @@ Note: CTRE will not be as well supported as REV products as our team primarily l
     * More accurate velocity readings
   * CTRE
     * CANivore
-    * Pidgeon 2.0
+    * Pigeon 2.0
     * CANCoder
     * VictorSPX
     * TalonSRX
