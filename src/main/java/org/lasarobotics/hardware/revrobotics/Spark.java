@@ -23,6 +23,7 @@ import com.revrobotics.CANSparkBase.IdleMode;
 import com.revrobotics.CANSparkBase.SoftLimitDirection;
 import com.revrobotics.CANSparkFlex;
 import com.revrobotics.CANSparkLowLevel.MotorType;
+import com.revrobotics.CANSparkLowLevel.PeriodicFrame;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.MotorFeedbackSensor;
 import com.revrobotics.REVLibError;
@@ -364,7 +365,7 @@ public class Spark extends LoggableHardware {
   }
 
   /**
-   * Get the velocity of the absolute encoder. This returns the native units of 'RPM' by default, and can be
+   * Get the velocity of the absolute encoder. This returns the n`ative units of 'RPM' by default, and can be
    * changed by a scale factor using setVelocityConversionFactor().
    * @return Number the RPM of the motor
    */
@@ -862,6 +863,23 @@ public class Spark extends LoggableHardware {
       () -> Precision.equals(m_spark.getPIDController().getIZone(), value, EPSILON),
       "Set IZone failure!"
     );
+    return status;
+  }
+
+  /**
+   * Sets the periodicFrameRate in a period on Spark
+   * <p>
+   * This method specifies the rate at which data is sent to the RoboRio which needs to be set in the time period given
+   * @param frame Value which specifies the type of data being sent
+   * @param period The time period in which the data is sent repeatedly
+   * @return {@link REVLibError#kOk} if successful
+   */
+  public REVLibError setPeriodicFrameRate(PeriodicFrame frame, Measure<Time> period) {
+    REVLibError status;
+    status = applyParameter(
+      () -> m_spark.setPeriodicFramePeriod(frame, (int) (period.in(Units.Milliseconds))), 
+      () -> true,
+      "Set periodic frame rate failure!");
     return status;
   }
 
