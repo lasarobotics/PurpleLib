@@ -879,7 +879,8 @@ public class Spark extends LoggableHardware {
     status = applyParameter(
       () -> m_spark.setPeriodicFramePeriod(frame, (int) (period.in(Units.Milliseconds))), 
       () -> true,
-      "Set periodic frame rate failure!");
+      "Set periodic frame rate failure!"
+      );
     return status;
   }
 
