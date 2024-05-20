@@ -51,6 +51,7 @@ Add the following dependencies to your project:
 * REVLib - https://software-metadata.revrobotics.com/REVLib-2024.json
 * CTRE Phoenix5 - https://maven.ctr-electronics.com/release/com/ctre/phoenix/Phoenix5-frc2024-latest.json
 * CTRE Phoenix6 - https://maven.ctr-electronics.com/release/com/ctre/phoenix6/latest/Phoenix6-frc2024-latest.json
+* PhotonLib - https://maven.photonvision.org/repository/internal/org/photonvision/photonlib-json/1.0/photonlib-json-1.0.json
 
 Add the following to `build.gradle` where VERSION is the release version, e.g. 2023.0.0
 ```
