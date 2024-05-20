@@ -4,6 +4,7 @@
 
 package org.lasarobotics.hardware.revrobotics;
 
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -44,6 +45,7 @@ import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Time;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.Voltage;
+import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 
@@ -129,13 +131,16 @@ public class Spark extends LoggableHardware {
   private static final String CURRENT_LOG_ENTRY = "/Current";
   private static final String TEMPERATURE_LOG_ENTRY = "/Temperature";
   private static final String MOTION_LOG_ENTRY = "/SmoothMotion";
+  private static final Measure<Time> DEFAULT_STATUS_FRAME_PERIOD = Units.Milliseconds.of(20.0);
+  private static final Measure<Time> SLAVE_STATUS_FRAME_PERIOD = Units.Milliseconds.of(100.0);
 
 
   private CANSparkBase m_spark;
 
   private ID m_id;
   private MotorKind m_kind;
-  private SparkInputsAutoLogged m_inputs;
+  private AtomicReference<SparkInputsAutoLogged> m_inputs;
+  private Notifier m_inputsThread;
 
   private boolean m_isSmoothMotionEnabled;
   private Debouncer m_smoothMotionFinishedDebouncer;
@@ -168,7 +173,8 @@ public class Spark extends LoggableHardware {
     }
     this.m_id = id;
     this.m_kind = kind;
-    this.m_inputs = new SparkInputsAutoLogged();
+    this.m_inputs = new AtomicReference<SparkInputsAutoLogged>();
+    this.m_inputsThread = new Notifier(this::updateInputs);
     this.m_isSmoothMotionEnabled = false;
     this.m_limitSwitchType = limitSwitchType;
 
@@ -185,11 +191,23 @@ public class Spark extends LoggableHardware {
       setAverageDepth();
     }
 
+    // Set status frame rates
+    setPeriodicFrameRate(PeriodicFrame.kStatus0, DEFAULT_STATUS_FRAME_PERIOD);
+    setPeriodicFrameRate(PeriodicFrame.kStatus1, DEFAULT_STATUS_FRAME_PERIOD);
+    setPeriodicFrameRate(PeriodicFrame.kStatus2, DEFAULT_STATUS_FRAME_PERIOD);
+    setPeriodicFrameRate(PeriodicFrame.kStatus3, DEFAULT_STATUS_FRAME_PERIOD);
+    setPeriodicFrameRate(PeriodicFrame.kStatus4, DEFAULT_STATUS_FRAME_PERIOD);
+    setPeriodicFrameRate(PeriodicFrame.kStatus5, DEFAULT_STATUS_FRAME_PERIOD);
+    setPeriodicFrameRate(PeriodicFrame.kStatus6, DEFAULT_STATUS_FRAME_PERIOD);
+
     // Update inputs on init
     periodic();
 
     // Register device with manager
     PurpleManager.add(this);
+
+    // Start sensor input thread
+    m_inputsThread.startPeriodic(GlobalConstants.ROBOT_LOOP_PERIOD);
   }
 
   /**
@@ -453,16 +471,20 @@ public class Spark extends LoggableHardware {
    * Update sensor input readings
    */
   private void updateInputs() {
-    m_inputs.analogPosition = getAnalogPosition();
-    m_inputs.analogVelocity = getAnalogVelocity();
-    m_inputs.absoluteEncoderPosition = getAbsoluteEncoderPosition();
-    m_inputs.absoluteEncoderVelocity = getAbsoluteEncoderVelocity();
-    m_inputs.forwardLimitSwitch = getForwardLimitSwitch().isPressed();
-    m_inputs.reverseLimitSwitch = getReverseLimitSwitch().isPressed();
+    var inputs = new SparkInputsAutoLogged();
+    inputs.analogPosition = getAnalogPosition();
+    inputs.analogVelocity = getAnalogVelocity();
+    inputs.absoluteEncoderPosition = getAbsoluteEncoderPosition();
+    inputs.absoluteEncoderVelocity = getAbsoluteEncoderVelocity();
+    inputs.forwardLimitSwitch = getForwardLimitSwitch().isPressed();
+    inputs.reverseLimitSwitch = getReverseLimitSwitch().isPressed();
 
-    if (getMotorType() == MotorType.kBrushed) return;
-    m_inputs.encoderPosition = getEncoderPosition();
-    m_inputs.encoderVelocity = getEncoderVelocity();
+    if (!getMotorType().equals(MotorType.kBrushed)) {
+      inputs.encoderPosition = getEncoderPosition();
+      inputs.encoderVelocity = getEncoderVelocity();
+    }
+
+    m_inputs.set(inputs);
   }
 
   /**
@@ -487,8 +509,7 @@ public class Spark extends LoggableHardware {
    */
   @Override
   protected void periodic() {
-    updateInputs();
-    Logger.processInputs(m_id.name, m_inputs);
+    Logger.processInputs(m_id.name, m_inputs.get());
 
     handleSmoothMotion();
 
@@ -505,7 +526,7 @@ public class Spark extends LoggableHardware {
    */
   @Override
   public SparkInputsAutoLogged getInputs() {
-    return m_inputs;
+    return m_inputs.get();
   }
 
   /**
@@ -664,6 +685,16 @@ public class Spark extends LoggableHardware {
       () -> m_spark.isFollower(),
       "Set motor master failure!"
     );
+    // Increase master output status frame rate
+    master.setPeriodicFrameRate(PeriodicFrame.kStatus0, DEFAULT_STATUS_FRAME_PERIOD.divide(4));
+    // Decrease all slave status frame rates
+    setPeriodicFrameRate(PeriodicFrame.kStatus0, SLAVE_STATUS_FRAME_PERIOD);
+    setPeriodicFrameRate(PeriodicFrame.kStatus1, SLAVE_STATUS_FRAME_PERIOD);
+    setPeriodicFrameRate(PeriodicFrame.kStatus2, SLAVE_STATUS_FRAME_PERIOD);
+    setPeriodicFrameRate(PeriodicFrame.kStatus3, SLAVE_STATUS_FRAME_PERIOD);
+    setPeriodicFrameRate(PeriodicFrame.kStatus4, SLAVE_STATUS_FRAME_PERIOD);
+    setPeriodicFrameRate(PeriodicFrame.kStatus5, SLAVE_STATUS_FRAME_PERIOD);
+    setPeriodicFrameRate(PeriodicFrame.kStatus6, SLAVE_STATUS_FRAME_PERIOD);
     return status;
   }
 
@@ -867,24 +898,6 @@ public class Spark extends LoggableHardware {
   }
 
   /**
-   * Sets the periodicFrameRate in a period on Spark
-   * <p>
-   * This method specifies the rate at which data is sent to the RoboRio which needs to be set in the time period given
-   * @param frame Value which specifies the type of data being sent
-   * @param period The time period in which the data is sent repeatedly
-   * @return {@link REVLibError#kOk} if successful
-   */
-  public REVLibError setPeriodicFrameRate(PeriodicFrame frame, Measure<Time> period) {
-    REVLibError status;
-    status = applyParameter(
-      () -> m_spark.setPeriodicFramePeriod(frame, (int) (period.in(Units.Milliseconds))), 
-      () -> true,
-      "Set periodic frame rate failure!"
-      );
-    return status;
-  }
-
-  /**
    * Execute a smooth motion to desired position
    * @param value The target value for the motor
    * @param motionConstraint The constraints for the motor
@@ -910,25 +923,31 @@ public class Spark extends LoggableHardware {
     smoothMotion(value, motionConstraint, (motionProfileState) -> 0.0);
   }
 
+
   /**
-   * Set NEO built-in encoder
+   * Reset NEO built-in encoder to desired value
+   * @param value Desired encoder value
+   * @return {@link REVLibError#kOk} if successful
    */
-  public REVLibError setEncoder(double value) {
+  public REVLibError resetEncoder(double value) {
     REVLibError status;
     status = applyParameter(
       () -> getEncoder().setPosition(value),
       () -> Precision.equals(getEncoderPosition(), value, EPSILON),
       "Set encoder failure!"
     );
-    System.out.println(String.join(" ", m_id.name, "Encoder set to " + value + "!"));
+    if (status.equals(REVLibError.kOk))
+      System.out.println(String.join(" ", m_id.name, "Encoder set to", String.valueOf(value), "!"));
+
     return status;
   }
 
   /**
-   * Reset NEO built-in encoder
+   * Reset NEO built-in encoder to zero
+   * @return {@link REVLibError#kOk} if successful
    */
   public REVLibError resetEncoder() {
-    return setEncoder(0.0);
+    return resetEncoder(0.0);
   }
 
   /**
@@ -1149,6 +1168,33 @@ public class Spark extends LoggableHardware {
       () -> m_spark.setSmartCurrentLimit((int)limit.in(Units.Amps)),
       () -> SparkHelpers.getSmartCurrentLimit(m_spark) == (int)limit.in(Units.Amps),
       "Set current limit failure!"
+    );
+    return status;
+  }
+
+  /**
+   * Set the rate of transmission for periodic frames from the SPARK
+   *
+   * <p>Each motor controller sends back status frames with different data at set rates. Use this
+   * function to change the default rates.
+   *
+   * <p>Defaults: Status0 - 10ms Status1 - 20ms Status2 - 20ms Status3 - 50ms Status4 - 20ms Status5
+   * - 200ms Status6 - 200ms Status7 - 250ms
+   *
+   * <p>This value is not stored in the FLASH after calling burnFlash() and is reset on powerup.
+   *
+   * <p>Refer to the SPARK reference manual on details for how and when to configure this parameter.
+   *
+   * @param frame Which type of periodic frame to change the period of
+   * @param period The rate the controller sends the frame to the controller.
+   * @return {@link REVLibError#kOk} if successful
+   */
+  public REVLibError setPeriodicFrameRate(PeriodicFrame frame, Measure<Time> period) {
+    REVLibError status;
+    status = applyParameter(
+      () -> m_spark.setPeriodicFramePeriod(frame, (int)period.in(Units.Milliseconds)),
+      () -> true,
+      "Set " + frame.name() + " rate failure!"
     );
     return status;
   }
