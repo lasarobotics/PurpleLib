@@ -563,6 +563,14 @@ public class MAXSwerveModule implements AutoCloseable {
   }
 
   /**
+   * Get location of module on robot chassis
+   * @return Location of module
+   */
+  public ModuleLocation getModuleLocation() {
+    return m_location;
+  }
+
+  /**
    * Get coordinate of module relative to the center of the robot
    * @return X, Y coordinate in meters
    */
