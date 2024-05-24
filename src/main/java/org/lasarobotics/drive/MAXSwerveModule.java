@@ -23,6 +23,7 @@ import org.littletonrobotics.junction.Logger;
 
 import com.revrobotics.CANSparkBase.ControlType;
 import com.revrobotics.CANSparkBase.IdleMode;
+import com.revrobotics.CANSparkLowLevel.PeriodicFrame;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -102,6 +103,7 @@ public class MAXSwerveModule implements AutoCloseable {
   private final Measure<Current> DRIVE_MOTOR_CURRENT_LIMIT;
   private final Measure<Current> ROTATE_MOTOR_CURRENT_LIMIT = Units.Amps.of(18.0);
   private final Rotation2d LOCK_POSITION = Rotation2d.fromRadians(Math.PI / 4);
+  private static final Measure<Time> DEFAULT_STATUS_FRAME_PERIOD = Units.Milliseconds.of(20.0);
 
   private static final String IS_SLIPPING_LOG_ENTRY = "/IsSlipping";
   private static final String ODOMETER_LOG_ENTRY = "/Odometer";
@@ -237,6 +239,11 @@ public class MAXSwerveModule implements AutoCloseable {
     // Set current limits
     m_driveMotor.setSmartCurrentLimit(DRIVE_MOTOR_CURRENT_LIMIT);
     m_rotateMotor.setSmartCurrentLimit(ROTATE_MOTOR_CURRENT_LIMIT);
+
+    // Set status frame rates
+    m_driveMotor.setPeriodicFrameRate(PeriodicFrame.kStatus1, DEFAULT_STATUS_FRAME_PERIOD);
+    m_driveMotor.setPeriodicFrameRate(PeriodicFrame.kStatus2, DEFAULT_STATUS_FRAME_PERIOD);
+    m_rotateMotor.setPeriodicFrameRate(PeriodicFrame.kStatus3, DEFAULT_STATUS_FRAME_PERIOD);
 
     // Reset encoder
     resetDriveEncoder();
