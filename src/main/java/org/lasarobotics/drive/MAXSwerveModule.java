@@ -243,7 +243,8 @@ public class MAXSwerveModule implements AutoCloseable {
     // Set status frame rates
     m_driveMotor.setPeriodicFrameRate(PeriodicFrame.kStatus1, DEFAULT_STATUS_FRAME_PERIOD);
     m_driveMotor.setPeriodicFrameRate(PeriodicFrame.kStatus2, DEFAULT_STATUS_FRAME_PERIOD);
-    m_rotateMotor.setPeriodicFrameRate(PeriodicFrame.kStatus3, DEFAULT_STATUS_FRAME_PERIOD);
+    m_rotateMotor.setPeriodicFrameRate(PeriodicFrame.kStatus5, DEFAULT_STATUS_FRAME_PERIOD);
+    m_rotateMotor.setPeriodicFrameRate(PeriodicFrame.kStatus6, DEFAULT_STATUS_FRAME_PERIOD);
 
     // Reset encoder
     resetDriveEncoder();
