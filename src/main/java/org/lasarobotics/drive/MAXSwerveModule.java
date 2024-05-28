@@ -37,6 +37,7 @@ import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Time;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.Velocity;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 
@@ -311,9 +312,10 @@ public class MAXSwerveModule implements AutoCloseable {
   public static Hardware initializeHardware(Spark.ID driveMotorID, Spark.ID rotateMotorID, MotorKind driveMotorKind) {
     if (driveMotorKind != MotorKind.NEO && driveMotorKind != MotorKind.NEO_VORTEX)
       throw new IllegalArgumentException("Drive motor MUST be a NEO or a NEO Vortex!");
+    var period = RobotBase.isReal() ? DEFAULT_PERIOD : Units.Seconds.of(GlobalConstants.ROBOT_LOOP_PERIOD);
     Hardware swerveModuleHardware = new Hardware(
-      new Spark(driveMotorID, driveMotorKind, DEFAULT_PERIOD),
-      new Spark(rotateMotorID, MotorKind.NEO_550, DEFAULT_PERIOD)
+      new Spark(driveMotorID, driveMotorKind, period),
+      new Spark(rotateMotorID, MotorKind.NEO_550, period)
     );
 
     return swerveModuleHardware;
