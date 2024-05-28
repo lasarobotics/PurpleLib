@@ -208,6 +208,7 @@ public class Spark extends LoggableHardware {
     PurpleManager.add(this);
 
     // Start sensor input thread
+    m_inputsThread.setName(m_id.name);
     if (!Logger.hasReplaySource()) m_inputsThread.startPeriodic(inputThreadPeriod.in(Units.Seconds));
   }
 
