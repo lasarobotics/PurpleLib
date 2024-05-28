@@ -325,7 +325,7 @@ public class MAXSwerveModule implements AutoCloseable {
    * Call this method periodically during simulation
    * (package-private)
    */
-   void simulationPeriodic() {
+  void simulationPeriodic() {
     m_driveMotor.getInputs().encoderPosition = m_simDrivePosition;
     m_rotateMotor.getInputs().absoluteEncoderPosition = m_simRotatePosition;
   }
