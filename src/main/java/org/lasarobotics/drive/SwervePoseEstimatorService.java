@@ -4,6 +4,7 @@
 
 package org.lasarobotics.drive;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
@@ -137,12 +138,12 @@ public class SwervePoseEstimatorService {
     this.m_pose = new SwervePoseEstimatorServiceInputsAutoLogged();
 
     // Initialise camera list
-    this.m_cameras = List.of();
+    this.m_cameras = new ArrayList<>();
 
     // Initialise vision variables
-    this.m_visionEstimatedPoses = List.of();
-    this.m_visibleTags = List.of();
-    this.m_visibleTagPoses = List.of();
+    this.m_visibleTags = new ArrayList<AprilTag>();
+    this.m_visibleTagPoses = new ArrayList<Pose3d>();
+    this.m_visionEstimatedPoses = new ArrayList<Pose2d>();
 
     // Initialise pose estimator thread
     this.m_thread = new Notifier(() -> {
@@ -157,9 +158,9 @@ public class SwervePoseEstimatorService {
         var result = camera.getLatestEstimatedPose();
         // If no updated vision pose estimate, continue
         if (result == null) {
-          m_visibleTags = List.of();
-          m_visibleTagPoses = List.of();
-          m_visionEstimatedPoses = List.of();
+          m_visibleTags = new ArrayList<AprilTag>();
+          m_visibleTagPoses = new ArrayList<Pose3d>();
+          m_visionEstimatedPoses = new ArrayList<Pose2d>();
           continue;
         }
         // Save estimated pose and visible tags for logging on main thread
