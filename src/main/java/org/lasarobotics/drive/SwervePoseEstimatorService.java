@@ -182,6 +182,7 @@ public class SwervePoseEstimatorService {
       // Update current pose
       m_pose.currentPose = m_poseEstimator.update(m_rotation2dSupplier.get(), m_swerveModulePositionSupplier.get());
     });
+    m_thread.setName(NAME);
 
     // Remember how to reset pose
     this.m_poseResetMethod = pose -> m_poseEstimator.resetPosition(m_rotation2dSupplier.get(), m_swerveModulePositionSupplier.get(), pose);
