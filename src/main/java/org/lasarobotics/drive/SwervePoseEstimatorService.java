@@ -33,6 +33,7 @@ import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Time;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.wpilibj.Notifier;
+import edu.wpi.first.wpilibj.RobotBase;
 
 /** Swerve Odometry Service */
 public class SwervePoseEstimatorService {
@@ -147,6 +148,14 @@ public class SwervePoseEstimatorService {
 
     // Initialise pose estimator thread
     this.m_thread = new Notifier(() -> {
+      // Update modules for simulation
+      if (RobotBase.isSimulation()) {
+        lFrontModule.get().simulationPeriodic();
+        rFrontModule.get().simulationPeriodic();
+        lRearModule.get().simulationPeriodic();
+        rRearModule.get().simulationPeriodic();
+      }
+
       // If no cameras, just update pose based on odometry and exit
       if (m_cameras.isEmpty()) {
         m_pose.currentPose = m_poseEstimator.update(m_rotation2dSupplier.get(), m_swerveModulePositionSupplier.get());
