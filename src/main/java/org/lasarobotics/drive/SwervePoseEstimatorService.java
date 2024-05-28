@@ -180,6 +180,9 @@ public class SwervePoseEstimatorService {
     // Remember how to reset pose
     this.m_poseResetMethod = pose -> m_poseEstimator.resetPosition(m_rotation2dSupplier.get(), m_swerveModulePositionSupplier.get(), pose);
 
+    // Register service as pose supplier with PurpleManager for simulation
+    PurpleManager.setPoseSupplier(this::getPose);
+
     // Set thread period to default
     this.m_threadPeriod = DEFAULT_THREAD_PERIOD;
   }

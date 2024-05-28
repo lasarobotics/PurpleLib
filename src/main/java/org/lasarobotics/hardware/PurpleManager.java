@@ -7,6 +7,7 @@ package org.lasarobotics.hardware;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.function.Supplier;
 
 import org.lasarobotics.battery.BatteryTracker;
 import org.lasarobotics.utils.GlobalConstants;
@@ -25,6 +26,7 @@ import com.ctre.phoenix6.SignalLogger;
 import com.revrobotics.REVPhysicsSim;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.PowerDistribution;
@@ -36,6 +38,7 @@ public class PurpleManager {
   private static ArrayList<Runnable> m_callbacks = new ArrayList<>();
   private static ArrayList<Runnable> m_simCallbacks = new ArrayList<>();
   private static VisionSystemSim m_visionSim = new VisionSystemSim("PurpleManager");
+  private static Supplier<Pose2d> m_poseSupplier = null;
 
   /**
    * Initialize and start logging
@@ -99,6 +102,9 @@ public class PurpleManager {
     // Initialize vision sim
     fieldLayout.setOrigin(AprilTagFieldLayout.OriginPosition.kBlueAllianceWallRightSide);
     m_visionSim.addAprilTags(fieldLayout);
+    addCallbackSim(() -> {
+      if (m_poseSupplier != null) m_visionSim.update(m_poseSupplier.get());
+    });
 
     // Run REV physics sim
     addCallbackSim(() -> REVPhysicsSim.getInstance().run());
@@ -162,6 +168,11 @@ public class PurpleManager {
 
     if (RobotBase.isReal()) return;
     m_simCallbacks.stream().forEach(Runnable::run);
+  }
+
+
+  public static void setPoseSupplier(Supplier<Pose2d> poseSupplier) {
+    m_poseSupplier = poseSupplier;
   }
 
   /**
