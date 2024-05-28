@@ -6,18 +6,23 @@ package org.lasarobotics.drive;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import org.lasarobotics.drive.MAXSwerveModule.ModuleLocation;
+import org.lasarobotics.hardware.PurpleManager;
 import org.lasarobotics.hardware.ctre.Pigeon2;
 import org.lasarobotics.hardware.kauailabs.NavX2;
-import org.lasarobotics.vision.AprilTagCameraResult;
+import org.lasarobotics.vision.AprilTagCamera;
+import org.littletonrobotics.junction.AutoLog;
+import org.littletonrobotics.junction.Logger;
 
+import edu.wpi.first.apriltag.AprilTag;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
@@ -30,16 +35,31 @@ import edu.wpi.first.wpilibj.Notifier;
 
 /** Swerve Odometry Service */
 public class SwervePoseEstimatorService {
+
+  @AutoLog
+  public static class SwervePoseEstimatorServiceInputs {
+    Pose2d currentPose = new Pose2d();
+  }
+
   private static final Matrix<N3,N1> VISION_STDDEV = VecBuilder.fill(1.0, 1.0, Math.toRadians(3.0));
   private static final Measure<Time> DEFAULT_THREAD_PERIOD = Units.Milliseconds.of(5.0);
+  private static final String NAME = "SwervePoseEstimatorService";
+  private static final String VISIBLE_TAGS_LOG_ENTRY = "/Vision/VisibleTags";
+  private static final String ESTIMATED_POSES_LOG_ENTRY = "/Vision/EstimatedPoses";
 
+  private boolean m_running;
   private Supplier<Rotation2d> m_rotation2dSupplier;
   private Supplier<SwerveModulePosition[]> m_swerveModulePositionSupplier;
+  private Consumer<Pose2d> m_poseResetMethod;
   private SwerveDrivePoseEstimator m_poseEstimator;
-  private AtomicReference<Pose2d> m_currentPose;
-  private AtomicReference<List<AprilTagCameraResult>> m_apriltagCameraResults;
+  private List<AprilTagCamera> m_cameras;
   private Measure<Time> m_threadPeriod;
   private Notifier m_thread;
+
+  private volatile List<Pose2d> m_visionEstimatedPoses;
+  private volatile List<AprilTag> m_visibleTags;
+  private volatile List<Pose3d> m_visibleTagPoses;
+  private volatile SwervePoseEstimatorServiceInputsAutoLogged m_pose;
 
   /**
    * Create Swerve Pose Estimator Service
@@ -58,7 +78,7 @@ public class SwervePoseEstimatorService {
    * <p>
    * This service runs in the background and keeps track of where the robot is on the field
    * @param odometryStdDev Standard deviation of wheel odometry measurements
-   * @param imu CTRE Pidgeon 2.0 IMU
+   * @param imu CTRE Pigeon 2.0 IMU
    * @param modules MAXSwerve modules
    */
   public SwervePoseEstimatorService(Matrix<N3,N1> odometryStdDev, Pigeon2 imu, MAXSwerveModule... modules) {
@@ -67,6 +87,7 @@ public class SwervePoseEstimatorService {
 
   private SwervePoseEstimatorService(Matrix<N3,N1> odometryStdDev, Supplier<Rotation2d> rotation2dSupplier, MAXSwerveModule... modules) {
     if (modules.length != 4) throw new IllegalArgumentException("Four (4) modules must be used!");
+    this.m_running = false;
     // Remember how to get rotation2d from IMU
     this.m_rotation2dSupplier = rotation2dSupplier;
 
@@ -99,6 +120,9 @@ public class SwervePoseEstimatorService {
       rRearModule.get().getModuleCoordinate()
     );
 
+    // Register callback with PurpleManager
+    PurpleManager.addCallback(() -> periodic());
+
     // Initialise pose estimator
     this.m_poseEstimator = new SwerveDrivePoseEstimator(
       kinematics,
@@ -110,27 +134,63 @@ public class SwervePoseEstimatorService {
     );
 
     // Initialise current pose and AprilTag camera results
-    this.m_currentPose = new AtomicReference<Pose2d>(new Pose2d());
-    this.m_apriltagCameraResults = new AtomicReference<List<AprilTagCameraResult>>(List.of());
+    this.m_pose = new SwervePoseEstimatorServiceInputsAutoLogged();
+
+    // Initialise camera list
+    this.m_cameras = List.of();
 
     // Initialise pose estimator thread
     this.m_thread = new Notifier(() -> {
+      // If no cameras, just update pose based on odometry and exit
+      if (m_cameras.isEmpty()) {
+        m_pose.currentPose = m_poseEstimator.update(m_rotation2dSupplier.get(), m_swerveModulePositionSupplier.get());
+        return;
+      }
+
       // Add AprilTag pose estimates if available
-      var apriltagCameraResults = m_apriltagCameraResults.get();
-      if (!apriltagCameraResults.isEmpty()) {
-        for (var result : apriltagCameraResults) {
-          m_poseEstimator.addVisionMeasurement(
-            result.estimatedRobotPose.estimatedPose.toPose2d(),
-            result.estimatedRobotPose.timestampSeconds,
-            result.standardDeviation
-          );
+      for (var camera : m_cameras) {
+        var result = camera.getLatestEstimatedPose();
+        // If no updated vision pose estimate, continue
+        if (result == null) {
+          m_visibleTags = List.of();
+          m_visibleTagPoses = List.of();
+          m_visionEstimatedPoses = List.of();
+          continue;
         }
-        m_apriltagCameraResults.set(List.of());
+        // Save estimated pose and visible tags for logging on main thread
+        m_visionEstimatedPoses.add(result.estimatedRobotPose.estimatedPose.toPose2d());
+        result.estimatedRobotPose.targetsUsed.forEach((photonTrackedTarget) -> {
+        var tag = camera.getTag(photonTrackedTarget.getFiducialId());
+          if (tag.isPresent()) {
+            m_visibleTags.add(tag.get());
+            m_visibleTagPoses.add(tag.get().pose);
+          }
+        });
+        // Add vision measurement
+        m_poseEstimator.addVisionMeasurement(
+          result.estimatedRobotPose.estimatedPose.toPose2d(),
+          result.estimatedRobotPose.timestampSeconds,
+          result.standardDeviation
+        );
       }
       // Update current pose
-      m_currentPose.set(m_poseEstimator.update(m_rotation2dSupplier.get(), m_swerveModulePositionSupplier.get()));
+      m_pose.currentPose = m_poseEstimator.update(m_rotation2dSupplier.get(), m_swerveModulePositionSupplier.get());
     });
+
+    // Remember how to reset pose
+    this.m_poseResetMethod = pose -> m_poseEstimator.resetPosition(m_rotation2dSupplier.get(), m_swerveModulePositionSupplier.get(), pose);
+
+    // Set thread period to default
     this.m_threadPeriod = DEFAULT_THREAD_PERIOD;
+  }
+
+  /**
+   * Call this method periodically
+   */
+  private void periodic() {
+    Logger.processInputs(NAME, m_pose);
+    Logger.recordOutput(NAME + VISIBLE_TAGS_LOG_ENTRY, m_visibleTagPoses.toArray(new Pose3d[0]));
+    Logger.recordOutput(NAME + ESTIMATED_POSES_LOG_ENTRY, m_visionEstimatedPoses.toArray(new Pose2d[0]));
   }
 
   /**
@@ -144,17 +204,22 @@ public class SwervePoseEstimatorService {
   }
 
   /**
-   * Add AprilTag camera pose estimate
-   * @param result AprilTag camera pose estimate result
+   * Add AprilTag camera to pose estimator service
+   * <p>
+   * Service will automatically query the camera for vision pose estimates
+   * and add them to the pose estimator
+   * @param cameras
    */
-  public void addAprilTagResult(AprilTagCameraResult result) {
-    m_apriltagCameraResults.getAcquire().add(result);
+  public void addAprilTagCamera(AprilTagCamera... cameras) {
+    m_cameras.addAll(Arrays.asList(cameras));
   }
 
   /**
    * Start pose estimator thread
    */
   public void start() {
+    m_running = true;
+    if (Logger.hasReplaySource()) return;
     m_thread.startPeriodic(m_threadPeriod.in(Units.Seconds));
   }
 
@@ -162,6 +227,30 @@ public class SwervePoseEstimatorService {
    * Stop pose estimator thread
    */
   public void stop() {
+    m_running = false;
+    if (Logger.hasReplaySource()) return;
     m_thread.stop();
+  }
+
+  /**
+   * Get latest estimated pose from service
+   * @return Latest robot pose estimate
+   */
+  public Pose2d getPose() {
+    return m_pose.currentPose;
+  }
+
+  /**
+   * Reset pose estimator
+   * @param pose Pose to reset to
+   */
+  public void resetPose(Pose2d pose) {
+    // Remember if service was running and stop if it is
+    var wasRunning = m_running;
+    if (m_running) stop();
+    // Reset pose estimator to desired pose
+    m_poseResetMethod.accept(pose);
+    // Restart service if it was previously running
+    if (wasRunning) start();
   }
 }
