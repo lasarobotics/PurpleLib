@@ -4,7 +4,6 @@
 
 package org.lasarobotics.hardware.revrobotics;
 
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -139,7 +138,6 @@ public class Spark extends LoggableHardware {
 
   private ID m_id;
   private MotorKind m_kind;
-  private AtomicReference<SparkInputsAutoLogged> m_inputs;
   private Notifier m_inputsThread;
 
   private boolean m_isSmoothMotionEnabled;
@@ -156,13 +154,15 @@ public class Spark extends LoggableHardware {
   private SparkLimitSwitch.Type m_limitSwitchType = SparkLimitSwitch.Type.kNormallyOpen;
   private RelativeEncoder m_encoder;
 
+  private volatile SparkInputsAutoLogged m_inputs;
+
   /**
    * Create a Spark that is unit-testing friendly with built-in logging
    * @param id Spark ID
    * @param kind The kind of motor connected to the controller
    * @param limitSwitchType Polarity of connected limit switches
    */
-  public Spark(ID id, MotorKind kind, SparkLimitSwitch.Type limitSwitchType) {
+  public Spark(ID id, MotorKind kind, SparkLimitSwitch.Type limitSwitchType, Measure<Time> inputThreadPeriod) {
     if (kind.equals(MotorKind.NEO_VORTEX)) {
       this.m_spark = new CANSparkFlex(id.deviceID, kind.type);
       this.m_encoder = m_spark.getEncoder(SparkRelativeEncoder.Type.kQuadrature, GlobalConstants.VORTEX_ENCODER_TICKS_PER_ROTATION);
@@ -173,7 +173,7 @@ public class Spark extends LoggableHardware {
     }
     this.m_id = id;
     this.m_kind = kind;
-    this.m_inputs = new AtomicReference<SparkInputsAutoLogged>();
+    this.m_inputs = new SparkInputsAutoLogged();
     this.m_inputsThread = new Notifier(this::updateInputs);
     this.m_isSmoothMotionEnabled = false;
     this.m_limitSwitchType = limitSwitchType;
@@ -201,13 +201,25 @@ public class Spark extends LoggableHardware {
     setPeriodicFrameRate(PeriodicFrame.kStatus6, DEFAULT_STATUS_FRAME_PERIOD);
 
     // Update inputs on init
+    updateInputs();
     periodic();
 
     // Register device with manager
     PurpleManager.add(this);
 
     // Start sensor input thread
-    m_inputsThread.startPeriodic(GlobalConstants.ROBOT_LOOP_PERIOD);
+    if (!Logger.hasReplaySource()) m_inputsThread.startPeriodic(inputThreadPeriod.in(Units.Seconds));
+  }
+
+  /**
+   * Create a Spark that is unit-testing friendly with built-in logging
+   * <p>
+   * Defaults to normally-open limit switches, {@value GlobalConstants#ROBOT_LOOP_HZ} Hz input thread frequency
+   * @param id Spark ID
+   * @param kind The kind of motor connected to the controller
+   */
+  public Spark(ID id, MotorKind kind) {
+    this(id, kind, SparkLimitSwitch.Type.kNormallyOpen, Units.Seconds.of(GlobalConstants.ROBOT_LOOP_PERIOD));
   }
 
   /**
@@ -216,9 +228,10 @@ public class Spark extends LoggableHardware {
    * Defaults to normally-open limit switches
    * @param id Spark ID
    * @param kind The kind of motor connected to the controller
+   * @param inputThreadPeriod Period of input thread
    */
-  public Spark(ID id, MotorKind kind) {
-    this(id, kind, SparkLimitSwitch.Type.kNormallyOpen);
+  public Spark(ID id, MotorKind kind, Measure<Time> inputThreadPeriod) {
+    this(id, kind, SparkLimitSwitch.Type.kNormallyOpen, inputThreadPeriod);
   }
 
   /**
@@ -471,20 +484,17 @@ public class Spark extends LoggableHardware {
    * Update sensor input readings
    */
   private void updateInputs() {
-    var inputs = new SparkInputsAutoLogged();
-    inputs.analogPosition = getAnalogPosition();
-    inputs.analogVelocity = getAnalogVelocity();
-    inputs.absoluteEncoderPosition = getAbsoluteEncoderPosition();
-    inputs.absoluteEncoderVelocity = getAbsoluteEncoderVelocity();
-    inputs.forwardLimitSwitch = getForwardLimitSwitch().isPressed();
-    inputs.reverseLimitSwitch = getReverseLimitSwitch().isPressed();
+    m_inputs.analogPosition = getAnalogPosition();
+    m_inputs.analogVelocity = getAnalogVelocity();
+    m_inputs.absoluteEncoderPosition = getAbsoluteEncoderPosition();
+    m_inputs.absoluteEncoderVelocity = getAbsoluteEncoderVelocity();
+    m_inputs.forwardLimitSwitch = getForwardLimitSwitch().isPressed();
+    m_inputs.reverseLimitSwitch = getReverseLimitSwitch().isPressed();
 
     if (!getMotorType().equals(MotorType.kBrushed)) {
-      inputs.encoderPosition = getEncoderPosition();
-      inputs.encoderVelocity = getEncoderVelocity();
+      m_inputs.encoderPosition = getEncoderPosition();
+      m_inputs.encoderVelocity = getEncoderVelocity();
     }
-
-    m_inputs.set(inputs);
   }
 
   /**
@@ -509,7 +519,7 @@ public class Spark extends LoggableHardware {
    */
   @Override
   protected void periodic() {
-    Logger.processInputs(m_id.name, m_inputs.get());
+    Logger.processInputs(m_id.name, m_inputs);
 
     handleSmoothMotion();
 
@@ -526,7 +536,7 @@ public class Spark extends LoggableHardware {
    */
   @Override
   public SparkInputsAutoLogged getInputs() {
-    return m_inputs.get();
+    return m_inputs;
   }
 
   /**
