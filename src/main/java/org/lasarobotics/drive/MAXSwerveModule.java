@@ -103,7 +103,7 @@ public class MAXSwerveModule implements AutoCloseable {
   private final Measure<Current> DRIVE_MOTOR_CURRENT_LIMIT;
   private final Measure<Current> ROTATE_MOTOR_CURRENT_LIMIT = Units.Amps.of(18.0);
   private final Rotation2d LOCK_POSITION = Rotation2d.fromRadians(Math.PI / 4);
-  private static final Measure<Time> DEFAULT_STATUS_FRAME_PERIOD = Units.Milliseconds.of(5.0);
+  private static final Measure<Time> DEFAULT_PERIOD = Units.Milliseconds.of(5.0);
 
   private static final String IS_SLIPPING_LOG_ENTRY = "/IsSlipping";
   private static final String ODOMETER_LOG_ENTRY = "/Odometer";
@@ -241,10 +241,10 @@ public class MAXSwerveModule implements AutoCloseable {
     m_rotateMotor.setSmartCurrentLimit(ROTATE_MOTOR_CURRENT_LIMIT);
 
     // Set status frame rates
-    m_driveMotor.setPeriodicFrameRate(PeriodicFrame.kStatus1, DEFAULT_STATUS_FRAME_PERIOD);
-    m_driveMotor.setPeriodicFrameRate(PeriodicFrame.kStatus2, DEFAULT_STATUS_FRAME_PERIOD);
-    m_rotateMotor.setPeriodicFrameRate(PeriodicFrame.kStatus5, DEFAULT_STATUS_FRAME_PERIOD);
-    m_rotateMotor.setPeriodicFrameRate(PeriodicFrame.kStatus6, DEFAULT_STATUS_FRAME_PERIOD);
+    m_driveMotor.setPeriodicFrameRate(PeriodicFrame.kStatus1, DEFAULT_PERIOD);
+    m_driveMotor.setPeriodicFrameRate(PeriodicFrame.kStatus2, DEFAULT_PERIOD);
+    m_rotateMotor.setPeriodicFrameRate(PeriodicFrame.kStatus5, DEFAULT_PERIOD);
+    m_rotateMotor.setPeriodicFrameRate(PeriodicFrame.kStatus6, DEFAULT_PERIOD);
 
     // Reset encoder
     resetDriveEncoder();
@@ -312,8 +312,8 @@ public class MAXSwerveModule implements AutoCloseable {
     if (driveMotorKind != MotorKind.NEO && driveMotorKind != MotorKind.NEO_VORTEX)
       throw new IllegalArgumentException("Drive motor MUST be a NEO or a NEO Vortex!");
     Hardware swerveModuleHardware = new Hardware(
-      new Spark(driveMotorID, driveMotorKind),
-      new Spark(rotateMotorID, MotorKind.NEO_550)
+      new Spark(driveMotorID, driveMotorKind, DEFAULT_PERIOD),
+      new Spark(rotateMotorID, MotorKind.NEO_550, DEFAULT_PERIOD)
     );
 
     return swerveModuleHardware;
