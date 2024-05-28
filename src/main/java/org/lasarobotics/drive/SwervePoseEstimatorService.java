@@ -139,6 +139,11 @@ public class SwervePoseEstimatorService {
     // Initialise camera list
     this.m_cameras = List.of();
 
+    // Initialise vision variables
+    this.m_visionEstimatedPoses = List.of();
+    this.m_visibleTags = List.of();
+    this.m_visibleTagPoses = List.of();
+
     // Initialise pose estimator thread
     this.m_thread = new Notifier(() -> {
       // If no cameras, just update pose based on odometry and exit
