@@ -29,6 +29,7 @@ import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.RobotBase;
 
@@ -105,6 +106,9 @@ public class PurpleManager {
     addCallbackSim(() -> {
       if (m_poseSupplier != null) m_visionSim.update(m_poseSupplier.get());
     });
+
+    // Set thread priority
+    Notifier.setHALThreadPriority(true, 99);
 
     // Run REV physics sim
     addCallbackSim(() -> REVPhysicsSim.getInstance().run());
