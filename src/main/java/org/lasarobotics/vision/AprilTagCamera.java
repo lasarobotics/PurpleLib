@@ -45,8 +45,7 @@ public class AprilTagCamera implements AutoCloseable {
     public final EstimatedRobotPose estimatedRobotPose;
     public final Matrix<N3, N1> standardDeviation;
 
-    public Result(EstimatedRobotPose estimatedRobotPose,
-                                Matrix<N3, N1> standardDeviation) {
+    public Result(EstimatedRobotPose estimatedRobotPose, Matrix<N3, N1> standardDeviation) {
       this.estimatedRobotPose = estimatedRobotPose;
       this.standardDeviation = standardDeviation;
     }
