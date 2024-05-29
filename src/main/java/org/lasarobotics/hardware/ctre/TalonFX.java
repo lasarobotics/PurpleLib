@@ -11,7 +11,13 @@ import org.lasarobotics.hardware.PurpleManager;
 import org.littletonrobotics.junction.AutoLog;
 import org.littletonrobotics.junction.Logger;
 
+import com.ctre.phoenix.CANifier;
 import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix6.configs.HardwareLimitSwitchConfigs;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.hardware.CANcoder;
+import com.ctre.phoenix6.signals.ForwardLimitSourceValue;
+import com.ctre.phoenix6.signals.ReverseLimitSourceValue;
 
 
 /** TalonFX */
@@ -21,7 +27,6 @@ public class TalonFX extends LoggableHardware {
     public final String name;
     public final PhoenixCANBus bus;
     public final int deviceID;
-
 
     /**
      * TalonFX ID
@@ -36,8 +41,6 @@ public class TalonFX extends LoggableHardware {
     }
   }
 
-
-
   /**
    * TalonFX sensor inputs
    */
@@ -46,6 +49,9 @@ public class TalonFX extends LoggableHardware {
     public double selectedSensorPosition = 0.0;
     public double selectedSensorVelocity = 0.0;
   }
+  private static final double MAX_VOLTAGE = 12.0;
+  private static final double MOTOR_DEADBAND = 0.01;
+
 
   private static final String VALUE_LOG_ENTRY = "/OutputValue";
   private static final String MODE_LOG_ENTRY = "/OutputMode";
@@ -57,6 +63,8 @@ public class TalonFX extends LoggableHardware {
   private ID m_id;
   private TalonFXInputsAutoLogged m_inputs;
 
+  private TalonFXConfiguration m_TalonFXConfiguration;
+ 
   /**
    * Create a TalonFX object with built-in logging
    * @param id TalonFX ID
@@ -69,6 +77,7 @@ public class TalonFX extends LoggableHardware {
 
     // Disable motor safety
     m_talon.setSafetyEnabled(false);
+
 
     periodic();
   }
@@ -84,7 +93,6 @@ public class TalonFX extends LoggableHardware {
     Logger.recordOutput(m_id.name + CURRENT_LOG_ENTRY, m_talon.getStatorCurrent().getValue());
   }
 
-
   /**
    * Get the selected sensor position (in raw sensor units).
    *
@@ -93,7 +101,6 @@ public class TalonFX extends LoggableHardware {
   private double getSelectedSensorPosition() {
     return m_talon.getPosition().getValue();
   }
-
 
   /**
    * Get the selected sensor velocity.
@@ -133,6 +140,48 @@ public class TalonFX extends LoggableHardware {
     return m_id;
   }
 
+  /**
+   * Initiialize remote limit switches with RemoteTalonFX as the sensor
+   * @param talonfx Sensor for limit switches
+   */
+  public void initializeRemoteTalonFXLimitSwitches(com.ctre.phoenix6.hardware.TalonFX talonfx) {
+   HardwareLimitSwitchConfigs limitConfigs = m_TalonFXConfiguration.HardwareLimitSwitch;
+    limitConfigs.ForwardLimitSource = ForwardLimitSourceValue.RemoteTalonFX;
+    limitConfigs.ForwardLimitRemoteSensorID = talonfx.getDeviceID();
+    limitConfigs.ReverseLimitSource = ReverseLimitSourceValue.RemoteTalonFX;
+    limitConfigs.ReverseLimitRemoteSensorID = talonfx.getDeviceID();
+
+   m_talon.getConfigurator().apply(limitConfigs);
+  }
+  
+  /**
+   * Initialize remote limit switches with CANcoder as the sensor
+   * @param cancoder Sensor for limit switches
+   */
+  public void initializeRemoteCANCoderLimitSwitches(CANcoder cancoder) {
+   HardwareLimitSwitchConfigs limitConfigs = m_TalonFXConfiguration.HardwareLimitSwitch;
+    limitConfigs.ForwardLimitSource = ForwardLimitSourceValue.RemoteCANcoder;
+    limitConfigs.ForwardLimitRemoteSensorID = cancoder.getDeviceID();   
+    limitConfigs.ReverseLimitSource = ReverseLimitSourceValue.RemoteCANcoder;
+    limitConfigs.ReverseLimitRemoteSensorID = cancoder.getDeviceID();
+
+   m_talon.getConfigurator().apply(limitConfigs);
+  }
+
+  /**
+   * Initialize remote limit switches with CANifier as the sensor
+   * @param canifier Sensor for limit switches
+   */
+  public void initializeRemoteCANifierLimitSwitches(CANifier canifier) {
+   HardwareLimitSwitchConfigs limitConfigs = m_TalonFXConfiguration.HardwareLimitSwitch;
+    limitConfigs.ForwardLimitSource = ForwardLimitSourceValue.RemoteCANifier;
+    limitConfigs.ForwardLimitRemoteSensorID = canifier.getDeviceID();
+    limitConfigs.ReverseLimitSource = ReverseLimitSourceValue.RemoteCANifier;
+    limitConfigs.ReverseLimitRemoteSensorID = canifier.getDeviceID();
+    
+   m_talon.getConfigurator().apply(limitConfigs);
+  }
+
    /**
     * Closes the TalonFX motor controller
     */
@@ -142,8 +191,3 @@ public class TalonFX extends LoggableHardware {
       m_talon.close();
     }
 }
-
-
-
-
-
