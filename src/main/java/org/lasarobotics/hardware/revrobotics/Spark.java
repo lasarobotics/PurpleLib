@@ -485,16 +485,18 @@ public class Spark extends LoggableHardware {
    * Update sensor input readings
    */
   private void updateInputs() {
-    m_inputs.analogPosition = getAnalogPosition();
-    m_inputs.analogVelocity = getAnalogVelocity();
-    m_inputs.absoluteEncoderPosition = getAbsoluteEncoderPosition();
-    m_inputs.absoluteEncoderVelocity = getAbsoluteEncoderVelocity();
-    m_inputs.forwardLimitSwitch = getForwardLimitSwitch().isPressed();
-    m_inputs.reverseLimitSwitch = getReverseLimitSwitch().isPressed();
+    synchronized (m_inputs) {
+      m_inputs.analogPosition = getAnalogPosition();
+      m_inputs.analogVelocity = getAnalogVelocity();
+      m_inputs.absoluteEncoderPosition = getAbsoluteEncoderPosition();
+      m_inputs.absoluteEncoderVelocity = getAbsoluteEncoderVelocity();
+      m_inputs.forwardLimitSwitch = getForwardLimitSwitch().isPressed();
+      m_inputs.reverseLimitSwitch = getReverseLimitSwitch().isPressed();
 
-    if (!getMotorType().equals(MotorType.kBrushed)) {
-      m_inputs.encoderPosition = getEncoderPosition();
-      m_inputs.encoderVelocity = getEncoderVelocity();
+      if (!getMotorType().equals(MotorType.kBrushed)) {
+        m_inputs.encoderPosition = getEncoderPosition();
+        m_inputs.encoderVelocity = getEncoderVelocity();
+      }
     }
   }
 
