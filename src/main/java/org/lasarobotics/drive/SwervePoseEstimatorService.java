@@ -4,6 +4,8 @@
 
 package org.lasarobotics.drive;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -14,6 +16,7 @@ import org.lasarobotics.drive.MAXSwerveModule.ModuleLocation;
 import org.lasarobotics.hardware.PurpleManager;
 import org.lasarobotics.hardware.ctre.Pigeon2;
 import org.lasarobotics.hardware.kauailabs.NavX2;
+import org.lasarobotics.utils.GlobalConstants;
 import org.lasarobotics.vision.AprilTagCamera;
 import org.littletonrobotics.junction.AutoLog;
 import org.littletonrobotics.junction.Logger;
@@ -55,6 +58,7 @@ public class SwervePoseEstimatorService {
   private SwerveDrivePoseEstimator m_poseEstimator;
   private List<AprilTagCamera> m_cameras;
   private Measure<Time> m_threadPeriod;
+  private Instant m_lastVisionUpdateTime;
   private Notifier m_thread;
 
   private volatile List<Pose2d> m_visionEstimatedPoses;
@@ -158,9 +162,11 @@ public class SwervePoseEstimatorService {
         var result = camera.getLatestEstimatedPose();
         // If no updated vision pose estimate, continue
         if (result == null) {
-          m_visibleTags = new ArrayList<AprilTag>();
-          m_visibleTagPoses = new ArrayList<Pose3d>();
-          m_visionEstimatedPoses = new ArrayList<Pose2d>();
+          if (Duration.between(m_lastVisionUpdateTime, Instant.now()).toMillis() / 1000.0 > GlobalConstants.ROBOT_LOOP_PERIOD) {
+            m_visibleTags = new ArrayList<AprilTag>();
+            m_visibleTagPoses = new ArrayList<Pose3d>();
+            m_visionEstimatedPoses = new ArrayList<Pose2d>();
+          }
           continue;
         }
         // Save estimated pose and visible tags for logging on main thread
@@ -178,6 +184,9 @@ public class SwervePoseEstimatorService {
           result.estimatedRobotPose.timestampSeconds,
           result.standardDeviation
         );
+
+        // Update vision update time
+        m_lastVisionUpdateTime = Instant.now();
       }
       // Update current pose
       m_pose.currentPose = m_poseEstimator.update(m_rotation2dSupplier.get(), m_swerveModulePositionSupplier.get());
@@ -192,6 +201,9 @@ public class SwervePoseEstimatorService {
 
     // Set thread period to default
     this.m_threadPeriod = DEFAULT_THREAD_PERIOD;
+
+    // Set last vision update time
+    this.m_lastVisionUpdateTime = Instant.now();
   }
 
   /**
