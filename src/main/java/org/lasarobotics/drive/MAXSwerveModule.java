@@ -138,11 +138,12 @@ public class MAXSwerveModule implements AutoCloseable {
   private ModuleLocation m_location;
   private Rotation2d m_previousRotatePosition;
 
+  private volatile double m_simDrivePosition;
+  private volatile SwerveModuleState m_desiredState;
+
   private GearRatio m_driveGearRatio;
   private double m_driveConversionFactor;
   private double m_rotateConversionFactor;
-  private double m_simDrivePosition;
-  private double m_simRotatePosition;
   private double m_radius;
   private double m_autoLockTime;
   private boolean m_autoLock;
@@ -184,7 +185,7 @@ public class MAXSwerveModule implements AutoCloseable {
     this.m_driveGearRatio = driveGearRatio;
     this.m_autoLock = true;
     this.m_simDrivePosition = 0.0;
-    this.m_simRotatePosition = 0.0;
+    this.m_desiredState = new SwerveModuleState(Units.MetersPerSecond.of(0.0), LOCK_POSITION);
     this.m_autoLockTime = MathUtil.clamp(autoLockTime.in(Units.Milliseconds), 0.0, MAX_AUTO_LOCK_TIME * 1000);
     this.m_previousRotatePosition = LOCK_POSITION;
     this.m_tractionControlController =  new TractionControlController(Units.MetersPerSecond.of(DRIVE_MAX_LINEAR_SPEED), maxSlippingTime, slipRatio);
@@ -271,7 +272,6 @@ public class MAXSwerveModule implements AutoCloseable {
 
     // Add callbacks to PurpleManager
     PurpleManager.addCallback(() -> periodic());
-    PurpleManager.addCallbackSim(() -> simulationPeriodic());
 
     // Setup disabled triggers
     RobotModeTriggers.disabled().onTrue(Commands.runOnce(() -> disabledInit()).ignoringDisable(true));
@@ -312,22 +312,13 @@ public class MAXSwerveModule implements AutoCloseable {
   public static Hardware initializeHardware(Spark.ID driveMotorID, Spark.ID rotateMotorID, MotorKind driveMotorKind) {
     if (driveMotorKind != MotorKind.NEO && driveMotorKind != MotorKind.NEO_VORTEX)
       throw new IllegalArgumentException("Drive motor MUST be a NEO or a NEO Vortex!");
-    var period = RobotBase.isReal() ? DEFAULT_PERIOD : Units.Seconds.of(GlobalConstants.ROBOT_LOOP_PERIOD);
+    //var period = RobotBase.isReal() ? DEFAULT_PERIOD : Units.Seconds.of(GlobalConstants.ROBOT_LOOP_PERIOD);
     Hardware swerveModuleHardware = new Hardware(
-      new Spark(driveMotorID, driveMotorKind, period),
-      new Spark(rotateMotorID, MotorKind.NEO_550, period)
+      new Spark(driveMotorID, driveMotorKind, DEFAULT_PERIOD),
+      new Spark(rotateMotorID, MotorKind.NEO_550, DEFAULT_PERIOD)
     );
 
     return swerveModuleHardware;
-  }
-
-  /**
-   * Call this method periodically during simulation
-   * (package-private)
-   */
-  void simulationPeriodic() {
-    m_driveMotor.getInputs().encoderPosition = m_simDrivePosition;
-    m_rotateMotor.getInputs().absoluteEncoderPosition = m_simRotatePosition;
   }
 
   /**
@@ -416,23 +407,19 @@ public class MAXSwerveModule implements AutoCloseable {
     }
 
     // Get desired state
-    var desiredState = getDesiredState(state);
+    m_desiredState = getDesiredState(state);
 
     // Set rotate motor position
-    m_rotateMotor.set(desiredState.angle.getRadians(), ControlType.kPosition);
+    m_rotateMotor.set(m_desiredState.angle.getRadians(), ControlType.kPosition);
 
     // Set drive motor speed
-    m_driveMotor.set(desiredState.speedMetersPerSecond, ControlType.kVelocity);
-
-    // Save drive and rotate position for simulation purposes only
-    m_simDrivePosition += desiredState.speedMetersPerSecond * GlobalConstants.ROBOT_LOOP_PERIOD;
-    m_simRotatePosition = desiredState.angle.getRadians();
+    m_driveMotor.set(m_desiredState.speedMetersPerSecond, ControlType.kVelocity);
 
     // Save rotate position
-    m_previousRotatePosition = desiredState.angle;
+    m_previousRotatePosition = m_desiredState.angle;
 
     // Increment odometer
-    m_runningOdometer += Math.abs(desiredState.speedMetersPerSecond) * GlobalConstants.ROBOT_LOOP_PERIOD;
+    m_runningOdometer += Math.abs(m_desiredState.speedMetersPerSecond) * GlobalConstants.ROBOT_LOOP_PERIOD;
   }
 
   /**
@@ -492,13 +479,30 @@ public class MAXSwerveModule implements AutoCloseable {
 
   /**
    * Get module position
+   * <p>
+   * Must be called periodically in simulation to keep position updated.
+   * Usually this is automatically done by the pose estimator service.
    * @return Current module position
    */
   public SwerveModulePosition getPosition() {
-    return new SwerveModulePosition(
-      m_driveMotor.getInputs().encoderPosition,
-      Rotation2d.fromRadians(m_rotateMotor.getInputs().absoluteEncoderPosition).minus(m_location.offset)
-    );
+    if (RobotBase.isReal()) {
+      return new SwerveModulePosition(
+        m_driveMotor.getInputs().encoderPosition,
+        Rotation2d.fromRadians(m_rotateMotor.getInputs().absoluteEncoderPosition).minus(m_location.offset)
+      );
+    }
+
+    m_simDrivePosition += m_desiredState.speedMetersPerSecond * DEFAULT_PERIOD.in(Units.Seconds);
+    synchronized (m_driveMotor.getInputs()) {
+      m_driveMotor.getInputs().encoderPosition = m_simDrivePosition;
+      synchronized (m_rotateMotor.getInputs()) {
+        m_rotateMotor.getInputs().absoluteEncoderPosition = m_desiredState.angle.getRadians();
+        return new SwerveModulePosition(
+          m_driveMotor.getInputs().encoderPosition,
+          Rotation2d.fromRadians(m_rotateMotor.getInputs().absoluteEncoderPosition).minus(m_location.offset)
+        );
+      }
+    }
   }
 
   /**

@@ -33,7 +33,6 @@ import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Time;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.wpilibj.Notifier;
-import edu.wpi.first.wpilibj.RobotBase;
 
 /** Swerve Odometry Service */
 public class SwervePoseEstimatorService {
@@ -139,7 +138,7 @@ public class SwervePoseEstimatorService {
     this.m_pose = new SwervePoseEstimatorServiceInputsAutoLogged();
 
     // Initialise camera list
-    this.m_cameras = new ArrayList<>();
+    this.m_cameras = new ArrayList<AprilTagCamera>();
 
     // Initialise vision variables
     this.m_visibleTags = new ArrayList<AprilTag>();
@@ -148,14 +147,6 @@ public class SwervePoseEstimatorService {
 
     // Initialise pose estimator thread
     this.m_thread = new Notifier(() -> {
-      // Update modules for simulation
-      if (RobotBase.isSimulation()) {
-        lFrontModule.get().simulationPeriodic();
-        rFrontModule.get().simulationPeriodic();
-        lRearModule.get().simulationPeriodic();
-        rRearModule.get().simulationPeriodic();
-      }
-
       // If no cameras, just update pose based on odometry and exit
       if (m_cameras.isEmpty()) {
         m_pose.currentPose = m_poseEstimator.update(m_rotation2dSupplier.get(), m_swerveModulePositionSupplier.get());
@@ -174,8 +165,8 @@ public class SwervePoseEstimatorService {
         }
         // Save estimated pose and visible tags for logging on main thread
         m_visionEstimatedPoses.add(result.estimatedRobotPose.estimatedPose.toPose2d());
-        result.estimatedRobotPose.targetsUsed.forEach((photonTrackedTarget) -> {
-        var tag = camera.getTag(photonTrackedTarget.getFiducialId());
+        result.estimatedRobotPose.targetsUsed.forEach(photonTrackedTarget -> {
+          var tag = camera.getTag(photonTrackedTarget.getFiducialId());
           if (tag.isPresent()) {
             m_visibleTags.add(tag.get());
             m_visibleTagPoses.add(tag.get().pose);

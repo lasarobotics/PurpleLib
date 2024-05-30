@@ -51,6 +51,7 @@ public class MAXSwerveModuleTest {
   private final Measure<Distance> TRACK_WIDTH = Units.Meters.of(0.6);
   private final Measure<Time> AUTO_LOCK_TIME = Units.Seconds.of(3.0);
   private final Measure<Time> MAX_SLIPPING_TIME = Units.Seconds.of(0.6);
+  private final Measure<Time> ODOMETRY_PERIOD = Units.Milliseconds.of(5.0);
   private final Measure<Current> DRIVE_CURRENT_LIMIT = Units.Amps.of(50.0);
 
   private final Measure<Velocity<Distance>> NEO_MAX_LINEAR_SPEED = Units.MetersPerSecond.of(4.327);
@@ -246,11 +247,8 @@ public class MAXSwerveModuleTest {
     SwerveModuleState desiredState = new SwerveModuleState(2.0, Rotation2d.fromRadians(+Math.PI));
     m_lFrontModule.set(desiredState);
 
-    // Run in simulation
-    m_lFrontModule.simulationPeriodic();
-
     // Verify module reports expected position
-    assertEquals(new SwerveModulePosition(-desiredState.speedMetersPerSecond * GlobalConstants.ROBOT_LOOP_PERIOD, desiredState.angle.minus(ROTATION_PI)), m_lFrontModule.getPosition());
+    assertEquals(new SwerveModulePosition(-desiredState.speedMetersPerSecond * ODOMETRY_PERIOD.in(Units.Seconds), desiredState.angle.minus(ROTATION_PI)), m_lFrontModule.getPosition());
   }
 
   @Test
