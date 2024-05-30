@@ -182,6 +182,19 @@ public class TalonFX extends LoggableHardware {
    m_talon.getConfigurator().apply(limitConfigs);
   }
 
+  /**
+   * Initialize current limits
+   * Take note supply current limit will never exceed stator and is usually much lower
+   * @param statorCurrentLimit Current limit to be applied for stator
+   */
+  public void initializeCurrentLimits(int statorCurrentLimit) {
+    var limitConfigs = m_TalonFXConfiguration.CurrentLimits;
+      limitConfigs.StatorCurrentLimit = statorCurrentLimit;
+      limitConfigs.StatorCurrentLimitEnable = true;
+
+    m_talon.getConfigurator().apply(limitConfigs);
+  }
+
    /**
     * Closes the TalonFX motor controller
     */
