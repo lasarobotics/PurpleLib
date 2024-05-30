@@ -160,15 +160,10 @@ public class SwervePoseEstimatorService {
       // Add AprilTag pose estimates if available
       for (var camera : m_cameras) {
         var result = camera.getLatestEstimatedPose();
+
         // If no updated vision pose estimate, continue
-        if (result == null) {
-          if (Duration.between(m_lastVisionUpdateTime, Instant.now()).toMillis() / 1000.0 > GlobalConstants.ROBOT_LOOP_PERIOD) {
-            m_visibleTags = new ArrayList<AprilTag>();
-            m_visibleTagPoses = new ArrayList<Pose3d>();
-            m_visionEstimatedPoses = new ArrayList<Pose2d>();
-          }
-          continue;
-        }
+        if (result == null) continue;
+
         // Save estimated pose and visible tags for logging on main thread
         m_visionEstimatedPoses.add(result.estimatedRobotPose.estimatedPose.toPose2d());
         result.estimatedRobotPose.targetsUsed.forEach(photonTrackedTarget -> {
@@ -185,11 +180,18 @@ public class SwervePoseEstimatorService {
           result.standardDeviation
         );
 
-        // Update vision update time
+        // Update last vision update time
         m_lastVisionUpdateTime = Instant.now();
       }
       // Update current pose
       m_pose.currentPose = m_poseEstimator.update(m_rotation2dSupplier.get(), m_swerveModulePositionSupplier.get());
+
+      // Clear vision logging variables if its been a while since last update
+      if (Duration.between(m_lastVisionUpdateTime, Instant.now()).toMillis() / 1000.0 > GlobalConstants.ROBOT_LOOP_PERIOD) {
+        m_visibleTags = new ArrayList<AprilTag>();
+        m_visibleTagPoses = new ArrayList<Pose3d>();
+        m_visionEstimatedPoses = new ArrayList<Pose2d>();
+      }
     });
     m_thread.setName(NAME);
 
