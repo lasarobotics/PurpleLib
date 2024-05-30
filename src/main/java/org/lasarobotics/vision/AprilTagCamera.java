@@ -36,6 +36,8 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 /** Create a camera */
 public class AprilTagCamera implements AutoCloseable {
+  public static final Object LOCK = new Object();
+
   private final double APRILTAG_POSE_AMBIGUITY_THRESHOLD = 0.1;
   private final double POSE_MAX_HEIGHT = 0.75;
   private final Measure<Distance> MAX_TAG_DISTANCE = Units.Meters.of(5.0);
@@ -140,63 +142,65 @@ public class AprilTagCamera implements AutoCloseable {
    * Run main camera logic
    */
   private void run() {
-    // Return if camera or field layout failed to load
-    if (m_poseEstimator == null || m_camera == null) return;
+    synchronized (LOCK) {
+      // Return if camera or field layout failed to load
+      if (m_poseEstimator == null || m_camera == null) return;
 
-    // Put camera connected indicator on SmartDashboard
-    SmartDashboard.putBoolean(m_camera.getName(), m_camera.isConnected());
+      // Put camera connected indicator on SmartDashboard
+      SmartDashboard.putBoolean(m_camera.getName(), m_camera.isConnected());
 
-    // Return if camera is not connected
-    if (!m_camera.isConnected()) return;
+      // Return if camera is not connected
+      if (!m_camera.isConnected()) return;
 
-    // Update and log inputs
-    PhotonPipelineResult pipelineResult = m_camera.getLatestResult();
+      // Update and log inputs
+      PhotonPipelineResult pipelineResult = m_camera.getLatestResult();
 
-    // Return if result is non-existent or invalid
-    if (!pipelineResult.hasTargets()) return;
-    if (pipelineResult.targets.size() == 1
-        && pipelineResult.targets.get(0).getPoseAmbiguity() > APRILTAG_POSE_AMBIGUITY_THRESHOLD) return;
+      // Return if result is non-existent or invalid
+      if (!pipelineResult.hasTargets()) return;
+      if (pipelineResult.targets.size() == 1
+          && pipelineResult.targets.get(0).getPoseAmbiguity() > APRILTAG_POSE_AMBIGUITY_THRESHOLD) return;
 
-    // Update pose estimate
-    m_poseEstimator.update(pipelineResult).ifPresent(estimatedRobotPose -> {
-      // Make sure the measurement is valid
-      if (!isPoseValid(estimatedRobotPose.estimatedPose)) return;
+      // Update pose estimate
+      m_poseEstimator.update(pipelineResult).ifPresent(estimatedRobotPose -> {
+        // Make sure the measurement is valid
+        if (!isPoseValid(estimatedRobotPose.estimatedPose)) return;
 
-      // Get distance to closest tag
-      var closestTagDistance = Units.Meters.of(100.0);
-      // Loop through all targets used for this estimate
-      for (var target : estimatedRobotPose.targetsUsed) {
-        // Get tag
-        var tag = getTag(target.getFiducialId());
-        // Get distance to tag
-        var tagDistance = Units.Meters.of(target.getBestCameraToTarget().getTranslation().getNorm());
-        // Get pose estimate based on just this tag
-        var singleTargetPose = tag.get().pose
-                              .transformBy(target.getBestCameraToTarget().inverse())
-                              .transformBy(m_transform.inverse());
-        // Ignore if single tag pose estimate is too far from multi-tag estimate
-        if (estimatedRobotPose.estimatedPose.relativeTo(singleTargetPose).getTranslation().getNorm() >
-            SINGLE_TO_MULTI_TAG_POSE_DELTA.in(Units.Meters)) return;
-        // Check if tag distance is closest yet
-        if (tagDistance.lte(closestTagDistance)) closestTagDistance = tagDistance;
-      }
+        // Get distance to closest tag
+        var closestTagDistance = Units.Meters.of(100.0);
+        // Loop through all targets used for this estimate
+        for (var target : estimatedRobotPose.targetsUsed) {
+          // Get tag
+          var tag = getTag(target.getFiducialId());
+          // Get distance to tag
+          var tagDistance = Units.Meters.of(target.getBestCameraToTarget().getTranslation().getNorm());
+          // Get pose estimate based on just this tag
+          var singleTargetPose = tag.get().pose
+                                .transformBy(target.getBestCameraToTarget().inverse())
+                                .transformBy(m_transform.inverse());
+          // Ignore if single tag pose estimate is too far from multi-tag estimate
+          if (estimatedRobotPose.estimatedPose.relativeTo(singleTargetPose).getTranslation().getNorm() >
+              SINGLE_TO_MULTI_TAG_POSE_DELTA.in(Units.Meters)) return;
+          // Check if tag distance is closest yet
+          if (tagDistance.lte(closestTagDistance)) closestTagDistance = tagDistance;
+        }
 
-      // Ignore if tags are too far
-      if (closestTagDistance.gte(MAX_TAG_DISTANCE)) return;
+        // Ignore if tags are too far
+        if (closestTagDistance.gte(MAX_TAG_DISTANCE)) return;
 
-      // Calculate standard deviation
-      double xyStdDev = getStandardDeviation(closestTagDistance, estimatedRobotPose.targetsUsed.size());
-      double thetaStdDev = RobotState.isDisabled()
-        ? xyStdDev
-        : Double.MAX_VALUE;
+        // Calculate standard deviation
+        double xyStdDev = getStandardDeviation(closestTagDistance, estimatedRobotPose.targetsUsed.size());
+        double thetaStdDev = RobotState.isDisabled()
+          ? xyStdDev
+          : Double.MAX_VALUE;
 
-      // Set result
-      var result = new AprilTagCamera.Result(
-        estimatedRobotPose,
-        VecBuilder.fill(xyStdDev, xyStdDev, thetaStdDev)
-      );
-      m_latestResult.set(result);
-    });
+        // Set result
+        var result = new AprilTagCamera.Result(
+          estimatedRobotPose,
+          VecBuilder.fill(xyStdDev, xyStdDev, thetaStdDev)
+        );
+        m_latestResult.set(result);
+      });
+    }
   }
 
   /**
