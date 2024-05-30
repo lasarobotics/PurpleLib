@@ -144,7 +144,7 @@ public class TalonFX extends LoggableHardware {
    * Initiialize remote limit switches with RemoteTalonFX as the sensor
    * @param talonfx Sensor for limit switches
    */
-  public void initializeRemoteTalonFXLimitSwitches(com.ctre.phoenix6.hardware.TalonFX talonfx) {
+  public void initializeRemoteLimitSwitches(com.ctre.phoenix6.hardware.TalonFX talonfx) {
    HardwareLimitSwitchConfigs limitConfigs = m_TalonFXConfiguration.HardwareLimitSwitch;
     limitConfigs.ForwardLimitSource = ForwardLimitSourceValue.RemoteTalonFX;
     limitConfigs.ForwardLimitRemoteSensorID = talonfx.getDeviceID();
@@ -158,7 +158,7 @@ public class TalonFX extends LoggableHardware {
    * Initialize remote limit switches with CANcoder as the sensor
    * @param cancoder Sensor for limit switches
    */
-  public void initializeRemoteCANCoderLimitSwitches(CANcoder cancoder) {
+  public void initializeRemoteLimitSwitches(CANcoder cancoder) {
    HardwareLimitSwitchConfigs limitConfigs = m_TalonFXConfiguration.HardwareLimitSwitch;
     limitConfigs.ForwardLimitSource = ForwardLimitSourceValue.RemoteCANcoder;
     limitConfigs.ForwardLimitRemoteSensorID = cancoder.getDeviceID();   
@@ -172,7 +172,7 @@ public class TalonFX extends LoggableHardware {
    * Initialize remote limit switches with CANifier as the sensor
    * @param canifier Sensor for limit switches
    */
-  public void initializeRemoteCANifierLimitSwitches(CANifier canifier) {
+  public void initializeRemoteLimitSwitches(CANifier canifier) {
    HardwareLimitSwitchConfigs limitConfigs = m_TalonFXConfiguration.HardwareLimitSwitch;
     limitConfigs.ForwardLimitSource = ForwardLimitSourceValue.RemoteCANifier;
     limitConfigs.ForwardLimitRemoteSensorID = canifier.getDeviceID();
