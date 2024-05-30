@@ -143,13 +143,21 @@ public class TalonFX extends LoggableHardware {
   /**
    * Initiialize remote limit switches with RemoteTalonFX as the sensor
    * @param talonfx Sensor for limit switches
+   * @param forward Boolean to choose whether to init forward limit switch
+   * @param reverse Boolean to choose whether to init reverse limit switch
    */
-  public void initializeRemoteLimitSwitches(com.ctre.phoenix6.hardware.TalonFX talonfx) {
+  public void initializeRemoteLimitSwitches(com.ctre.phoenix6.hardware.TalonFX talonfx, 
+                                                                       boolean forward, 
+                                                                       boolean reverse) {
    HardwareLimitSwitchConfigs limitConfigs = m_TalonFXConfiguration.HardwareLimitSwitch;
+   if (forward) {
     limitConfigs.ForwardLimitSource = ForwardLimitSourceValue.RemoteTalonFX;
     limitConfigs.ForwardLimitRemoteSensorID = talonfx.getDeviceID();
+   }
+   if (reverse) {
     limitConfigs.ReverseLimitSource = ReverseLimitSourceValue.RemoteTalonFX;
     limitConfigs.ReverseLimitRemoteSensorID = talonfx.getDeviceID();
+   }
 
    m_talon.getConfigurator().apply(limitConfigs);
   }
@@ -157,13 +165,19 @@ public class TalonFX extends LoggableHardware {
   /**
    * Initialize remote limit switches with CANcoder as the sensor
    * @param cancoder Sensor for limit switches
+   * @param forward Boolean to choose whether to init forward limit switch
+   * @param reverse Boolean to choose whether to init reverse limit switch
    */
-  public void initializeRemoteLimitSwitches(CANcoder cancoder) {
+  public void initializeRemoteLimitSwitches(CANcoder cancoder, boolean forward, boolean reverse) {
    HardwareLimitSwitchConfigs limitConfigs = m_TalonFXConfiguration.HardwareLimitSwitch;
+   if (forward) {
     limitConfigs.ForwardLimitSource = ForwardLimitSourceValue.RemoteCANcoder;
     limitConfigs.ForwardLimitRemoteSensorID = cancoder.getDeviceID();   
+   }
+   if (reverse) {
     limitConfigs.ReverseLimitSource = ReverseLimitSourceValue.RemoteCANcoder;
     limitConfigs.ReverseLimitRemoteSensorID = cancoder.getDeviceID();
+   }
 
    m_talon.getConfigurator().apply(limitConfigs);
   }
@@ -171,13 +185,19 @@ public class TalonFX extends LoggableHardware {
   /**
    * Initialize remote limit switches with CANifier as the sensor
    * @param canifier Sensor for limit switches
+   * @param forward Boolean to choose whether to init forward limit switch
+   * @param reverse Boolean to choose whether to init reverse limit switch
    */
-  public void initializeRemoteLimitSwitches(CANifier canifier) {
+  public void initializeRemoteLimitSwitches(CANifier canifier, boolean forward, boolean reverse) {
    HardwareLimitSwitchConfigs limitConfigs = m_TalonFXConfiguration.HardwareLimitSwitch;
+   if (forward) {
     limitConfigs.ForwardLimitSource = ForwardLimitSourceValue.RemoteCANifier;
     limitConfigs.ForwardLimitRemoteSensorID = canifier.getDeviceID();
+   }
+   if (reverse) {
     limitConfigs.ReverseLimitSource = ReverseLimitSourceValue.RemoteCANifier;
     limitConfigs.ReverseLimitRemoteSensorID = canifier.getDeviceID();
+   }
     
    m_talon.getConfigurator().apply(limitConfigs);
   }
@@ -185,7 +205,7 @@ public class TalonFX extends LoggableHardware {
   /**
    * Initialize current limits
    * Take note supply current limit will never exceed stator and is usually much lower
-   * @param statorCurrentLimit Current limit to be applied for stator
+   * @param statorCurrentLimit Current limit to be applied for stator 
    */
   public void initializeCurrentLimits(int statorCurrentLimit) {
     var limitConfigs = m_TalonFXConfiguration.CurrentLimits;
