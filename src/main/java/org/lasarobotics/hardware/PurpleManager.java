@@ -7,10 +7,12 @@ package org.lasarobotics.hardware;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.function.Supplier;
 
 import org.lasarobotics.battery.BatteryTracker;
 import org.lasarobotics.utils.GlobalConstants;
+import org.lasarobotics.vision.AprilTagCamera;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
@@ -35,9 +37,9 @@ import edu.wpi.first.wpilibj.RobotBase;
 
 /** PurpleLib Hardware Logging Manager */
 public class PurpleManager {
-  private static ArrayList<LoggableHardware> m_hardware = new ArrayList<>();
-  private static ArrayList<Runnable> m_callbacks = new ArrayList<>();
-  private static ArrayList<Runnable> m_simCallbacks = new ArrayList<>();
+  private static List<LoggableHardware> m_hardware = new ArrayList<>();
+  private static List<Runnable> m_callbacks = new ArrayList<>();
+  private static List<Runnable> m_simCallbacks = new ArrayList<>();
   private static VisionSystemSim m_visionSim = new VisionSystemSim("PurpleManager");
   private static Supplier<Pose2d> m_poseSupplier = null;
 
@@ -104,7 +106,10 @@ public class PurpleManager {
     fieldLayout.setOrigin(AprilTagFieldLayout.OriginPosition.kBlueAllianceWallRightSide);
     m_visionSim.addAprilTags(fieldLayout);
     addCallbackSim(() -> {
-      if (m_poseSupplier != null) m_visionSim.update(m_poseSupplier.get());
+      if (m_poseSupplier == null) return;
+      synchronized (AprilTagCamera.LOCK) {
+        m_visionSim.update(m_poseSupplier.get());
+      }
     });
 
     // Set thread priority
