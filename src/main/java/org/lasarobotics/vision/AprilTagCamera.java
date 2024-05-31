@@ -143,10 +143,7 @@ public class AprilTagCamera implements AutoCloseable {
    */
   private void run() {
     // Return if camera or field layout failed to load
-    if (m_poseEstimator == null || m_camera == null) {
-      m_latestResult.set(null);
-      return;
-    }
+    if (m_poseEstimator == null || m_camera == null) return;
 
     // Put camera connected indicator on SmartDashboard
     SmartDashboard.putBoolean(m_camera.getName(), m_camera.isConnected());
@@ -158,23 +155,14 @@ public class AprilTagCamera implements AutoCloseable {
     PhotonPipelineResult pipelineResult = m_camera.getLatestResult();
 
     // Return if result is non-existent or invalid
-    if (!pipelineResult.hasTargets()) {
-      m_latestResult.set(null);
-      return;
-    }
+    if (!pipelineResult.hasTargets()) return;
     if (pipelineResult.targets.size() == 1
-        && pipelineResult.targets.get(0).getPoseAmbiguity() > APRILTAG_POSE_AMBIGUITY_THRESHOLD) {
-      m_latestResult.set(null);
-      return;
-    }
+        && pipelineResult.targets.get(0).getPoseAmbiguity() > APRILTAG_POSE_AMBIGUITY_THRESHOLD) return;
 
     // Update pose estimate
     m_poseEstimator.update(pipelineResult).ifPresent(estimatedRobotPose -> {
       // Make sure the measurement is valid
-      if (!isPoseValid(estimatedRobotPose.estimatedPose)) {
-        m_latestResult.set(null);
-        return;
-      }
+      if (!isPoseValid(estimatedRobotPose.estimatedPose)) return;
 
       // Get distance to closest tag
       var closestTagDistance = Units.Meters.of(100.0);
@@ -199,10 +187,7 @@ public class AprilTagCamera implements AutoCloseable {
       }
 
       // Ignore if tags are too far
-      if (closestTagDistance.gte(MAX_TAG_DISTANCE)) {
-        m_latestResult.set(null);
-        return;
-      }
+      if (closestTagDistance.gte(MAX_TAG_DISTANCE)) return;
 
       // Calculate standard deviation
       double xyStdDev = getStandardDeviation(closestTagDistance, estimatedRobotPose.targetsUsed.size());
