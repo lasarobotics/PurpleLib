@@ -32,9 +32,11 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Time;
 import edu.wpi.first.units.Units;
+import edu.wpi.first.units.Velocity;
 import edu.wpi.first.wpilibj.Notifier;
 
 /** Swerve Odometry Service */
@@ -47,12 +49,14 @@ public class SwervePoseEstimatorService {
 
   private static final Matrix<N3,N1> VISION_STDDEV = VecBuilder.fill(1.0, 1.0, Math.toRadians(3.0));
   private static final Measure<Time> DEFAULT_THREAD_PERIOD = Units.Milliseconds.of(5.0);
+  private static final Measure<Velocity<Angle>> VISION_ANGULAR_VELOCITY_THRESHOLD = Units.DegreesPerSecond.of(720.0);
   private static final String NAME = "SwervePoseEstimatorService";
   private static final String VISIBLE_TAGS_LOG_ENTRY = "/Vision/VisibleTags";
   private static final String ESTIMATED_POSES_LOG_ENTRY = "/Vision/EstimatedPoses";
 
   private boolean m_running;
   private Supplier<Rotation2d> m_rotation2dSupplier;
+  private Supplier<Measure<Velocity<Angle>>> m_yawRateSupplier;
   private Supplier<SwerveModulePosition[]> m_swerveModulePositionSupplier;
   private Consumer<Pose2d> m_poseResetMethod;
   private SwerveDrivePoseEstimator m_poseEstimator;
@@ -75,7 +79,7 @@ public class SwervePoseEstimatorService {
    * @param modules MAXSwerve modules
    */
   public SwervePoseEstimatorService(Matrix<N3,N1> odometryStdDev, NavX2 imu, MAXSwerveModule... modules) {
-    this(odometryStdDev, () -> imu.getInputs().rotation2d, modules);
+    this(odometryStdDev, () -> imu.getInputs().rotation2d, () -> imu.getInputs().yawRate, modules);
   }
 
   /**
@@ -87,14 +91,18 @@ public class SwervePoseEstimatorService {
    * @param modules MAXSwerve modules
    */
   public SwervePoseEstimatorService(Matrix<N3,N1> odometryStdDev, Pigeon2 imu, MAXSwerveModule... modules) {
-    this(odometryStdDev, () -> imu.getInputs().rotation2d, modules);
+    this(odometryStdDev, () -> imu.getInputs().rotation2d, () -> imu.getInputs().yawRate, modules);
   }
 
-  private SwervePoseEstimatorService(Matrix<N3,N1> odometryStdDev, Supplier<Rotation2d> rotation2dSupplier, MAXSwerveModule... modules) {
+  private SwervePoseEstimatorService(Matrix<N3,N1> odometryStdDev,
+    Supplier<Rotation2d> rotation2dSupplier, Supplier<Measure<Velocity<Angle>>> yawRateSupplier,
+    MAXSwerveModule... modules) {
     if (modules.length != 4) throw new IllegalArgumentException("Four (4) modules must be used!");
     this.m_running = false;
     // Remember how to get rotation2d from IMU
     this.m_rotation2dSupplier = rotation2dSupplier;
+    // Remember how to get yaw rate from IMU
+    this.m_yawRateSupplier = yawRateSupplier;
 
     // Get each individual module
     var moduleList = Arrays.asList(modules);
@@ -151,8 +159,8 @@ public class SwervePoseEstimatorService {
 
     // Initialise pose estimator thread
     this.m_thread = new Notifier(() -> {
-      // If no cameras, just update pose based on odometry and exit
-      if (m_cameras.isEmpty()) {
+      // If no cameras or yaw rate is too high, just update pose based on odometry and exit
+      if (m_cameras.isEmpty() || m_yawRateSupplier.get().gte(VISION_ANGULAR_VELOCITY_THRESHOLD)) {
         m_pose.currentPose = m_poseEstimator.update(m_rotation2dSupplier.get(), m_swerveModulePositionSupplier.get());
         return;
       }
@@ -276,5 +284,13 @@ public class SwervePoseEstimatorService {
     m_poseResetMethod.accept(pose);
     // Restart service if it was previously running
     if (wasRunning) start();
+  }
+
+  /**
+   * Get currently visible AprilTags
+   * @return List of currently visible tags
+   */
+  public List<AprilTag> getVisibleTags() {
+    return m_visibleTags;
   }
 }
