@@ -178,6 +178,8 @@ public class AprilTagCamera implements AutoCloseable {
 
       // Get distance to closest tag
       var closestTagDistance = Units.Meters.of(100.0);
+      // Number of tags in range
+      int numOfTagsInRange = 0;
       // Loop through all targets used for this estimate
       for (var target : estimatedRobotPose.targetsUsed) {
         // Get tag
@@ -196,10 +198,12 @@ public class AprilTagCamera implements AutoCloseable {
         }
         // Check if tag distance is closest yet
         if (tagDistance.lte(closestTagDistance)) closestTagDistance = tagDistance;
+        // Increment number of tags in range if applicable
+        if (tagDistance.lte(MAX_TAG_DISTANCE)) numOfTagsInRange++;
       }
 
       // Ignore if tags are too far
-      if (closestTagDistance.gte(MAX_TAG_DISTANCE)) {
+      if (numOfTagsInRange < 2 && estimatedRobotPose.targetsUsed.size() > 1) {
         m_latestResult.set(null);
         return;
       }
