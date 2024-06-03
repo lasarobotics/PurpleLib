@@ -143,7 +143,7 @@ public class TalonFX extends LoggableHardware {
    * @param forward Boolean to choose whether to init forward limit switch
    * @param reverse Boolean to choose whether to init reverse limit switch
    */
-  public void initializeRemoteLimits(boolean forward, boolean reverse) {
+  public void initializeRemoteLimitSwitches(boolean forward, boolean reverse) {
    HardwareLimitSwitchConfigs limitConfigs = m_TalonFXConfiguration.HardwareLimitSwitch;
    if (forward) {
     limitConfigs.ForwardLimitRemoteSensorID = m_talon.getDeviceID();
@@ -188,15 +188,14 @@ public class TalonFX extends LoggableHardware {
                                   double reverseSoftLimitThreshold) {
 
     SoftwareLimitSwitchConfigs softLimitConfigs = m_TalonFXConfiguration.SoftwareLimitSwitch;
-      if (forward) {
-        softLimitConfigs.ForwardSoftLimitEnable = true;
-        softLimitConfigs.ForwardSoftLimitThreshold = forwardSoftLimitThreshold;
+     if (forward) {
+       softLimitConfigs.ForwardSoftLimitEnable = true;
+       softLimitConfigs.ForwardSoftLimitThreshold = forwardSoftLimitThreshold;
       }
-      if (reverse) {
-        softLimitConfigs.ReverseSoftLimitEnable = true;
-        softLimitConfigs.ReverseSoftLimitThreshold = reverseSoftLimitThreshold;
+     if (reverse) {
+       softLimitConfigs.ReverseSoftLimitEnable = true;
+       softLimitConfigs.ReverseSoftLimitThreshold = reverseSoftLimitThreshold;
       }
-
     m_talon.getConfigurator().apply(softLimitConfigs);
   }
 
