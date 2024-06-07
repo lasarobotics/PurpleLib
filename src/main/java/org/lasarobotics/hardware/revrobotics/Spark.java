@@ -1204,12 +1204,11 @@ public class Spark extends LoggableHardware {
    */
   public REVLibError setPeriodicFrameRate(PeriodicFrame frame, Measure<Time> period) {
     REVLibError status;
-    status = applyParameter(
-      () -> m_spark.setPeriodicFramePeriod(frame, (int)period.in(Units.Milliseconds)),
-      () -> true,
-      "Set " + frame.name() + " rate failure!"
-    );
-    return status;
+    for (int i = 0; i < MAX_ATTEMPTS; i++) {
+      System.out.println("Set periodic frame rate: " + (int)period.in(Units.Milliseconds));
+      m_spark.setPeriodicFramePeriod(frame, (int)period.in(Units.Milliseconds));
+    }
+    return REVLibError.kOk;
   }
 
   /**
