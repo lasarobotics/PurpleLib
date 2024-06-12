@@ -623,6 +623,20 @@ public class MAXSwerveModule implements AutoCloseable {
   }
 
   /**
+   * Enables auto locking. If enabled, the wheels will rotate to a state that prevents translation when not driving.
+   */
+  public void enableAutoLock() {
+    m_autoLock = true;
+  }
+
+  /**
+   * Disables auto locking. If disabled, the wheels will not automatically rotate when not driving.
+   */
+  public void disableAutoLock() {
+    m_autoLock = false;
+  }
+
+  /**
    * Stop swerve module
    */
   public void stop() {
