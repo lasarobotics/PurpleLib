@@ -15,9 +15,12 @@ import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.HardwareLimitSwitchConfigs;
+import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.SoftwareLimitSwitchConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
+import com.ctre.phoenix6.signals.GravityTypeValue;
+import com.ctre.phoenix6.signals.StaticFeedforwardSignValue;
 
 
 /** TalonFX */
@@ -64,8 +67,9 @@ public class TalonFX extends LoggableHardware {
   private TalonFXInputsAutoLogged m_inputs;
 
   private TalonFXConfiguration m_TalonFXConfiguration;
+  private TalonPIDConfig m_TalonPIDConfig;
   
-  //Feedback sensor
+  //Feedback sensor types
   private enum FeedbackSensor {FUSED, REMOTE, SYNC}
 
   /**
@@ -181,6 +185,10 @@ public class TalonFX extends LoggableHardware {
    */
   public void initializeFeedbackSensor(CANCoder cancoder, FeedbackSensor sensor) {
     FeedbackConfigs feedbackConfigs = m_TalonFXConfiguration.Feedback;
+
+    //Automatically configure feedback sensor to built in rotor sensor
+    feedbackConfigs.FeedbackSensorSource = FeedbackSensorSourceValue.RotorSensor;
+
     switch (sensor) {
       case REMOTE:
        feedbackConfigs.FeedbackRemoteSensorID = cancoder.getID().deviceID;
@@ -270,6 +278,72 @@ public class TalonFX extends LoggableHardware {
       limitConfigs.StatorCurrentLimitEnable = true;
 
     m_talon.getConfigurator().apply(limitConfigs);
+  }
+
+  /**
+   * Initialize Talon PID Configuration and Motion Magic
+   * @param pidconfig PID Config to use
+   * @param gravityType Type of gravity to use
+   * @param staticffsign Static feedforward gain type to use
+   */
+  private void initializeTalonPID(TalonPIDConfig pidconfig,
+                                 GravityTypeValue gravityType,
+                                 StaticFeedforwardSignValue staticffsign) {
+    //Initialize PID configs
+    m_TalonPIDConfig = pidconfig;
+    Slot0Configs slot0Configs = m_TalonFXConfiguration.Slot0;
+
+    //Configure PID Values
+    slot0Configs.kP = m_TalonPIDConfig.getkP();
+    slot0Configs.kI = m_TalonPIDConfig.getkI();
+    slot0Configs.kD = m_TalonPIDConfig.getkD();
+    slot0Configs.kS = m_TalonPIDConfig.getkS();
+    slot0Configs.kV = m_TalonPIDConfig.getkV();
+    slot0Configs.kG = m_TalonPIDConfig.getkG();
+    slot0Configs.kA = m_TalonPIDConfig.getkA();
+
+    /**
+     * Gravity Feedforward Type
+     * <p>
+     * This determines the type of the gravity feedforward. Choose
+     * Elevator_Static for systems where the gravity feedforward is
+     * constant, such as an elevator. The gravity feedforward output will
+     * always have the same sign. Choose Arm_Cosine for systems where the
+     * gravity feedforward is dependent on the angular position of the
+     * mechanism, such as an arm. The gravity feedforward output will vary
+     * depending on the mechanism angular position. Note that the sensor
+     * offset and ratios must be configured so that the sensor reports a
+     * position of 0 when the mechanism is horizonal (parallel to the
+     * ground), and the reported sensor position is 1:1 with the
+     * mechanism.
+     */
+    switch (gravityType) {
+      case Arm_Cosine:
+       slot0Configs.GravityType = GravityTypeValue.Arm_Cosine;
+      case Elevator_Static:
+      slot0Configs.GravityType = GravityTypeValue.Elevator_Static;
+    }
+
+     /**
+     * Static Feedforward Sign during position closed loop
+     * <p>
+     * This determines the sign of the applied kS during position
+     * closed-loop modes. The default behavior uses the velocity
+     * feedforward sign. This works well with position closed loop when
+     * velocity reference is specified (motion profiling). However, when
+     * using position closed loop with zero velocity reference (no motion
+     * profiling), the application may want to apply static feedforward
+     * based on the closed loop error sign instead. In which case, we
+     * recommend the minimal amount of kS, otherwise the motor output may
+     * dither when closed loop error is near zero.
+     * 
+     */
+    switch (staticffsign) {
+      case UseClosedLoopSign:
+       slot0Configs.StaticFeedforwardSign = StaticFeedforwardSignValue.UseClosedLoopSign;
+      case UseVelocitySign:
+       slot0Configs.StaticFeedforwardSign = StaticFeedforwardSignValue.UseVelocitySign; 
+    }  
   }
 
    /**
