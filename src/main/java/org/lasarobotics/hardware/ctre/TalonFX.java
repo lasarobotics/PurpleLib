@@ -15,6 +15,7 @@ import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.HardwareLimitSwitchConfigs;
+import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.SoftwareLimitSwitchConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
@@ -284,7 +285,7 @@ public class TalonFX extends LoggableHardware {
    * Initialize Talon PID Configuration and Motion Magic
    * @param pidconfig PID Config to use
    * @param gravityType Type of gravity to use
-   * @param staticffsign Static feedforward gain type to use
+   * @param staticffsign Static feedforward sign to use
    */
   private void initializeTalonPID(TalonPIDConfig pidconfig,
                                  GravityTypeValue gravityType,
@@ -344,6 +345,56 @@ public class TalonFX extends LoggableHardware {
       case UseVelocitySign:
        slot0Configs.StaticFeedforwardSign = StaticFeedforwardSignValue.UseVelocitySign; 
     }  
+
+    //Configure MotionMagic
+    MotionMagicConfigs m_motionMagic = m_TalonFXConfiguration.MotionMagic;
+    if (m_TalonPIDConfig.getMotionMagic()) {
+     /**
+     * This is the maximum velocity Motion Magic® based control modes are
+     * allowed to use.  Motion Magic® Velocity control modes do not use
+     * this config.  When using Motion Magic® Expo control modes, setting
+     * this to 0 will allow the profile to run to the max possible
+     * velocity based on Expo_kV.
+     * 
+     *   <ul>
+     *   <li> <b>Minimum Value:</b> 0
+     *   <li> <b>Maximum Value:</b> 9999
+     *   <li> <b>Default Value:</b> 0
+     *   <li> <b>Units:</b> rps
+     *   </ul>
+     */
+     m_motionMagic.MotionMagicCruiseVelocity = m_TalonPIDConfig.getVelocityRPM();
+     
+     /**
+     * This is the target acceleration Motion Magic® based control modes
+     * are allowed to use.  Motion Magic® Expo control modes do not use
+     * this config.
+     * 
+     *   <ul>
+     *   <li> <b>Minimum Value:</b> 0
+     *   <li> <b>Maximum Value:</b> 9999
+     *   <li> <b>Default Value:</b> 0
+     *   <li> <b>Units:</b> rot per sec²
+     *   </ul>
+     */
+     m_motionMagic.MotionMagicAcceleration = m_TalonPIDConfig.getAccelerationRPMPerSec();
+     
+     /**
+     * This is the target jerk (acceleration derivative) Motion Magic®
+     * based control modes are allowed to use.  Motion Magic® Expo control
+     * modes do not use this config.  This allows Motion Magic® support of
+     * S-Curves.  If this is set to zero, then Motion Magic® will not
+     * apply a Jerk limit.
+     * 
+     *   <ul>
+     *   <li> <b>Minimum Value:</b> 0
+     *   <li> <b>Maximum Value:</b> 9999
+     *   <li> <b>Default Value:</b> 0
+     *   <li> <b>Units:</b> rot per sec³
+     *   </ul>
+     */
+     m_motionMagic.MotionMagicJerk = m_TalonPIDConfig.getMotionMagicJerk();
+    }
   }
 
    /**
