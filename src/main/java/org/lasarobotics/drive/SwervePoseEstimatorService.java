@@ -95,8 +95,9 @@ public class SwervePoseEstimatorService {
   }
 
   private SwervePoseEstimatorService(Matrix<N3,N1> odometryStdDev,
-    Supplier<Rotation2d> rotation2dSupplier, Supplier<Measure<Velocity<Angle>>> yawRateSupplier,
-    MAXSwerveModule... modules) {
+                                     Supplier<Rotation2d> rotation2dSupplier,
+                                     Supplier<Measure<Velocity<Angle>>> yawRateSupplier,
+                                     MAXSwerveModule... modules) {
     if (modules.length != 4) throw new IllegalArgumentException("Four (4) modules must be used!");
     this.m_running = false;
     // Remember how to get rotation2d from IMU
