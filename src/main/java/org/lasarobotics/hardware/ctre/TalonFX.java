@@ -13,9 +13,11 @@ import org.littletonrobotics.junction.Logger;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
+import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.HardwareLimitSwitchConfigs;
 import com.ctre.phoenix6.configs.SoftwareLimitSwitchConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 
 
 /** TalonFX */
@@ -62,7 +64,10 @@ public class TalonFX extends LoggableHardware {
   private TalonFXInputsAutoLogged m_inputs;
 
   private TalonFXConfiguration m_TalonFXConfiguration;
- 
+  
+  //Feedback sensor
+  private enum FeedbackSensor {FUSED, REMOTE, SYNC}
+
   /**
    * Create a TalonFX object with built-in logging
    * @param id TalonFX ID
@@ -139,6 +144,63 @@ public class TalonFX extends LoggableHardware {
   }
 
   /**
+   Choose what sensor source is reported via API and used by
+   * closed-loop and limit features.  The default is RotorSensor, which
+   * uses the internal rotor sensor in the Talon FX.  Choose
+   * RemoteCANcoder to use another CANcoder on the same CAN bus (this
+   * also requires setting FeedbackRemoteSensorID).  Talon FX will
+   * update its position and velocity whenever CANcoder publishes its
+   * information on CAN bus.  Choose FusedCANcoder (requires Phoenix
+   * Pro) and Talon FX will fuse another CANcoder's information with the
+   * internal rotor, which provides the best possible position and
+   * velocity for accuracy and bandwidth (note this requires setting
+   * FeedbackRemoteSensorID).  FusedCANcoder was developed for
+   * applications such as swerve-azimuth.  Choose SyncCANcoder (requires
+   * Phoenix Pro) and Talon FX will synchronize its internal rotor
+   * position against another CANcoder, then continue to use the rotor
+   * sensor for closed loop control (note this requires setting
+   * FeedbackRemoteSensorID).  The TalonFX will report if its internal
+   * position differs significantly from the reported CANcoder position.
+   *  SyncCANcoder was developed for mechanisms where there is a risk of
+   * the CANcoder failing in such a way that it reports a position that
+   * does not match the mechanism, such as the sensor mounting assembly
+   * breaking off.  Choose RemotePigeon2_Yaw, RemotePigeon2_Pitch, and
+   * RemotePigeon2_Roll to use another Pigeon2 on the same CAN bus (this
+   * also requires setting FeedbackRemoteSensorID).  Talon FX will
+   * update its position to match the selected value whenever Pigeon2
+   * publishes its information on CAN bus. Note that the Talon FX
+   * position will be in rotations and not degrees.
+   * <p>
+   * Note: When the Talon Source is changed to FusedCANcoder, the Talon
+   * needs a period of time to fuse before sensor-based (soft-limit,
+   * closed loop, etc.) features are used. This period of time is
+   * determined by the update frequency of the CANcoder's Position
+   * signal.
+   * @param cancoder CANCoder object to use for feedback
+   * @param sensor Enum to choose which type of CANCoder
+   */
+  public void initializeFeedbackSensor(CANCoder cancoder, FeedbackSensor sensor) {
+    FeedbackConfigs feedbackConfigs = m_TalonFXConfiguration.Feedback;
+    switch (sensor) {
+      case REMOTE:
+       feedbackConfigs.FeedbackRemoteSensorID = cancoder.getID().deviceID;
+       feedbackConfigs.FeedbackSensorSource = FeedbackSensorSourceValue.RemoteCANcoder;
+      case FUSED:
+       feedbackConfigs.FeedbackRemoteSensorID = cancoder.getID().deviceID;
+       feedbackConfigs.FeedbackSensorSource = FeedbackSensorSourceValue.FusedCANcoder;
+      case SYNC:
+       feedbackConfigs.FeedbackRemoteSensorID = cancoder.getID().deviceID;
+       feedbackConfigs.FeedbackSensorSource = FeedbackSensorSourceValue.SyncCANcoder;
+      }
+      m_talon.getConfigurator().apply(feedbackConfigs);
+    }
+
+  //Control Limit Switches here
+  public void initializeControlLimitSwitches() {
+    
+  }
+
+  /**
    * Initiialize remote limit switches with TalonFX as the sensor
    * @param forward Boolean to choose whether to init forward limit switch
    * @param reverse Boolean to choose whether to init reverse limit switch
@@ -151,7 +213,6 @@ public class TalonFX extends LoggableHardware {
    if (reverse) {
     limitConfigs.ReverseLimitRemoteSensorID = m_talon.getDeviceID();
    }
-
    m_talon.getConfigurator().apply(limitConfigs);
   }
   
@@ -171,7 +232,6 @@ public class TalonFX extends LoggableHardware {
    if (reverse) {
     limitConfigs.ReverseLimitRemoteSensorID = cancoder.getID().deviceID;
    }
-
    m_talon.getConfigurator().apply(limitConfigs);
   }
 
