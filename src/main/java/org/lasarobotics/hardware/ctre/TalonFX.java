@@ -298,18 +298,38 @@ public class TalonFX extends LoggableHardware {
                                  SlotTypes slotTypes) {
     //Initialize PID configs
     m_TalonPIDConfig = pidconfig;
+
     Slot0Configs slot0Configs = m_TalonFXConfiguration.Slot0;
     Slot1Configs slot1Configs = m_TalonFXConfiguration.Slot1;
     Slot2Configs slot2Configs = m_TalonFXConfiguration.Slot2;
 
     //Configure PID Values
-    slot0Configs.kP = m_TalonPIDConfig.getkP();
-    slot0Configs.kI = m_TalonPIDConfig.getkI();
-    slot0Configs.kD = m_TalonPIDConfig.getkD();
-    slot0Configs.kS = m_TalonPIDConfig.getkS();
-    slot0Configs.kV = m_TalonPIDConfig.getkV();
-    slot0Configs.kG = m_TalonPIDConfig.getkG();
-    slot0Configs.kA = m_TalonPIDConfig.getkA();
+    switch (slotTypes) {
+     case Slot0:
+      slot0Configs.kP = m_TalonPIDConfig.getkP();
+      slot0Configs.kI = m_TalonPIDConfig.getkI();
+      slot0Configs.kD = m_TalonPIDConfig.getkD();
+      slot0Configs.kS = m_TalonPIDConfig.getkS();
+      slot0Configs.kV = m_TalonPIDConfig.getkV();
+      slot0Configs.kG = m_TalonPIDConfig.getkG();
+      slot0Configs.kA = m_TalonPIDConfig.getkA();
+     case Slot1:
+      slot1Configs.kP = m_TalonPIDConfig.getkP();
+      slot1Configs.kI = m_TalonPIDConfig.getkI();
+      slot1Configs.kD = m_TalonPIDConfig.getkD();
+      slot1Configs.kS = m_TalonPIDConfig.getkS();
+      slot1Configs.kV = m_TalonPIDConfig.getkV();
+      slot1Configs.kG = m_TalonPIDConfig.getkG();
+      slot1Configs.kA = m_TalonPIDConfig.getkA();
+     case Slot2:
+      slot2Configs.kP = m_TalonPIDConfig.getkP();
+      slot2Configs.kI = m_TalonPIDConfig.getkI();
+      slot2Configs.kD = m_TalonPIDConfig.getkD();
+      slot2Configs.kS = m_TalonPIDConfig.getkS();
+      slot2Configs.kV = m_TalonPIDConfig.getkV();
+      slot2Configs.kG = m_TalonPIDConfig.getkG();
+      slot2Configs.kA = m_TalonPIDConfig.getkA();
+    }
 
     /**
      * Gravity Feedforward Type
