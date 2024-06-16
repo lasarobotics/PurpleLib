@@ -319,7 +319,9 @@ public class TalonFX extends LoggableHardware {
     m_talon.getConfigurator().apply(limitConfigs);
   }
 
- /**
+  /**
+   * Initialize supply current threshold
+   * @param supplyCurrentThreshold
    * Delay supply current limiting until current exceeds this threshold
    * for longer than SupplyTimeThreshold.  This allows current draws
    * above SupplyCurrentLimit for a fixed period of time.  This has no
@@ -337,6 +339,25 @@ public class TalonFX extends LoggableHardware {
       limitConfigs.SupplyCurrentThreshold = supplyCurrentThreshold;
 
      m_talon.getConfigurator().apply(limitConfigs);
+  }
+
+  /**
+   * Allows unlimited current for a period of time before current
+   * limiting occurs.  Current threshold is the maximum of
+   * SupplyCurrentThreshold and SupplyCurrentLimit.
+   * 
+   *   <ul>
+   *   <li> <b>Minimum Value:</b> 0.0
+   *   <li> <b>Maximum Value:</b> 1.275
+   *   <li> <b>Default Value:</b> 0
+   *   <li> <b>Units:</b> sec
+   *   </ul>
+   */
+  public void initializeSupplyTimeThreshold(double supplyTimeThreshold) {
+    CurrentLimitsConfigs limitConfigs = m_TalonFXConfiguration.CurrentLimits;
+    limitConfigs.SupplyTimeThreshold = supplyTimeThreshold;
+   
+   m_talon.getConfigurator().apply(limitConfigs);
   }
 
   /**
