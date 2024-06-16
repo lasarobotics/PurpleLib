@@ -24,7 +24,6 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.StaticFeedforwardSignValue;
-import com.fasterxml.jackson.databind.ser.std.StdKeySerializers.Default;
 
 
 /** TalonFX */
@@ -223,10 +222,10 @@ public class TalonFX extends LoggableHardware {
   public void initializeRemoteLimitSwitches(boolean forward, boolean reverse) {
    HardwareLimitSwitchConfigs limitConfigs = m_TalonFXConfiguration.HardwareLimitSwitch;
    if (forward) {
-    limitConfigs.ForwardLimitRemoteSensorID = m_talon.getDeviceID();
+     limitConfigs.ForwardLimitRemoteSensorID = m_talon.getDeviceID();
    }
    if (reverse) {
-    limitConfigs.ReverseLimitRemoteSensorID = m_talon.getDeviceID();
+     limitConfigs.ReverseLimitRemoteSensorID = m_talon.getDeviceID();
    }
    m_talon.getConfigurator().apply(limitConfigs);
   }
@@ -318,6 +317,26 @@ public class TalonFX extends LoggableHardware {
       limitConfigs.SupplyCurrentLimitEnable = true;
 
     m_talon.getConfigurator().apply(limitConfigs);
+  }
+
+ /**
+   * Delay supply current limiting until current exceeds this threshold
+   * for longer than SupplyTimeThreshold.  This allows current draws
+   * above SupplyCurrentLimit for a fixed period of time.  This has no
+   * effect if SupplyCurrentLimit is greater than this value.
+   * 
+   *   <ul>
+   *   <li> <b>Minimum Value:</b> 0.0
+   *   <li> <b>Maximum Value:</b> 511
+   *   <li> <b>Default Value:</b> 0
+   *   <li> <b>Units:</b> A
+   *   </ul>
+   */
+  public void initializeSupplyCurrentThreshold(double supplyCurrentThreshold) {
+    CurrentLimitsConfigs limitConfigs = m_TalonFXConfiguration.CurrentLimits;
+      limitConfigs.SupplyCurrentThreshold = supplyCurrentThreshold;
+
+     m_talon.getConfigurator().apply(limitConfigs);
   }
 
   /**
