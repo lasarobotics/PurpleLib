@@ -24,6 +24,7 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.StaticFeedforwardSignValue;
+import com.fasterxml.jackson.databind.ser.std.StdKeySerializers.Default;
 
 
 /** TalonFX */
@@ -274,14 +275,47 @@ public class TalonFX extends LoggableHardware {
   }
 
   /**
-   * Initialize current limits
-   * Take note supply current limit will never exceed stator and is usually much lower
-   * @param statorCurrentLimit Current limit to be applied for stator 
+   * Initialize stator current limits
+   * @param statorCurrentLimit 
+   * The amount of current allowed in the motor (motoring and regen
+   * current).  This is only applicable for non-torque current control
+   * modes.  Note this requires the corresponding enable to be true.
+   * 
+   *   <ul>
+   *   <li> <b>Minimum Value:</b> 0.0
+   *   <li> <b>Maximum Value:</b> 800.0
+   *   <li> <b>Default Value:</b> 0
+   *   <li> <b>Units:</b> A
+   *   </ul>
    */
-  public void initializeCurrentLimits(int statorCurrentLimit) {
+  public void initializeStatorCurrentLimits(double statorCurrentLimit) {
     CurrentLimitsConfigs limitConfigs = m_TalonFXConfiguration.CurrentLimits;
       limitConfigs.StatorCurrentLimit = statorCurrentLimit;
       limitConfigs.StatorCurrentLimitEnable = true;
+
+    m_talon.getConfigurator().apply(limitConfigs);
+  }
+
+  /**
+   * Initialize supply current limits
+   * @param supplyCurrentLimit
+   * The amount of supply current allowed.  This is only applicable for
+   * non-torque current control modes.  Note this requires the
+   * corresponding enable to be true.  Use SupplyCurrentThreshold and
+   * SupplyTimeThreshold to allow brief periods of high-current before
+   * limiting occurs.
+   * 
+   *   <ul>
+   *   <li> <b>Minimum Value:</b> 0.0
+   *   <li> <b>Maximum Value:</b> 800.0
+   *   <li> <b>Default Value:</b> 0
+   *   <li> <b>Units:</b> A
+   *   </ul>
+   */
+  public void initializeSupplyCurrentLimits(double supplyCurrentLimit) {
+    CurrentLimitsConfigs limitConfigs = m_TalonFXConfiguration.CurrentLimits;
+      limitConfigs.SupplyCurrentLimit = supplyCurrentLimit;
+      limitConfigs.SupplyCurrentLimitEnable = true;
 
     m_talon.getConfigurator().apply(limitConfigs);
   }
@@ -437,6 +471,13 @@ public class TalonFX extends LoggableHardware {
      m_motionMagic.MotionMagicJerk = m_TalonPIDConfig.getMotionMagicJerk();
     }
    }
+  }
+
+  /**
+   * 
+   */
+  public void initializeTalonPID() {
+    
   }
 
    /**
