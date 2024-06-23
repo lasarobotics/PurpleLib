@@ -16,6 +16,7 @@ import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.HardwareLimitSwitchConfigs;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
+import com.ctre.phoenix6.configs.OpenLoopRampsConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.Slot1Configs;
 import com.ctre.phoenix6.configs.Slot2Configs;
@@ -153,6 +154,7 @@ public class TalonFX extends LoggableHardware {
     return m_id;
   }
 
+
   /**
    Choose what sensor source is reported via API and used by
    * closed-loop and limit features.  The default is RotorSensor, which
@@ -208,10 +210,55 @@ public class TalonFX extends LoggableHardware {
       }
       m_talon.getConfigurator().apply(feedbackConfigs);
     }
-
-  //Control Limit Switches here
-  public void initializeControlLimitSwitches() {
     
+  /**
+   * Initialize open-loop period times
+   * @param dutyCycleOpenLoopRampPeriod
+   * If non-zero, this determines how much time to ramp from 0% output
+   * to 100% during open-loop modes.
+   * 
+   *   <ul>
+   *   <li> <b>Minimum Value:</b> 0
+   *   <li> <b>Maximum Value:</b> 1
+   *   <li> <b>Default Value:</b> 0
+   *   <li> <b>Units:</b> sec
+   *   </ul>
+   * @param voltageOpenLoopRampPeriod
+   * If non-zero, this determines how much time to ramp from 0V output
+   * to 12V during open-loop modes.
+   * 
+   *   <ul>
+   *   <li> <b>Minimum Value:</b> 0
+   *   <li> <b>Maximum Value:</b> 1
+   *   <li> <b>Default Value:</b> 0
+   *   <li> <b>Units:</b> sec
+   *   </ul>
+   * @param torqueOpenLoopRampPeriod
+   * If non-zero, this determines how much time to ramp from 0V output
+   * to 12V during open-loop modes.
+   * 
+   *   <ul>
+   *   <li> <b>Minimum Value:</b> 0
+   *   <li> <b>Maximum Value:</b> 1
+   *   <li> <b>Default Value:</b> 0
+   *   <li> <b>Units:</b> sec
+   *   </ul>
+   */
+  public void initializeOpenLoopRampPeriods(double dutyCycleOpenLoopRampPeriod,
+                                            double voltageOpenLoopRampPeriod,
+                                            double torqueOpenLoopRampPeriod) {
+    OpenLoopRampsConfigs openloopsrampsconfigs = m_TalonFXConfiguration.OpenLoopRamps;
+      if (dutyCycleOpenLoopRampPeriod != 0) {
+        openloopsrampsconfigs.DutyCycleOpenLoopRampPeriod = dutyCycleOpenLoopRampPeriod;
+      }          
+      if (voltageOpenLoopRampPeriod != 0) {
+        openloopsrampsconfigs.VoltageOpenLoopRampPeriod = voltageOpenLoopRampPeriod;
+      }     
+      if (torqueOpenLoopRampPeriod != 0) {
+        openloopsrampsconfigs.TorqueOpenLoopRampPeriod = torqueOpenLoopRampPeriod;
+      }      
+    
+    m_talon.getConfigurator().apply(openloopsrampsconfigs);
   }
 
   /**
@@ -357,7 +404,7 @@ public class TalonFX extends LoggableHardware {
     CurrentLimitsConfigs limitConfigs = m_TalonFXConfiguration.CurrentLimits;
     limitConfigs.SupplyTimeThreshold = supplyTimeThreshold;
    
-   m_talon.getConfigurator().apply(limitConfigs);
+    m_talon.getConfigurator().apply(limitConfigs);
   }
 
   /**
@@ -510,6 +557,10 @@ public class TalonFX extends LoggableHardware {
      */
      m_motionMagic.MotionMagicJerk = m_TalonPIDConfig.getMotionMagicJerk();
     }
+   }
+
+   if (pidconfig.getInvertMotor()) {
+     
    }
   }
 
