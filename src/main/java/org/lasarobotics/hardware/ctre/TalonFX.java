@@ -22,6 +22,7 @@ import com.ctre.phoenix6.configs.Slot1Configs;
 import com.ctre.phoenix6.configs.Slot2Configs;
 import com.ctre.phoenix6.configs.SoftwareLimitSwitchConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.configs.VoltageConfigs;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.StaticFeedforwardSignValue;
@@ -152,6 +153,17 @@ public class TalonFX extends LoggableHardware {
    */
   public ID getID() {
     return m_id;
+  }
+
+  /**
+   * Initialize supply voltage time constant
+   * @param supplyVoltageTimeConstant supply voltage time constant
+   */
+  public void initializeSupplyVoltageTimeConstant(double supplyVoltageTimeConstant) {
+    VoltageConfigs config = m_TalonFXConfiguration.Voltage;
+      config.SupplyVoltageTimeConstant = supplyVoltageTimeConstant;
+
+    m_talon.getConfigurator().apply(config);
   }
 
 
@@ -512,9 +524,9 @@ public class TalonFX extends LoggableHardware {
     MotionMagicConfigs m_motionMagic = m_TalonFXConfiguration.MotionMagic;
     if (m_TalonPIDConfig.getMotionMagic()) {
      /**
-     * This is the maximum velocity Motion Magic® based control modes are
+     * This is the maximum velocity Motion Magic based control modes are
      * allowed to use.  Motion Magic® Velocity control modes do not use
-     * this config.  When using Motion Magic® Expo control modes, setting
+     * this config.  When using Motion Magic Expo control modes, setting
      * this to 0 will allow the profile to run to the max possible
      * velocity based on Expo_kV.
      * 
@@ -528,8 +540,8 @@ public class TalonFX extends LoggableHardware {
      m_motionMagic.MotionMagicCruiseVelocity = m_TalonPIDConfig.getVelocityRPM();
      
      /**
-     * This is the target acceleration Motion Magic® based control modes
-     * are allowed to use.  Motion Magic® Expo control modes do not use
+     * This is the target acceleration Motion Magic based control modes
+     * are allowed to use.  Motion Magic Expo control modes do not use
      * this config.
      * 
      *   <ul>
@@ -542,10 +554,10 @@ public class TalonFX extends LoggableHardware {
      m_motionMagic.MotionMagicAcceleration = m_TalonPIDConfig.getAccelerationRPMPerSec();
      
      /**
-     * This is the target jerk (acceleration derivative) Motion Magic®
-     * based control modes are allowed to use.  Motion Magic® Expo control
-     * modes do not use this config.  This allows Motion Magic® support of
-     * S-Curves.  If this is set to zero, then Motion Magic® will not
+     * This is the target jerk (acceleration derivative) Motion Magic
+     * based control modes are allowed to use.  Motion Magic Expo control
+     * modes do not use this config.  This allows Motion Magic support of
+     * S-Curves.  If this is set to zero, then Motion Magic will not
      * apply a Jerk limit.
      * 
      *   <ul>
@@ -562,13 +574,6 @@ public class TalonFX extends LoggableHardware {
    if (pidconfig.getInvertMotor()) {
      
    }
-  }
-
-  /**
-   * 
-   */
-  public void initializeTalonPID() {
-    
   }
 
    /**
