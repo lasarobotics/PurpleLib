@@ -166,7 +166,19 @@ public class TalonFX extends LoggableHardware {
     m_talon.getConfigurator().apply(config);
   }
 
+  /**
+   * Initialize peak voltage
+   * 
+   * @param peakReverseVoltage peak reverse voltage
+   * @param peakForwardVoltage peak forward voltage
+   */
+  public void initializePeakVoltage(double peakReverseVoltage, double peakForwardVoltage) {
+    VoltageConfigs config = m_TalonFXConfiguration.Voltage;
+      config.PeakReverseVoltage = peakReverseVoltage;
+      config.PeakForwardVoltage = peakForwardVoltage;
 
+    m_talon.getConfigurator().apply(config);
+  }
   /**
    Choose what sensor source is reported via API and used by
    * closed-loop and limit features.  The default is RotorSensor, which
