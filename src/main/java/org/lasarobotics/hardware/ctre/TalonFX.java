@@ -157,7 +157,21 @@ public class TalonFX extends LoggableHardware {
 
   /**
    * Initialize supply voltage time constant
-   * @param supplyVoltageTimeConstant supply voltage time constant
+   * 
+   * @param supplyVoltageTimeConstant 
+   * The time constant (in seconds) of the low-pass filter for the
+   * supply voltage.
+   * <p>
+   * This impacts the filtering for the reported supply voltage, and any
+   * control strategies that use the supply voltage (such as voltage
+   * control on a motor controller).
+   * 
+   *   <ul>
+   *   <li> <b>Minimum Value:</b> 0.0
+   *   <li> <b>Maximum Value:</b> 0.1
+   *   <li> <b>Default Value:</b> 0
+   *   <li> <b>Units:</b> sec
+   *   </ul>
    */
   public void initializeSupplyVoltageTimeConstant(double supplyVoltageTimeConstant) {
     VoltageConfigs config = m_TalonFXConfiguration.Voltage;
@@ -168,9 +182,29 @@ public class TalonFX extends LoggableHardware {
 
   /**
    * Initialize peak voltage
+   * @param peakReverseVoltage 
+   * The time constant (in seconds) of the low-pass filter for the
+   * supply voltage.
+   * <p>
+   * This impacts the filtering for the reported supply voltage, and any
+   * control strategies that use the supply voltage (such as voltage
+   * control on a motor controller).
    * 
-   * @param peakReverseVoltage peak reverse voltage
-   * @param peakForwardVoltage peak forward voltage
+   *   <ul>
+   *   <li> <b>Minimum Value:</b> 0.0
+   *   <li> <b>Maximum Value:</b> 0.1
+   *   <li> <b>Default Value:</b> 0
+   *   <li> <b>Units:</b> sec
+   *   </ul>
+   * @param peakForwardVoltage
+   * Maximum (forward) output during voltage based control modes.
+   * 
+   *   <ul>
+   *   <li> <b>Minimum Value:</b> -16
+   *   <li> <b>Maximum Value:</b> 16
+   *   <li> <b>Default Value:</b> 16
+   *   <li> <b>Units:</b> V
+   *   </ul>
    */
   public void initializePeakVoltage(double peakReverseVoltage, double peakForwardVoltage) {
     VoltageConfigs config = m_TalonFXConfiguration.Voltage;
