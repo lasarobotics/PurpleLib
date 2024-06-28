@@ -22,6 +22,7 @@ import com.ctre.phoenix6.configs.Slot1Configs;
 import com.ctre.phoenix6.configs.Slot2Configs;
 import com.ctre.phoenix6.configs.SoftwareLimitSwitchConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
 import com.ctre.phoenix6.configs.VoltageConfigs;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.GravityTypeValue;
@@ -183,18 +184,13 @@ public class TalonFX extends LoggableHardware {
   /**
    * Initialize peak voltage
    * @param peakReverseVoltage 
-   * The time constant (in seconds) of the low-pass filter for the
-   * supply voltage.
-   * <p>
-   * This impacts the filtering for the reported supply voltage, and any
-   * control strategies that use the supply voltage (such as voltage
-   * control on a motor controller).
+   * Minimum (reverse) output during voltage based control modes.
    * 
    *   <ul>
-   *   <li> <b>Minimum Value:</b> 0.0
-   *   <li> <b>Maximum Value:</b> 0.1
-   *   <li> <b>Default Value:</b> 0
-   *   <li> <b>Units:</b> sec
+   *   <li> <b>Minimum Value:</b> -16
+   *   <li> <b>Maximum Value:</b> 16
+   *   <li> <b>Default Value:</b> -16
+   *   <li> <b>Units:</b> V
    *   </ul>
    * @param peakForwardVoltage
    * Maximum (forward) output during voltage based control modes.
@@ -213,6 +209,57 @@ public class TalonFX extends LoggableHardware {
 
     m_talon.getConfigurator().apply(config);
   }
+
+  /**
+   * Initialize peak torque currents
+   * @param peakReverseTorqueCurrent
+   * Minimum (reverse) output during torque current based control modes.
+   * 
+   *   <ul>
+   *   <li> <b>Minimum Value:</b> -800
+   *   <li> <b>Maximum Value:</b> 800
+   *   <li> <b>Default Value:</b> -800
+   *   <li> <b>Units:</b> A
+   *   </ul>
+   * @param peakForwardTorqueCurrent
+   * Maximum (forward) output during torque current based control modes.
+   * 
+   *   <ul>
+   *   <li> <b>Minimum Value:</b> -800
+   *   <li> <b>Maximum Value:</b> 800
+   *   <li> <b>Default Value:</b> 800
+   *   <li> <b>Units:</b> A
+   *   </ul>
+   */
+  public void initializePeakTorqueCurrents(double peakReverseTorqueCurrent, 
+                                           double peakForwardTorqueCurrent) {
+    TorqueCurrentConfigs config = m_TalonFXConfiguration.TorqueCurrent;
+      config.PeakReverseTorqueCurrent = peakReverseTorqueCurrent;
+      config.PeakForwardTorqueCurrent = peakForwardTorqueCurrent;
+
+    m_talon.getConfigurator().apply(config);
+  }
+
+  /**
+   * Initialize torque neutral deadband
+   * @param torqueNeutralDeadband
+   * Configures the output deadband during torque current based control
+   * modes.
+   * 
+   *   <ul>
+   *   <li> <b>Minimum Value:</b> 0
+   *   <li> <b>Maximum Value:</b> 25
+   *   <li> <b>Default Value:</b> 0.0
+   *   <li> <b>Units:</b> A
+   *   </ul>
+   */
+  public void initializeTorqueNeutralDeadband(double torqueNeutralDeadband) {
+    TorqueCurrentConfigs configs = m_TalonFXConfiguration.TorqueCurrent;
+      configs.TorqueNeutralDeadband = torqueNeutralDeadband;
+    
+    m_talon.getConfigurator().apply(configs);
+  }
+  
   /**
    Choose what sensor source is reported via API and used by
    * closed-loop and limit features.  The default is RotorSensor, which
@@ -447,6 +494,8 @@ public class TalonFX extends LoggableHardware {
   }
 
   /**
+   * Initialize supply time threshold
+   * 
    * Allows unlimited current for a period of time before current
    * limiting occurs.  Current threshold is the maximum of
    * SupplyCurrentThreshold and SupplyCurrentLimit.
