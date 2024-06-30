@@ -684,7 +684,7 @@ public class TalonFX extends LoggableHardware {
     if (m_TalonPIDConfig.getMotionMagic()) {
      /**
      * This is the maximum velocity Motion Magic based control modes are
-     * allowed to use.  Motion Magic® Velocity control modes do not use
+     * allowed to use.  Motion Magic Velocity control modes do not use
      * this config.  When using Motion Magic Expo control modes, setting
      * this to 0 will allow the profile to run to the max possible
      * velocity based on Expo_kV.
@@ -707,7 +707,7 @@ public class TalonFX extends LoggableHardware {
      *   <li> <b>Minimum Value:</b> 0
      *   <li> <b>Maximum Value:</b> 9999
      *   <li> <b>Default Value:</b> 0
-     *   <li> <b>Units:</b> rot per sec²
+     *   <li> <b>Units:</b> rot per sec^2
      *   </ul>
      */
      m_motionMagic.MotionMagicAcceleration = m_TalonPIDConfig.getAccelerationRPMPerSec();
@@ -723,7 +723,7 @@ public class TalonFX extends LoggableHardware {
      *   <li> <b>Minimum Value:</b> 0
      *   <li> <b>Maximum Value:</b> 9999
      *   <li> <b>Default Value:</b> 0
-     *   <li> <b>Units:</b> rot per sec³
+     *   <li> <b>Units:</b> rot per sec^2
      *   </ul>
      */
      m_motionMagic.MotionMagicJerk = m_TalonPIDConfig.getMotionMagicJerk();
