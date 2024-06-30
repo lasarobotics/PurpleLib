@@ -48,7 +48,7 @@ public class SwervePoseEstimatorService {
   }
 
   private static final Matrix<N3,N1> VISION_STDDEV = VecBuilder.fill(1.0, 1.0, Math.toRadians(3.0));
-  private static final Measure<Time> DEFAULT_THREAD_PERIOD = Units.Milliseconds.of(5.0);
+  private static final Measure<Time> DEFAULT_THREAD_PERIOD = Units.Milliseconds.of(10.0);
   private static final Measure<Velocity<Angle>> VISION_ANGULAR_VELOCITY_THRESHOLD = Units.DegreesPerSecond.of(720.0);
   private static final String NAME = "SwervePoseEstimatorService";
   private static final String VISIBLE_TAGS_LOG_ENTRY = "/Vision/VisibleTags";
@@ -229,7 +229,7 @@ public class SwervePoseEstimatorService {
   /**
    * Set how frequently the pose estimator should update
    * <p>
-   * Defaults to 5ms if not set (200Hz)
+   * Defaults to 10ms if not set (100Hz)
    * @param period Period between pose estimator updates
    */
   public void setPeriod(Measure<Time> period) {
