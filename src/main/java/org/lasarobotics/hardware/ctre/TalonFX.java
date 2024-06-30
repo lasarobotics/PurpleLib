@@ -12,6 +12,8 @@ import org.littletonrobotics.junction.AutoLog;
 import org.littletonrobotics.junction.Logger;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix6.configs.ClosedLoopGeneralConfigs;
+import com.ctre.phoenix6.configs.ClosedLoopRampsConfigs;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.HardwareLimitSwitchConfigs;
@@ -254,12 +256,12 @@ public class TalonFX extends LoggableHardware {
    *   </ul>
    */
   public void initializeTorqueNeutralDeadband(double torqueNeutralDeadband) {
-    TorqueCurrentConfigs configs = m_TalonFXConfiguration.TorqueCurrent;
-      configs.TorqueNeutralDeadband = torqueNeutralDeadband;
+    TorqueCurrentConfigs config = m_TalonFXConfiguration.TorqueCurrent;
+      config.TorqueNeutralDeadband = torqueNeutralDeadband;
     
-    m_talon.getConfigurator().apply(configs);
+    m_talon.getConfigurator().apply(config);
   }
-  
+
   /**
    Choose what sensor source is reported via API and used by
    * closed-loop and limit features.  The default is RotorSensor, which
@@ -297,23 +299,23 @@ public class TalonFX extends LoggableHardware {
    * @param sensor Enum to choose which type of CANCoder
    */
   public void initializeFeedbackSensor(CANCoder cancoder, FeedbackSensor sensor) {
-    FeedbackConfigs feedbackConfigs = m_TalonFXConfiguration.Feedback;
+    FeedbackConfigs config = m_TalonFXConfiguration.Feedback;
 
     //Automatically configure feedback sensor to built in rotor sensor
-    feedbackConfigs.FeedbackSensorSource = FeedbackSensorSourceValue.RotorSensor;
+    config.FeedbackSensorSource = FeedbackSensorSourceValue.RotorSensor;
 
     switch (sensor) {
       case REMOTE:
-       feedbackConfigs.FeedbackRemoteSensorID = cancoder.getID().deviceID;
-       feedbackConfigs.FeedbackSensorSource = FeedbackSensorSourceValue.RemoteCANcoder;
+       config.FeedbackRemoteSensorID = cancoder.getID().deviceID;
+       config.FeedbackSensorSource = FeedbackSensorSourceValue.RemoteCANcoder;
       case FUSED:
-       feedbackConfigs.FeedbackRemoteSensorID = cancoder.getID().deviceID;
-       feedbackConfigs.FeedbackSensorSource = FeedbackSensorSourceValue.FusedCANcoder;
+       config.FeedbackRemoteSensorID = cancoder.getID().deviceID;
+       config.FeedbackSensorSource = FeedbackSensorSourceValue.FusedCANcoder;
       case SYNC:
-       feedbackConfigs.FeedbackRemoteSensorID = cancoder.getID().deviceID;
-       feedbackConfigs.FeedbackSensorSource = FeedbackSensorSourceValue.SyncCANcoder;
+       config.FeedbackRemoteSensorID = cancoder.getID().deviceID;
+       config.FeedbackSensorSource = FeedbackSensorSourceValue.SyncCANcoder;
       }
-      m_talon.getConfigurator().apply(feedbackConfigs);
+      m_talon.getConfigurator().apply(config);
     }
     
   /**
@@ -352,18 +354,80 @@ public class TalonFX extends LoggableHardware {
   public void initializeOpenLoopRampPeriods(double dutyCycleOpenLoopRampPeriod,
                                             double voltageOpenLoopRampPeriod,
                                             double torqueOpenLoopRampPeriod) {
-    OpenLoopRampsConfigs openloopsrampsconfigs = m_TalonFXConfiguration.OpenLoopRamps;
-      if (dutyCycleOpenLoopRampPeriod != 0) {
-        openloopsrampsconfigs.DutyCycleOpenLoopRampPeriod = dutyCycleOpenLoopRampPeriod;
-      }          
-      if (voltageOpenLoopRampPeriod != 0) {
-        openloopsrampsconfigs.VoltageOpenLoopRampPeriod = voltageOpenLoopRampPeriod;
-      }     
-      if (torqueOpenLoopRampPeriod != 0) {
-        openloopsrampsconfigs.TorqueOpenLoopRampPeriod = torqueOpenLoopRampPeriod;
-      }      
+    OpenLoopRampsConfigs config = m_TalonFXConfiguration.OpenLoopRamps;
+      config.DutyCycleOpenLoopRampPeriod = dutyCycleOpenLoopRampPeriod;        
+      config.VoltageOpenLoopRampPeriod = voltageOpenLoopRampPeriod;     
+      config.TorqueOpenLoopRampPeriod = torqueOpenLoopRampPeriod;      
     
-    m_talon.getConfigurator().apply(openloopsrampsconfigs);
+    m_talon.getConfigurator().apply(config);
+  }
+
+  /**
+   * Initialize configs that affect the closed-loop control of this motor
+   * controller.
+   * <p>
+   * Closed-loop ramp rates for the various control types.
+   * @param dutyCycleClosedLoopRampPeriod
+   * If non-zero, this determines how much time to ramp from 0% output
+   * to 100% during closed-loop modes.
+   * 
+   *   <ul>
+   *   <li> <b>Minimum Value:</b> 0
+   *   <li> <b>Maximum Value:</b> 1
+   *   <li> <b>Default Value:</b> 0
+   *   <li> <b>Units:</b> sec
+   *   </ul>
+   * @param voltageClosedLoopRampPeriod
+   * If non-zero, this determines how much time to ramp from 0V output
+   * to 12V during closed-loop modes.
+   * 
+   *   <ul>
+   *   <li> <b>Minimum Value:</b> 0
+   *   <li> <b>Maximum Value:</b> 1
+   *   <li> <b>Default Value:</b> 0
+   *   <li> <b>Units:</b> sec
+   *   </ul>
+   * @param torqueClosedLoopRampPeriod
+   * If non-zero, this determines how much time to ramp from 0A output
+   * to 300A during closed-loop modes.
+   * 
+   *   <ul>
+   *   <li> <b>Minimum Value:</b> 0
+   *   <li> <b>Maximum Value:</b> 10
+   *   <li> <b>Default Value:</b> 0
+   *   <li> <b>Units:</b> sec
+   *   </ul>
+   */
+  public void initializeClosedLoopRampPeriods(double dutyCycleClosedLoopRampPeriod, 
+                                              double voltageClosedLoopRampPeriod, 
+                                              double torqueClosedLoopRampPeriod) {
+    ClosedLoopRampsConfigs config = m_TalonFXConfiguration.ClosedLoopRamps;
+      config.DutyCycleClosedLoopRampPeriod = dutyCycleClosedLoopRampPeriod;
+      config.VoltageClosedLoopRampPeriod = voltageClosedLoopRampPeriod;
+      config.TorqueClosedLoopRampPeriod = torqueClosedLoopRampPeriod;
+
+    m_talon.getConfigurator().apply(config);
+  }
+  
+  /**
+   * Wrap position error within [-0.5,+0.5) mechanism rotations. 
+   * Typically used for continuous position closed-loops like swerve
+   * azimuth.
+   * <p>
+   * This uses the mechanism rotation value. If there is a gear ratio
+   * between the sensor and the mechanism, make sure to apply a
+   * SensorToMechanismRatio so the closed loop operates on the full
+   * rotation.
+   * 
+   *   <ul>
+   *   <li> <b>Default Value:</b> False
+   *   </ul>
+   */
+  public void initalizeContinuousWrap() {
+    ClosedLoopGeneralConfigs config = m_TalonFXConfiguration.ClosedLoopGeneral;
+      config.ContinuousWrap = true;
+
+    m_talon.getConfigurator().apply(config);
   }
 
   /**
@@ -664,10 +728,6 @@ public class TalonFX extends LoggableHardware {
      */
      m_motionMagic.MotionMagicJerk = m_TalonPIDConfig.getMotionMagicJerk();
     }
-   }
-
-   if (pidconfig.getInvertMotor()) {
-     
    }
   }
 
