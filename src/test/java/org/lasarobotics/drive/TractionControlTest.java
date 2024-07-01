@@ -28,17 +28,15 @@ import edu.wpi.first.wpilibj.Timer;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class TractionControlTest {
   private final Measure<Dimensionless> SLIP_RATIO = Units.Percent.of(8.0);
-  private final Measure<Dimensionless> STATIC_FRICTION_COEFFICIENT = Units.Value.of(1.1);
-  private final Measure<Dimensionless> DYNAMIC_FRICTION_COEFFICIENT = Units.Value.of(0.8);
+  private final Measure<Dimensionless> COEFFICIENT_FRICTION = Units.Value.of(1.1);
   private final Measure<Mass> MASS = Units.Pounds.of(110.0);
   private final Measure<Velocity<Distance>> MAX_LINEAR_SPEED = Units.MetersPerSecond.of(4.30);
-  private final double THRESHOLD = 0.05;
 
   private TractionControlController m_tractionControlController;
 
   @BeforeEach
   public void setup() {
-    m_tractionControlController = new TractionControlController(STATIC_FRICTION_COEFFICIENT, DYNAMIC_FRICTION_COEFFICIENT, SLIP_RATIO, MASS, MAX_LINEAR_SPEED);
+    m_tractionControlController = new TractionControlController(SLIP_RATIO, COEFFICIENT_FRICTION, MASS, MAX_LINEAR_SPEED);
   }
 
   @Test
@@ -46,7 +44,7 @@ public class TractionControlTest {
   @DisplayName("Test if traction control controller detects and limits slip")
   public void limitSlip() {
     // Simulate scenario
-    var outputSpeed = Units.MetersPerSecond.of(100.0);
+    Measure<Velocity<Distance>> outputSpeed = Units.MetersPerSecond.of(100.0);
     for (int i = 0; i < 50; i++) {
       Timer.delay(GlobalConstants.ROBOT_LOOP_PERIOD);
       outputSpeed = m_tractionControlController.calculate(MAX_LINEAR_SPEED, Units.MetersPerSecond.of(0.0), MAX_LINEAR_SPEED.divide(2));
