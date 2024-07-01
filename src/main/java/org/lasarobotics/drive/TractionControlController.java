@@ -77,7 +77,8 @@ public class TractionControlController {
     var velocityOutput = velocityRequest;
 
     // Get current slip ratio, and check if slipping
-    double currentSlipRatio =  (wheelSpeed.in(Units.MetersPerSecond) - inertialVelocity.in(Units.MetersPerSecond)) / inertialVelocity.in(Units.MetersPerSecond);
+    inertialVelocity = Units.MetersPerSecond.of(Math.abs(inertialVelocity.in(Units.MetersPerSecond)));
+    double currentSlipRatio =  (Math.abs(wheelSpeed.in(Units.MetersPerSecond)) - inertialVelocity.in(Units.MetersPerSecond)) / inertialVelocity.in(Units.MetersPerSecond);
     m_isSlipping = currentSlipRatio > m_optimalSlipRatio & isEnabled();
 
     // Get desired acceleration
@@ -86,7 +87,8 @@ public class TractionControlController {
     // Simplified prediction of future slip ratio based on desired acceleration
     double predictedSlipRatio = Math.abs(
       desiredAcceleration.in(Units.MetersPerSecondPerSecond) /
-      (inertialVelocity.in(Units.MetersPerSecond) * GlobalConstants.GRAVITATIONAL_ACCELERATION.in(Units.MetersPerSecondPerSecond) + m_frictionCoefficient * m_mass * GlobalConstants.GRAVITATIONAL_ACCELERATION.in(Units.MetersPerSecondPerSecond))
+        (inertialVelocity.in(Units.MetersPerSecond) *
+          GlobalConstants.GRAVITATIONAL_ACCELERATION.in(Units.MetersPerSecondPerSecond) + m_frictionCoefficient * m_mass * GlobalConstants.GRAVITATIONAL_ACCELERATION.in(Units.MetersPerSecondPerSecond))
     );
 
     // Calculate correction based on difference between optimal and predicted slip ratio
