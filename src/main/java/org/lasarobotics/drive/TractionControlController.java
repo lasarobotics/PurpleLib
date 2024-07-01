@@ -4,67 +4,62 @@
 
 package org.lasarobotics.drive;
 
+import org.lasarobotics.utils.GlobalConstants;
+
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.filter.Debouncer;
-import edu.wpi.first.math.filter.Debouncer.DebounceType;
+import edu.wpi.first.units.Dimensionless;
 import edu.wpi.first.units.Distance;
+import edu.wpi.first.units.Mass;
 import edu.wpi.first.units.Measure;
-import edu.wpi.first.units.Time;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.Velocity;
 
 /** Traction control controller */
 public class TractionControlController {
   private enum State {
-    DISABLED {
+    DISABLED(0) {
       @Override
       public State toggle() { return ENABLED; }
     },
-    ENABLED {
+    ENABLED(1) {
       @Override
       public State toggle() { return DISABLED; }
     };
 
+    public int value;
+    private State(int value) {
+      this.value = value;
+    }
+
     public abstract State toggle();
   }
 
-  private final double VELOCITY_REQUEST_MIN_THRESHOLD;
   private final double MIN_SLIP_RATIO = 0.01;
   private final double MAX_SLIP_RATIO = 0.40;
 
-  private double m_optimalSlipRatio = 0.0;
-  private double m_currentSlipRatio = 0.0;
-  private double m_maxLinearSpeed = 0.0;
-  private boolean m_isSlipping = false;
-  private State m_state = State.ENABLED;
-
-  private Debouncer m_slippingDebouncer;
+  private double m_optimalSlipRatio;
+  private double m_mass;
+  private double m_maxLinearSpeed;
+  private double m_maxVelocityCorrection;
+  private double m_frictionCoefficient;
+  private boolean m_isSlipping;
+  private State m_state;
 
   /**
    * Create an instance of TractionControlController
+   * @param optimalSlipRatio Desired slip ratio [1%, 40%]
+   * @param frictionCoefficient CoF between the wheel and the field surface
+   * @param mass Mass of robot
    * @param maxLinearSpeed Maximum linear speed of robot
-   * @param maxSlippingTime Maximum time that wheel is allowed to slip
-   * @param optimalSlipRatio Desired slip ratio [+0.01, +0.40]
    */
-  public TractionControlController(Measure<Velocity<Distance>> maxLinearSpeed, Measure<Time> maxSlippingTime, double optimalSlipRatio) {
-    this.m_optimalSlipRatio = MathUtil.clamp(optimalSlipRatio, MIN_SLIP_RATIO, MAX_SLIP_RATIO);
+  public TractionControlController(Measure<Dimensionless> optimalSlipRatio, Measure<Dimensionless> frictionCoefficient, Measure<Mass> mass, Measure<Velocity<Distance>> maxLinearSpeed) {
+    this.m_optimalSlipRatio = MathUtil.clamp(optimalSlipRatio.in(Units.Value), MIN_SLIP_RATIO, MAX_SLIP_RATIO);
+    this.m_mass = mass.divide(4).in(Units.Kilograms);
     this.m_maxLinearSpeed = Math.floor(maxLinearSpeed.in(Units.MetersPerSecond) * 1000) / 1000;
-    this.m_slippingDebouncer = new Debouncer(maxSlippingTime.in(Units.Seconds), DebounceType.kRising);
-
-    VELOCITY_REQUEST_MIN_THRESHOLD = m_maxLinearSpeed * m_optimalSlipRatio;
-  }
-
-  /**
-   * Update slip ratio, and check if wheel is slipping
-   * @param wheelSpeed Current wheel speed
-   * @param inertialVelocity Inertial velocity
-   */
-  private void updateSlipRatio(double wheelSpeed, double inertialVelocity) {
-    // Calculate current slip ratio
-    m_currentSlipRatio = ((wheelSpeed - inertialVelocity) / inertialVelocity);
-
-    // Check if wheel is slipping, false if disabled
-    m_isSlipping = m_slippingDebouncer.calculate(m_currentSlipRatio > m_optimalSlipRatio) & isEnabled();
+    this.m_maxVelocityCorrection = m_maxLinearSpeed * (1.0 - m_optimalSlipRatio);
+    this.m_frictionCoefficient = frictionCoefficient.in(Units.Value);
+    this.m_isSlipping = false;
+    this.m_state = State.ENABLED;
   }
 
   /**
@@ -77,30 +72,36 @@ public class TractionControlController {
   public Measure<Velocity<Distance>> calculate(Measure<Velocity<Distance>> velocityRequest,
                                                Measure<Velocity<Distance>> inertialVelocity,
                                                Measure<Velocity<Distance>> wheelSpeed) {
-    double velocityRequestMetersPerSecond = velocityRequest.in(Units.MetersPerSecond);
-    double inertialVelocityMetersPerSecond = inertialVelocity.in(Units.MetersPerSecond);
-    double wheelSpeedMetersPerSecond = wheelSpeed.in(Units.MetersPerSecond);
+    var velocityOutput = velocityRequest;
 
-    // Initialize velocity output to requested velocity
-    double velocityOutputMetersPerSecond = velocityRequestMetersPerSecond;
+    // Get current slip ratio, and check if slipping
+    double currentSlipRatio =  (wheelSpeed.in(Units.MetersPerSecond) - inertialVelocity.in(Units.MetersPerSecond)) / inertialVelocity.in(Units.MetersPerSecond);
+    m_isSlipping = currentSlipRatio > m_optimalSlipRatio & isEnabled();
 
-    // Make sure wheel speed and inertial velocity are positive
-    wheelSpeedMetersPerSecond = Math.abs(wheelSpeedMetersPerSecond);
-    inertialVelocityMetersPerSecond = Math.abs(inertialVelocityMetersPerSecond);
+    // Get desired acceleration
+    var desiredAcceleration = velocityRequest.minus(inertialVelocity).per(Units.Seconds.of(GlobalConstants.ROBOT_LOOP_PERIOD));
 
-    // Update slip ratio given current wheel speed and inertial velocity
-    updateSlipRatio(wheelSpeedMetersPerSecond, inertialVelocityMetersPerSecond);
+    // Simplified prediction of future slip ratio based on desired acceleration
+    double predictedSlipRatio = Math.abs(
+      desiredAcceleration.in(Units.MetersPerSecondPerSecond) /
+      (inertialVelocity.in(Units.MetersPerSecond) * GlobalConstants.GRAVITATIONAL_ACCELERATION.in(Units.MetersPerSecondPerSecond) + m_frictionCoefficient * m_mass * GlobalConstants.GRAVITATIONAL_ACCELERATION.in(Units.MetersPerSecondPerSecond))
+    );
 
-    // If input is below threshold, return
-    if (Math.abs(velocityRequestMetersPerSecond) < VELOCITY_REQUEST_MIN_THRESHOLD) return Units.MetersPerSecond.of(velocityOutputMetersPerSecond);
+    // Calculate correction based on difference between optimal and predicted slip ratio
+    double velocityCorrection = MathUtil.clamp(
+      velocityOutput.in(Units.MetersPerSecond) * (m_optimalSlipRatio - predictedSlipRatio) * m_state.value,
+      -m_maxVelocityCorrection,
+      +m_maxVelocityCorrection
+    );
 
-    // Limit wheel speed if slipping excessively
-    if (isSlipping())
-      velocityOutputMetersPerSecond = Math.copySign(inertialVelocityMetersPerSecond * m_optimalSlipRatio + inertialVelocityMetersPerSecond, velocityRequestMetersPerSecond);
+    // Update output, clamping to max linear speed
+    velocityOutput = Units.MetersPerSecond.of(MathUtil.clamp(
+      velocityOutput.plus(Units.MetersPerSecond.of(velocityCorrection)).in(Units.MetersPerSecond),
+      -m_maxLinearSpeed,
+      +m_maxLinearSpeed
+    ));
 
-    // Return corrected velocity output, clamping to max linear speed
-    velocityOutputMetersPerSecond = MathUtil.clamp(velocityOutputMetersPerSecond, -m_maxLinearSpeed, +m_maxLinearSpeed);
-    return Units.MetersPerSecond.of(velocityOutputMetersPerSecond);
+    return velocityOutput;
   }
 
   /**

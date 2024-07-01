@@ -32,7 +32,9 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.Current;
+import edu.wpi.first.units.Dimensionless;
 import edu.wpi.first.units.Distance;
+import edu.wpi.first.units.Mass;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Time;
 import edu.wpi.first.units.Units;
@@ -45,12 +47,13 @@ public class MAXSwerveModuleTest {
   private final Rotation2d ROTATION_PI = Rotation2d.fromRadians(Math.PI);
 
   private final GearRatio GEAR_RATIO = MAXSwerveModule.GearRatio.L3;
-  private final double SLIP_RATIO = 0.08;
   private final Measure<Distance> WHEELBASE = Units.Meters.of(0.6);
   private final Measure<Distance> TRACK_WIDTH = Units.Meters.of(0.6);
+  private final Measure<Mass> MASS = Units.Pounds.of(110.0);
   private final Measure<Time> AUTO_LOCK_TIME = Units.Seconds.of(3.0);
-  private final Measure<Time> MAX_SLIPPING_TIME = Units.Seconds.of(0.6);
   private final Measure<Current> DRIVE_CURRENT_LIMIT = Units.Amps.of(50.0);
+  private final Measure<Dimensionless> SLIP_RATIO = Units.Percent.of(8.0);
+  private final Measure<Dimensionless> FRICTION_COEFFICIENT = Units.Value.of(1.1);
   private final Spark.ID LEFT_FRONT_DRIVE_MOTOR_ID = new Spark.ID("DriveHardware/Swerve/LeftFront/Drive", 2);
   private final Spark.ID LEFT_FRONT_ROTATE_MOTOR_ID = new Spark.ID("DriveHardware/Swerve/LeftFront/Rotate", 3);
   private final Spark.ID RIGHT_FRONT_DRIVE_MOTOR_ID = new Spark.ID("DriveHardware/Swerve/RightFront/Drive", 4);
@@ -122,10 +125,11 @@ public class MAXSwerveModuleTest {
       GEAR_RATIO,
       WHEELBASE,
       TRACK_WIDTH,
+      MASS,
       AUTO_LOCK_TIME,
-      MAX_SLIPPING_TIME,
       DRIVE_CURRENT_LIMIT,
-      SLIP_RATIO
+      SLIP_RATIO,
+      FRICTION_COEFFICIENT
     );
     m_rFrontModule = new MAXSwerveModule(
       new MAXSwerveModule.Hardware(m_rFrontDriveMotor, m_rFrontRotateMotor),
@@ -133,10 +137,11 @@ public class MAXSwerveModuleTest {
       GEAR_RATIO,
       WHEELBASE,
       TRACK_WIDTH,
+      MASS,
       AUTO_LOCK_TIME,
-      MAX_SLIPPING_TIME,
       DRIVE_CURRENT_LIMIT,
-      SLIP_RATIO
+      SLIP_RATIO,
+      FRICTION_COEFFICIENT
     );
     m_lRearModule = new MAXSwerveModule(
      new MAXSwerveModule.Hardware(m_lRearDriveMotor, m_lRearRotateMotor),
@@ -144,10 +149,11 @@ public class MAXSwerveModuleTest {
       GEAR_RATIO,
       WHEELBASE,
       TRACK_WIDTH,
+      MASS,
       AUTO_LOCK_TIME,
-      MAX_SLIPPING_TIME,
       DRIVE_CURRENT_LIMIT,
-      SLIP_RATIO
+      SLIP_RATIO,
+      FRICTION_COEFFICIENT
     );
     m_rRearModule = new MAXSwerveModule(
       new MAXSwerveModule.Hardware(m_rRearDriveMotor, m_rRearRotateMotor),
@@ -155,10 +161,11 @@ public class MAXSwerveModuleTest {
       GEAR_RATIO,
       WHEELBASE,
       TRACK_WIDTH,
+      MASS,
       AUTO_LOCK_TIME,
-      MAX_SLIPPING_TIME,
       DRIVE_CURRENT_LIMIT,
-      SLIP_RATIO
+      SLIP_RATIO,
+      FRICTION_COEFFICIENT
     );
 
     // Disable traction control for unit tests
@@ -173,10 +180,10 @@ public class MAXSwerveModuleTest {
   @DisplayName("Test if module location is set correctly")
   public void moduleLocation() {
     // Check if all module locations are set
-    assertEquals(new Translation2d(+WHEELBASE.in(Units.Meters) / 2, +TRACK_WIDTH.in(Units.Meters) / 2), m_lFrontModule.getModuleCoordinate());
-    assertEquals(new Translation2d(+WHEELBASE.in(Units.Meters) / 2, -TRACK_WIDTH.in(Units.Meters) / 2), m_rFrontModule.getModuleCoordinate());
-    assertEquals(new Translation2d(-WHEELBASE.in(Units.Meters) / 2, +TRACK_WIDTH.in(Units.Meters) / 2), m_lRearModule.getModuleCoordinate());
-    assertEquals(new Translation2d(-WHEELBASE.in(Units.Meters) / 2, -TRACK_WIDTH.in(Units.Meters) / 2), m_rRearModule.getModuleCoordinate());
+    assertEquals(new Translation2d(WHEELBASE.divide(+2), TRACK_WIDTH.divide(+2)), m_lFrontModule.getModuleCoordinate());
+    assertEquals(new Translation2d(WHEELBASE.divide(+2), TRACK_WIDTH.divide(-2)), m_rFrontModule.getModuleCoordinate());
+    assertEquals(new Translation2d(WHEELBASE.divide(-2), TRACK_WIDTH.divide(+2)), m_lRearModule.getModuleCoordinate());
+    assertEquals(new Translation2d(WHEELBASE.divide(-2), TRACK_WIDTH.divide(-2)), m_rRearModule.getModuleCoordinate());
   }
 
   @Test

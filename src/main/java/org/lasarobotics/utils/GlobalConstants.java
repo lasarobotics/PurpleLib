@@ -5,6 +5,10 @@
 package org.lasarobotics.utils;
 
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.units.Distance;
+import edu.wpi.first.units.Measure;
+import edu.wpi.first.units.Units;
+import edu.wpi.first.units.Velocity;
 
 /**
  * Global Constants
@@ -35,4 +39,7 @@ public class GlobalConstants {
   public static final Rotation2d ROTATION_ZERO = Rotation2d.fromRadians(0.0);
   /** Pi radians rotation */
   public static final Rotation2d ROTATION_PI = Rotation2d.fromRadians(Math.PI);
+
+  /** Gravitational acceleration */
+  public static final Measure<Velocity<Velocity<Distance>>> GRAVITATIONAL_ACCELERATION = Units.MetersPerSecondPerSecond.of(9.80665);
 }
