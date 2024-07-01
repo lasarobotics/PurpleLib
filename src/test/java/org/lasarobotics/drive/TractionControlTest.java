@@ -15,24 +15,26 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.lasarobotics.utils.GlobalConstants;
 
+import edu.wpi.first.units.Dimensionless;
 import edu.wpi.first.units.Distance;
+import edu.wpi.first.units.Mass;
 import edu.wpi.first.units.Measure;
-import edu.wpi.first.units.Time;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.Velocity;
 import edu.wpi.first.wpilibj.Timer;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class TractionControlTest {
+  private final Measure<Dimensionless> SLIP_RATIO = Units.Percent.of(8.0);
+  private final Measure<Dimensionless> COEFFICIENT_FRICTION = Units.Value.of(1.1);
+  private final Measure<Mass> MASS = Units.Pounds.of(110.0);
   private final Measure<Velocity<Distance>> MAX_LINEAR_SPEED = Units.MetersPerSecond.of(4.30);
-  private final Measure<Time> MAX_SLIPPING_TIME = Units.Seconds.of(0.6);
-  private final double DRIVE_SLIP_RATIO = 0.08;
 
   private TractionControlController m_tractionControlController;
 
   @BeforeEach
   public void setup() {
-    m_tractionControlController = new TractionControlController(MAX_LINEAR_SPEED, MAX_SLIPPING_TIME, DRIVE_SLIP_RATIO);
+    m_tractionControlController = new TractionControlController(SLIP_RATIO, COEFFICIENT_FRICTION, MASS, MAX_LINEAR_SPEED);
   }
 
   @Test
@@ -40,8 +42,7 @@ public class TractionControlTest {
   @DisplayName("Test if traction control controller detects and limits slip")
   public void limitSlip() {
     // Simulate scenario
-    var outputSpeed = m_tractionControlController.calculate(MAX_LINEAR_SPEED, Units.MetersPerSecond.of(0.0), MAX_LINEAR_SPEED.divide(2));
-
+    Measure<Velocity<Distance>> outputSpeed = Units.MetersPerSecond.of(100.0);
     for (int i = 0; i < 50; i++) {
       Timer.delay(GlobalConstants.ROBOT_LOOP_PERIOD);
       outputSpeed = m_tractionControlController.calculate(MAX_LINEAR_SPEED, Units.MetersPerSecond.of(0.0), MAX_LINEAR_SPEED.divide(2));
@@ -49,7 +50,7 @@ public class TractionControlTest {
 
     // Verify behavior
     assertTrue(m_tractionControlController.isSlipping());
-    assertTrue(outputSpeed.lt(MAX_LINEAR_SPEED));
+    assertTrue(outputSpeed.lte(MAX_LINEAR_SPEED.times(SLIP_RATIO.in(Units.Value))));
   }
 
   @Test

@@ -50,10 +50,11 @@ public class PurpleManager {
    * <p>
    * To enable replay, set the environment variable <code>ROBOT_REPLAY=1</code>, otherwise simply unset this variable.
    * @param robot Robot object
+   * @param fieldLayout AprilTag field layout
+   * @param logPath Path for log file
    * @param projectName Project name
    * @param gitSHA Git SHA
    * @param buildDate Build date string
-   * @param logPath Path for log file
    * @param batteryTrackingEnabled True to enable battery tracking
    */
   @SuppressWarnings("resource")
