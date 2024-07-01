@@ -43,45 +43,24 @@ public class TractionControlController {
   private double m_optimalSlipRatio;
   private double m_mass;
   private double m_maxLinearSpeed;
-  private double m_staticCoF;
-  private double m_dynamicCoF;
-  private double m_maxPredictedSlipRatio;
+  private double m_maxVelocityCorrection;
+  private double m_frictionCoefficient;
   private boolean m_isSlipping;
   private State m_state;
 
   /**
    * Create an instance of TractionControlController
-   * @param driveWheel Wheel that is delivering power to the ground
    * @param optimalSlipRatio Desired slip ratio [1%, 40%]
+   * @param frictionCoefficient CoF between the wheel and the field surface
    * @param mass Mass of robot
    * @param maxLinearSpeed Maximum linear speed of robot
    */
-  public TractionControlController(DriveWheel driveWheel, Measure<Dimensionless> optimalSlipRatio, Measure<Mass> mass, Measure<Velocity<Distance>> maxLinearSpeed) {
-    this(driveWheel.staticCoF, driveWheel.dynamicCoF, optimalSlipRatio, mass, maxLinearSpeed);
-  }
-
-  /**
-   * Create an instance of TractionControlController
-   * @param staticCoF Static CoF between the wheel and the field surface
-   * @param dynamicCoF Dynamic CoF between the wheel and the field surface
-   * @param optimalSlipRatio Desired slip ratio [1%, 40%]
-   * @param mass Mass of robot
-   * @param maxLinearSpeed Maximum linear speed of robot
-   */
-  public TractionControlController(Measure<Dimensionless> staticCoF,
-                                   Measure<Dimensionless> dynamicCoF,
-                                   Measure<Dimensionless> optimalSlipRatio,
-                                   Measure<Mass> mass,
-                                   Measure<Velocity<Distance>> maxLinearSpeed) {
-    if (dynamicCoF.gt(staticCoF))
-      throw new IllegalArgumentException("Static CoF must be higher than dynamic CoF!");
-    this.m_staticCoF = staticCoF.in(Units.Value);
-    this.m_dynamicCoF = dynamicCoF.in(Units.Value);
+  public TractionControlController(Measure<Dimensionless> optimalSlipRatio, Measure<Dimensionless> frictionCoefficient, Measure<Mass> mass, Measure<Velocity<Distance>> maxLinearSpeed) {
     this.m_optimalSlipRatio = MathUtil.clamp(optimalSlipRatio.in(Units.Value), MIN_SLIP_RATIO, MAX_SLIP_RATIO);
     this.m_mass = mass.divide(4).in(Units.Kilograms);
     this.m_maxLinearSpeed = Math.floor(maxLinearSpeed.in(Units.MetersPerSecond) * 1000) / 1000;
-    this.m_maxPredictedSlipRatio = (m_maxLinearSpeed * GlobalConstants.ROBOT_LOOP_HZ)
-      / (m_staticCoF * m_mass * GlobalConstants.GRAVITATIONAL_ACCELERATION.in(Units.MetersPerSecondPerSecond));
+    this.m_maxVelocityCorrection = m_maxLinearSpeed * (1.0 - m_optimalSlipRatio);
+    this.m_frictionCoefficient = frictionCoefficient.in(Units.Value);
     this.m_isSlipping = false;
     this.m_state = State.ENABLED;
   }
@@ -99,35 +78,28 @@ public class TractionControlController {
     var velocityOutput = velocityRequest;
 
     // Get current slip ratio, and check if slipping
-    inertialVelocity = Units.MetersPerSecond.of(Math.abs(inertialVelocity.in(Units.MetersPerSecond)));
-    double currentSlipRatio = Math.abs(
-      inertialVelocity.lte(INERTIAL_VELOCITY_THRESHOLD)
-        ? wheelSpeed.in(Units.MetersPerSecond) / m_maxLinearSpeed
-        : (Math.abs(wheelSpeed.in(Units.MetersPerSecond)) - inertialVelocity.in(Units.MetersPerSecond)) / inertialVelocity.in(Units.MetersPerSecond)
-    );
-    m_isSlipping = currentSlipRatio > m_optimalSlipRatio
-      & Math.abs(wheelSpeed.in(Units.MetersPerSecond)) > m_maxLinearSpeed * m_optimalSlipRatio
-      & isEnabled();
+    double currentSlipRatio =  (wheelSpeed.in(Units.MetersPerSecond) - inertialVelocity.in(Units.MetersPerSecond)) / inertialVelocity.in(Units.MetersPerSecond);
+    m_isSlipping = currentSlipRatio > m_optimalSlipRatio & isEnabled();
 
     // Get desired acceleration
     var desiredAcceleration = velocityRequest.minus(inertialVelocity).per(Units.Seconds.of(GlobalConstants.ROBOT_LOOP_PERIOD));
 
-    // Select CoF based on whether or not robot is currently slipping
-    double selectedCoF = m_isSlipping ? m_dynamicCoF : m_staticCoF;
-
     // Simplified prediction of future slip ratio based on desired acceleration
     double predictedSlipRatio = Math.abs(
       desiredAcceleration.in(Units.MetersPerSecondPerSecond) /
-        (inertialVelocity.in(Units.MetersPerSecond) * GlobalConstants.GRAVITATIONAL_ACCELERATION.in(Units.MetersPerSecondPerSecond)
-          + selectedCoF * m_mass * GlobalConstants.GRAVITATIONAL_ACCELERATION.in(Units.MetersPerSecondPerSecond))
-    ) / m_maxPredictedSlipRatio;
+      (inertialVelocity.in(Units.MetersPerSecond) * GlobalConstants.GRAVITATIONAL_ACCELERATION.in(Units.MetersPerSecondPerSecond) + m_frictionCoefficient * m_mass * GlobalConstants.GRAVITATIONAL_ACCELERATION.in(Units.MetersPerSecondPerSecond))
+    );
 
-    // Calculate correction based on difference between optimal and weighted slip ratio, which combines the predicted and current slip ratios
-    var velocityCorrection = velocityOutput.times((m_optimalSlipRatio - predictedSlipRatio) * m_state.value);
+    // Calculate correction based on difference between optimal and predicted slip ratio
+    double velocityCorrection = MathUtil.clamp(
+      velocityOutput.in(Units.MetersPerSecond) * (m_optimalSlipRatio - predictedSlipRatio) * m_state.value,
+      -m_maxVelocityCorrection,
+      +m_maxVelocityCorrection
+    );
 
     // Update output, clamping to max linear speed
     velocityOutput = Units.MetersPerSecond.of(MathUtil.clamp(
-      velocityOutput.plus(velocityCorrection).in(Units.MetersPerSecond),
+      velocityOutput.plus(Units.MetersPerSecond.of(velocityCorrection)).in(Units.MetersPerSecond),
       -m_maxLinearSpeed,
       +m_maxLinearSpeed
     ));
