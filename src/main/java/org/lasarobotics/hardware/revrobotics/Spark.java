@@ -1395,7 +1395,7 @@ public class Spark extends LoggableHardware {
    * @return Output current
    */
   public Measure<Current> getOutputCurrent() {
-    return Units.Amps.of(m_spark.getOutputCurrent());
+  return Units.Amps.of(m_spark.getOutputCurrent());
   }
 
   /**
