@@ -40,8 +40,8 @@ public class TractionControlController {
   private double m_optimalSlipRatio;
   private double m_mass;
   private double m_maxLinearSpeed;
-  private double m_maxVelocityCorrection;
   private double m_frictionCoefficient;
+  private double m_maxSlipRatio;
   private boolean m_isSlipping;
   private State m_state;
 
@@ -56,8 +56,8 @@ public class TractionControlController {
     this.m_optimalSlipRatio = MathUtil.clamp(optimalSlipRatio.in(Units.Value), MIN_SLIP_RATIO, MAX_SLIP_RATIO);
     this.m_mass = mass.divide(4).in(Units.Kilograms);
     this.m_maxLinearSpeed = Math.floor(maxLinearSpeed.in(Units.MetersPerSecond) * 1000) / 1000;
-    this.m_maxVelocityCorrection = m_maxLinearSpeed * (1.0 - m_optimalSlipRatio);
     this.m_frictionCoefficient = frictionCoefficient.in(Units.Value);
+    this.m_maxSlipRatio =  (m_maxLinearSpeed * GlobalConstants.ROBOT_LOOP_HZ) / (m_frictionCoefficient * m_mass * GlobalConstants.GRAVITATIONAL_ACCELERATION.in(Units.MetersPerSecondPerSecond));
     this.m_isSlipping = false;
     this.m_state = State.ENABLED;
   }
@@ -76,7 +76,7 @@ public class TractionControlController {
 
     // Get current slip ratio, and check if slipping
     inertialVelocity = Units.MetersPerSecond.of(Math.abs(inertialVelocity.in(Units.MetersPerSecond)));
-    double currentSlipRatio =  (Math.abs(wheelSpeed.in(Units.MetersPerSecond)) - inertialVelocity.in(Units.MetersPerSecond)) / inertialVelocity.in(Units.MetersPerSecond);
+    double currentSlipRatio = (Math.abs(wheelSpeed.in(Units.MetersPerSecond)) - inertialVelocity.in(Units.MetersPerSecond)) / inertialVelocity.in(Units.MetersPerSecond);
     m_isSlipping = currentSlipRatio > m_optimalSlipRatio & isEnabled();
 
     // Get desired acceleration
@@ -87,14 +87,10 @@ public class TractionControlController {
       desiredAcceleration.in(Units.MetersPerSecondPerSecond) /
         (inertialVelocity.in(Units.MetersPerSecond) *
           GlobalConstants.GRAVITATIONAL_ACCELERATION.in(Units.MetersPerSecondPerSecond) + m_frictionCoefficient * m_mass * GlobalConstants.GRAVITATIONAL_ACCELERATION.in(Units.MetersPerSecondPerSecond))
-    );
+    ) / m_maxSlipRatio;
 
     // Calculate correction based on difference between optimal and predicted slip ratio
-    double velocityCorrection = MathUtil.clamp(
-      velocityOutput.in(Units.MetersPerSecond) * (m_optimalSlipRatio - predictedSlipRatio) * m_state.value,
-      -m_maxVelocityCorrection,
-      +m_maxVelocityCorrection
-    );
+    double velocityCorrection = velocityOutput.in(Units.MetersPerSecond) * (m_optimalSlipRatio - predictedSlipRatio) * m_state.value;
 
     // Update output, clamping to max linear speed
     velocityOutput = Units.MetersPerSecond.of(MathUtil.clamp(
