@@ -539,7 +539,7 @@ public class Spark extends LoggableHardware {
    */
   @Override
   public SparkInputsAutoLogged getInputs() {
-    return m_inputs;
+    synchronized (m_inputs) { return m_inputs; }
   }
 
   /**
