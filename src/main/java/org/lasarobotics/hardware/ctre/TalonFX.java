@@ -21,8 +21,6 @@ import com.ctre.phoenix6.configs.HardwareLimitSwitchConfigs;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.OpenLoopRampsConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
-import com.ctre.phoenix6.configs.Slot1Configs;
-import com.ctre.phoenix6.configs.Slot2Configs;
 import com.ctre.phoenix6.configs.SoftwareLimitSwitchConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
@@ -81,8 +79,6 @@ public class TalonFX extends LoggableHardware {
   //Feedback sensor types
   private enum FeedbackSensor {FUSED, REMOTE, SYNC}
 
-  //Different slot types
-  private enum SlotTypes {Slot0, Slot1, Slot2}
 
   /**
    * Create a TalonFX object with built-in logging
@@ -335,7 +331,7 @@ public class TalonFX extends LoggableHardware {
   public StatusCode applyConfigs(SoftwareLimitSwitchConfigs configs) {
      return m_talon.getConfigurator().apply(configs);
   }
-  
+
   /**
    * Initialize stator current limits
    * @param statorCurrentLimit 
@@ -433,18 +429,13 @@ public class TalonFX extends LoggableHardware {
    */
   private void initializeTalonPID(TalonPIDConfig pidconfig,
                                  GravityTypeValue gravityType,
-                                 StaticFeedforwardSignValue staticffsign,
-                                 SlotTypes slotTypes) {
+                                 StaticFeedforwardSignValue staticffsign) {
     //Initialize PID configs
     m_TalonPIDConfig = pidconfig;
 
     Slot0Configs slot0Configs = m_TalonFXConfiguration.Slot0;
-    Slot1Configs slot1Configs = m_TalonFXConfiguration.Slot1;
-    Slot2Configs slot2Configs = m_TalonFXConfiguration.Slot2;
 
     //Configure PID Values
-    switch (slotTypes) {
-     case Slot0:
       slot0Configs.kP = m_TalonPIDConfig.getkP();
       slot0Configs.kI = m_TalonPIDConfig.getkI();
       slot0Configs.kD = m_TalonPIDConfig.getkD();
@@ -452,23 +443,6 @@ public class TalonFX extends LoggableHardware {
       slot0Configs.kV = m_TalonPIDConfig.getkV();
       slot0Configs.kG = m_TalonPIDConfig.getkG();
       slot0Configs.kA = m_TalonPIDConfig.getkA();
-     case Slot1:
-      slot1Configs.kP = m_TalonPIDConfig.getkP();
-      slot1Configs.kI = m_TalonPIDConfig.getkI();
-      slot1Configs.kD = m_TalonPIDConfig.getkD();
-      slot1Configs.kS = m_TalonPIDConfig.getkS();
-      slot1Configs.kV = m_TalonPIDConfig.getkV();
-      slot1Configs.kG = m_TalonPIDConfig.getkG();
-      slot1Configs.kA = m_TalonPIDConfig.getkA();
-     case Slot2:
-      slot2Configs.kP = m_TalonPIDConfig.getkP();
-      slot2Configs.kI = m_TalonPIDConfig.getkI();
-      slot2Configs.kD = m_TalonPIDConfig.getkD();
-      slot2Configs.kS = m_TalonPIDConfig.getkS();
-      slot2Configs.kV = m_TalonPIDConfig.getkV();
-      slot2Configs.kG = m_TalonPIDConfig.getkG();
-      slot2Configs.kA = m_TalonPIDConfig.getkA();
-    }
 
     /**
      * Gravity Feedforward Type
@@ -487,22 +461,9 @@ public class TalonFX extends LoggableHardware {
      */
     switch (gravityType) {
       case Arm_Cosine:
-       switch (slotTypes) {
-        case Slot0:
-         slot0Configs.GravityType = GravityTypeValue.Arm_Cosine;
-        case Slot1:
-         slot1Configs.GravityType = GravityTypeValue.Arm_Cosine;
-        case Slot2:
-         slot2Configs.GravityType = GravityTypeValue.Arm_Cosine;
-    }
+       slot0Configs.GravityType = GravityTypeValue.Arm_Cosine;
       case Elevator_Static:
-       switch (slotTypes) {
-        case Slot0:
          slot0Configs.GravityType = GravityTypeValue.Elevator_Static;
-        case Slot1:
-         slot1Configs.GravityType = GravityTypeValue.Elevator_Static;
-        case Slot2:
-         slot2Configs.GravityType = GravityTypeValue.Elevator_Static;
     }
 
      /**
@@ -576,7 +537,6 @@ public class TalonFX extends LoggableHardware {
      m_motionMagic.MotionMagicJerk = m_TalonPIDConfig.getMotionMagicJerk();
     }
    }
-  }
 
    /**
     * Closes the TalonFX motor controller
