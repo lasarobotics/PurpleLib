@@ -12,6 +12,7 @@ import org.littletonrobotics.junction.AutoLog;
 import org.littletonrobotics.junction.Logger;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.configs.ClosedLoopGeneralConfigs;
 import com.ctre.phoenix6.configs.ClosedLoopRampsConfigs;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
@@ -158,108 +159,33 @@ public class TalonFX extends LoggableHardware {
     return m_id;
   }
 
+  
   /**
-   * Initialize supply voltage time constant
-   * 
-   * @param supplyVoltageTimeConstant 
-   * The time constant (in seconds) of the low-pass filter for the
-   * supply voltage.
+   * Applies the contents of the specified config to the device.
    * <p>
-   * This impacts the filtering for the reported supply voltage, and any
-   * control strategies that use the supply voltage (such as voltage
-   * control on a motor controller).
-   * 
-   *   <ul>
-   *   <li> <b>Minimum Value:</b> 0.0
-   *   <li> <b>Maximum Value:</b> 0.1
-   *   <li> <b>Default Value:</b> 0
-   *   <li> <b>Units:</b> sec
-   *   </ul>
+   * This will wait up to {@link #DefaultTimeoutSeconds}.
+   * <p>
+   * Call to apply the selected configs.
+   *
+   * @param configs Configs to apply against.
+   * @return StatusCode of the set command
    */
-  public void initializeSupplyVoltageTimeConstant(double supplyVoltageTimeConstant) {
-    VoltageConfigs config = m_TalonFXConfiguration.Voltage;
-      config.SupplyVoltageTimeConstant = supplyVoltageTimeConstant;
-
-    m_talon.getConfigurator().apply(config);
+  public StatusCode applyConfigs(VoltageConfigs configs) {
+     return m_talon.getConfigurator().apply(configs);
   }
 
   /**
-   * Initialize peak voltage
-   * @param peakReverseVoltage 
-   * Minimum (reverse) output during voltage based control modes.
-   * 
-   *   <ul>
-   *   <li> <b>Minimum Value:</b> -16
-   *   <li> <b>Maximum Value:</b> 16
-   *   <li> <b>Default Value:</b> -16
-   *   <li> <b>Units:</b> V
-   *   </ul>
-   * @param peakForwardVoltage
-   * Maximum (forward) output during voltage based control modes.
-   * 
-   *   <ul>
-   *   <li> <b>Minimum Value:</b> -16
-   *   <li> <b>Maximum Value:</b> 16
-   *   <li> <b>Default Value:</b> 16
-   *   <li> <b>Units:</b> V
-   *   </ul>
+   * Applies the contents of the specified config to the device.
+   * <p>
+   * This will wait up to {@link #DefaultTimeoutSeconds}.
+   * <p>
+   * Call to apply the selected configs.
+   *
+   * @param configs Configs to apply against.
+   * @return StatusCode of the set command
    */
-  public void initializePeakVoltage(double peakReverseVoltage, double peakForwardVoltage) {
-    VoltageConfigs config = m_TalonFXConfiguration.Voltage;
-      config.PeakReverseVoltage = peakReverseVoltage;
-      config.PeakForwardVoltage = peakForwardVoltage;
-
-    m_talon.getConfigurator().apply(config);
-  }
-
-  /**
-   * Initialize peak torque currents
-   * @param peakReverseTorqueCurrent
-   * Minimum (reverse) output during torque current based control modes.
-   * 
-   *   <ul>
-   *   <li> <b>Minimum Value:</b> -800
-   *   <li> <b>Maximum Value:</b> 800
-   *   <li> <b>Default Value:</b> -800
-   *   <li> <b>Units:</b> A
-   *   </ul>
-   * @param peakForwardTorqueCurrent
-   * Maximum (forward) output during torque current based control modes.
-   * 
-   *   <ul>
-   *   <li> <b>Minimum Value:</b> -800
-   *   <li> <b>Maximum Value:</b> 800
-   *   <li> <b>Default Value:</b> 800
-   *   <li> <b>Units:</b> A
-   *   </ul>
-   */
-  public void initializePeakTorqueCurrents(double peakReverseTorqueCurrent, 
-                                           double peakForwardTorqueCurrent) {
-    TorqueCurrentConfigs config = m_TalonFXConfiguration.TorqueCurrent;
-      config.PeakReverseTorqueCurrent = peakReverseTorqueCurrent;
-      config.PeakForwardTorqueCurrent = peakForwardTorqueCurrent;
-
-    m_talon.getConfigurator().apply(config);
-  }
-
-  /**
-   * Initialize torque neutral deadband
-   * @param torqueNeutralDeadband
-   * Configures the output deadband during torque current based control
-   * modes.
-   * 
-   *   <ul>
-   *   <li> <b>Minimum Value:</b> 0
-   *   <li> <b>Maximum Value:</b> 25
-   *   <li> <b>Default Value:</b> 0.0
-   *   <li> <b>Units:</b> A
-   *   </ul>
-   */
-  public void initializeTorqueNeutralDeadband(double torqueNeutralDeadband) {
-    TorqueCurrentConfigs config = m_TalonFXConfiguration.TorqueCurrent;
-      config.TorqueNeutralDeadband = torqueNeutralDeadband;
-    
-    m_talon.getConfigurator().apply(config);
+  public StatusCode applyConfigs(TorqueCurrentConfigs configs) {
+     return m_talon.getConfigurator().apply(configs);
   }
 
   /**
@@ -317,118 +243,49 @@ public class TalonFX extends LoggableHardware {
       }
       m_talon.getConfigurator().apply(config);
     }
-    
+
   /**
-   * Initialize open-loop period times
-   * @param dutyCycleOpenLoopRampPeriod
-   * If non-zero, this determines how much time to ramp from 0% output
-   * to 100% during open-loop modes.
-   * 
-   *   <ul>
-   *   <li> <b>Minimum Value:</b> 0
-   *   <li> <b>Maximum Value:</b> 1
-   *   <li> <b>Default Value:</b> 0
-   *   <li> <b>Units:</b> sec
-   *   </ul>
-   * @param voltageOpenLoopRampPeriod
-   * If non-zero, this determines how much time to ramp from 0V output
-   * to 12V during open-loop modes.
-   * 
-   *   <ul>
-   *   <li> <b>Minimum Value:</b> 0
-   *   <li> <b>Maximum Value:</b> 1
-   *   <li> <b>Default Value:</b> 0
-   *   <li> <b>Units:</b> sec
-   *   </ul>
-   * @param torqueOpenLoopRampPeriod
-   * If non-zero, this determines how much time to ramp from 0V output
-   * to 12V during open-loop modes.
-   * 
-   *   <ul>
-   *   <li> <b>Minimum Value:</b> 0
-   *   <li> <b>Maximum Value:</b> 1
-   *   <li> <b>Default Value:</b> 0
-   *   <li> <b>Units:</b> sec
-   *   </ul>
+   * Applies the contents of the specified config to the device.
+   * <p>
+   * This will wait up to {@link #DefaultTimeoutSeconds}.
+   * <p>
+   * Call to apply the selected configs.
+   *
+   * @param configs Configs to apply against.
+   * @return StatusCode of the set command
    */
-  public void initializeOpenLoopRampPeriods(double dutyCycleOpenLoopRampPeriod,
-                                            double voltageOpenLoopRampPeriod,
-                                            double torqueOpenLoopRampPeriod) {
-    OpenLoopRampsConfigs config = m_TalonFXConfiguration.OpenLoopRamps;
-      config.DutyCycleOpenLoopRampPeriod = dutyCycleOpenLoopRampPeriod;        
-      config.VoltageOpenLoopRampPeriod = voltageOpenLoopRampPeriod;     
-      config.TorqueOpenLoopRampPeriod = torqueOpenLoopRampPeriod;      
-    
-    m_talon.getConfigurator().apply(config);
+  public StatusCode applyConfigs(OpenLoopRampsConfigs configs) {
+     return m_talon.getConfigurator().apply(configs);
   }
 
   /**
-   * Initialize configs that affect the closed-loop control of this motor
-   * controller.
+   * Applies the contents of the specified config to the device.
    * <p>
-   * Closed-loop ramp rates for the various control types.
-   * @param dutyCycleClosedLoopRampPeriod
-   * If non-zero, this determines how much time to ramp from 0% output
-   * to 100% during closed-loop modes.
-   * 
-   *   <ul>
-   *   <li> <b>Minimum Value:</b> 0
-   *   <li> <b>Maximum Value:</b> 1
-   *   <li> <b>Default Value:</b> 0
-   *   <li> <b>Units:</b> sec
-   *   </ul>
-   * @param voltageClosedLoopRampPeriod
-   * If non-zero, this determines how much time to ramp from 0V output
-   * to 12V during closed-loop modes.
-   * 
-   *   <ul>
-   *   <li> <b>Minimum Value:</b> 0
-   *   <li> <b>Maximum Value:</b> 1
-   *   <li> <b>Default Value:</b> 0
-   *   <li> <b>Units:</b> sec
-   *   </ul>
-   * @param torqueClosedLoopRampPeriod
-   * If non-zero, this determines how much time to ramp from 0A output
-   * to 300A during closed-loop modes.
-   * 
-   *   <ul>
-   *   <li> <b>Minimum Value:</b> 0
-   *   <li> <b>Maximum Value:</b> 10
-   *   <li> <b>Default Value:</b> 0
-   *   <li> <b>Units:</b> sec
-   *   </ul>
+   * This will wait up to {@link #DefaultTimeoutSeconds}.
+   * <p>
+   * Call to apply the selected configs.
+   *
+   * @param configs Configs to apply against.
+   * @return StatusCode of the set command
    */
-  public void initializeClosedLoopRampPeriods(double dutyCycleClosedLoopRampPeriod, 
-                                              double voltageClosedLoopRampPeriod, 
-                                              double torqueClosedLoopRampPeriod) {
-    ClosedLoopRampsConfigs config = m_TalonFXConfiguration.ClosedLoopRamps;
-      config.DutyCycleClosedLoopRampPeriod = dutyCycleClosedLoopRampPeriod;
-      config.VoltageClosedLoopRampPeriod = voltageClosedLoopRampPeriod;
-      config.TorqueClosedLoopRampPeriod = torqueClosedLoopRampPeriod;
+  public StatusCode applyConfigs(ClosedLoopGeneralConfigs configs) {
+     return m_talon.getConfigurator().apply(configs);
+  }
 
-    m_talon.getConfigurator().apply(config);
+  /**
+   * Applies the contents of the specified config to the device.
+   * <p>
+   * This will wait up to {@link #DefaultTimeoutSeconds}.
+   * <p>
+   * Call to apply the selected configs.
+   *
+   * @param configs Configs to apply against.
+   * @return StatusCode of the set command
+   */
+  public StatusCode applyConfigs(ClosedLoopRampsConfigs configs) {
+     return m_talon.getConfigurator().apply(configs);
   }
   
-  /**
-   * Wrap position error within [-0.5,+0.5) mechanism rotations. 
-   * Typically used for continuous position closed-loops like swerve
-   * azimuth.
-   * <p>
-   * This uses the mechanism rotation value. If there is a gear ratio
-   * between the sensor and the mechanism, make sure to apply a
-   * SensorToMechanismRatio so the closed loop operates on the full
-   * rotation.
-   * 
-   *   <ul>
-   *   <li> <b>Default Value:</b> False
-   *   </ul>
-   */
-  public void initalizeContinuousWrap() {
-    ClosedLoopGeneralConfigs config = m_TalonFXConfiguration.ClosedLoopGeneral;
-      config.ContinuousWrap = true;
-
-    m_talon.getConfigurator().apply(config);
-  }
 
   /**
    * Initiialize remote limit switches with TalonFX as the sensor
@@ -465,30 +322,20 @@ public class TalonFX extends LoggableHardware {
    m_talon.getConfigurator().apply(limitConfigs);
   }
 
-  /**
-   * Initialize software limit switches for TalonFX
-   * @param forward Boolean to choose whether to init forward soft limit switch
-   * @param reverse Boolean to choose whether to init reverse soft limit switch
-   * @param forwardSoftLimitThreshold Double for threshold of forward soft limit
-   * @param reverseSoftLimitThreshold Double for threshold of reverse soft limit
+ /**
+   * Applies the contents of the specified config to the device.
+   * <p>
+   * This will wait up to {@link #DefaultTimeoutSeconds}.
+   * <p>
+   * Call to apply the selected configs.
+   *
+   * @param configs Configs to apply against.
+   * @return StatusCode of the set command
    */
-  public void initializeSoftLimits(boolean forward, 
-                                  boolean reverse, 
-                                  double forwardSoftLimitThreshold, 
-                                  double reverseSoftLimitThreshold) {
-
-    SoftwareLimitSwitchConfigs softLimitConfigs = m_TalonFXConfiguration.SoftwareLimitSwitch;
-     if (forward) {
-       softLimitConfigs.ForwardSoftLimitEnable = true;
-       softLimitConfigs.ForwardSoftLimitThreshold = forwardSoftLimitThreshold;
-      }
-     if (reverse) {
-       softLimitConfigs.ReverseSoftLimitEnable = true;
-       softLimitConfigs.ReverseSoftLimitThreshold = reverseSoftLimitThreshold;
-      }
-    m_talon.getConfigurator().apply(softLimitConfigs);
+  public StatusCode applyConfigs(SoftwareLimitSwitchConfigs configs) {
+     return m_talon.getConfigurator().apply(configs);
   }
-
+  
   /**
    * Initialize stator current limits
    * @param statorCurrentLimit 
