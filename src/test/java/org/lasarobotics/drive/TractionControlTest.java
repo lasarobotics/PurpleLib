@@ -48,7 +48,7 @@ public class TractionControlTest {
     var outputSpeed = Units.MetersPerSecond.of(100.0);
     for (int i = 0; i < 50; i++) {
       Timer.delay(GlobalConstants.ROBOT_LOOP_PERIOD);
-      outputSpeed = m_tractionControlController.calculate(MAX_LINEAR_SPEED, Units.MetersPerSecond.of(0.0), MAX_LINEAR_SPEED.divide(2));
+      outputSpeed = m_tractionControlController.calculate(MAX_LINEAR_SPEED, Units.MetersPerSecond.of(0.02), MAX_LINEAR_SPEED.divide(2));
     }
 
     // Verify behavior
@@ -63,18 +63,21 @@ public class TractionControlTest {
     // Simulate scenario
     var outputSpeed = Units.MetersPerSecond.of(100.0);
     var inertialVelocity = Units.MetersPerSecond.of(0.0);
-    while (inertialVelocity.lte(MAX_LINEAR_SPEED)) {
+    var wheelSpeed = Units.MetersPerSecond.of(0.0);
+
+    while (outputSpeed.lt(MAX_LINEAR_SPEED)) {
       Timer.delay(GlobalConstants.ROBOT_LOOP_PERIOD);
-      outputSpeed = m_tractionControlController.calculate(MAX_LINEAR_SPEED, inertialVelocity, Units.MetersPerSecond.of(0.0));
+      outputSpeed = m_tractionControlController.calculate(MAX_LINEAR_SPEED, inertialVelocity, wheelSpeed);
 
       // Verify behavior
       assertTrue(outputSpeed.gte(inertialVelocity) & outputSpeed.lt(MAX_LINEAR_SPEED));
 
       // Update values
       inertialVelocity = outputSpeed;
+      wheelSpeed = outputSpeed;
 
       // Exit if test is complete
-      if (inertialVelocity.isNear(MAX_LINEAR_SPEED, THRESHOLD)) break;
+      if (outputSpeed.isNear(MAX_LINEAR_SPEED, THRESHOLD)) break;
     }
   }
 
