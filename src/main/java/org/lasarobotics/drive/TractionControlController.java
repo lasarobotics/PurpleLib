@@ -43,7 +43,6 @@ public class TractionControlController {
   private double m_mass;
   private double m_maxLinearSpeed;
   private double m_frictionCoefficient;
-  private double m_maxCurrentSlipRatio;
   private double m_maxPredictedSlipRatio;
   private boolean m_isSlipping;
   private State m_state;
@@ -60,7 +59,6 @@ public class TractionControlController {
     this.m_mass = mass.divide(4).in(Units.Kilograms);
     this.m_maxLinearSpeed = Math.floor(maxLinearSpeed.in(Units.MetersPerSecond) * 1000) / 1000;
     this.m_frictionCoefficient = frictionCoefficient.in(Units.Value);
-    this.m_maxCurrentSlipRatio = (m_maxLinearSpeed - INERTIAL_VELOCITY_THRESHOLD.in(Units.MetersPerSecond)) / INERTIAL_VELOCITY_THRESHOLD.in(Units.MetersPerSecond);
     this.m_maxPredictedSlipRatio =  (m_maxLinearSpeed * GlobalConstants.ROBOT_LOOP_HZ) / (m_frictionCoefficient * m_mass * GlobalConstants.GRAVITATIONAL_ACCELERATION.in(Units.MetersPerSecondPerSecond));
     this.m_isSlipping = false;
     this.m_state = State.ENABLED;
@@ -84,8 +82,7 @@ public class TractionControlController {
       inertialVelocity.lte(INERTIAL_VELOCITY_THRESHOLD)
         ? 0.0
         : (Math.abs(wheelSpeed.in(Units.MetersPerSecond)) - inertialVelocity.in(Units.MetersPerSecond)) / inertialVelocity.in(Units.MetersPerSecond)
-    ) / m_maxCurrentSlipRatio;
-
+    );
     m_isSlipping = currentSlipRatio > m_optimalSlipRatio & isEnabled();
 
     // Get desired acceleration
