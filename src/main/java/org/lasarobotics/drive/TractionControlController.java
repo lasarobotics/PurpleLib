@@ -80,7 +80,7 @@ public class TractionControlController {
     inertialVelocity = Units.MetersPerSecond.of(Math.abs(inertialVelocity.in(Units.MetersPerSecond)));
     double currentSlipRatio = Math.abs(
       inertialVelocity.lte(INERTIAL_VELOCITY_THRESHOLD)
-        ? 0.0
+        ? wheelSpeed.in(Units.MetersPerSecond) - m_optimalSlipRatio
         : (Math.abs(wheelSpeed.in(Units.MetersPerSecond)) - inertialVelocity.in(Units.MetersPerSecond)) / inertialVelocity.in(Units.MetersPerSecond)
     );
     m_isSlipping = currentSlipRatio > m_optimalSlipRatio & isEnabled();
