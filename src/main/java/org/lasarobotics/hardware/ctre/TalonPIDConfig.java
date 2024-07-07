@@ -9,6 +9,8 @@ package org.lasarobotics.hardware.ctre;
 import org.lasarobotics.utils.FFConstants;
 import org.lasarobotics.utils.PIDConstants;
 
+import com.ctre.phoenix6.signals.GravityTypeValue;
+import com.ctre.phoenix6.signals.StaticFeedforwardSignValue;
 
 import edu.wpi.first.math.MathUtil;
 
@@ -45,6 +47,8 @@ public class TalonPIDConfig {
   private double m_velocityRPM = 1.0;
   private double m_accelerationRPMPerSec = 1.0;
   private double m_jerk = 0;
+  private GravityTypeValue m_gravitytype;
+  private StaticFeedforwardSignValue m_staticff;
 
 
 
@@ -96,7 +100,8 @@ public class TalonPIDConfig {
    */
   public TalonPIDConfig(PIDConstants pidf, boolean sensorPhase, boolean invertMotor, double ticksPerRotation,
                         double tolerance, double lowerLimit, double upperLimit, boolean enableSoftLimits,
-                        double velocity, double acceleration, double jerk) {
+                        double velocity, double acceleration, double jerk, GravityTypeValue gravitytype,
+                        StaticFeedforwardSignValue staticff) {
     this.m_kP = pidf.kP;
     this.m_kI = pidf.kI;
     this.m_kD = pidf.kD;
@@ -113,6 +118,8 @@ public class TalonPIDConfig {
     this.m_velocityRPM = velocity;
     this.m_accelerationRPMPerSec = acceleration;
     this.m_jerk = MathUtil.clamp(jerk, MIN_JERK, MAX_JERK);
+    this.m_gravitytype = gravitytype;
+    this.m_staticff = staticff;
 
 
     this.m_motionMagic = true;
@@ -280,5 +287,19 @@ public class TalonPIDConfig {
    */
   public double getMotionMagicJerk() {
     return m_jerk;
+  }
+
+  /**
+   * @return Gravity type
+   */
+  public GravityTypeValue getGravityType() {
+    return m_gravitytype;
+  }
+
+  /**
+   * @return Static feedforward
+   */
+  public StaticFeedforwardSignValue getStaticFeedForward() {
+    return m_staticff;
   }
 }
