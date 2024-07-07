@@ -48,7 +48,7 @@ public class TractionControlTest {
     var outputSpeed = Units.MetersPerSecond.of(100.0);
     for (int i = 0; i < 50; i++) {
       Timer.delay(GlobalConstants.ROBOT_LOOP_PERIOD);
-      outputSpeed = m_tractionControlController.calculate(MAX_LINEAR_SPEED, Units.MetersPerSecond.of(0.0), Units.MetersPerSecond.of(0.05));
+      outputSpeed = m_tractionControlController.calculate(MAX_LINEAR_SPEED, Units.MetersPerSecond.of(0.0), MAX_LINEAR_SPEED.divide(2));
     }
 
     // Verify behavior
