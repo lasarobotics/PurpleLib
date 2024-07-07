@@ -26,8 +26,6 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
 import com.ctre.phoenix6.configs.VoltageConfigs;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
-import com.ctre.phoenix6.signals.GravityTypeValue;
-import com.ctre.phoenix6.signals.StaticFeedforwardSignValue;
 
 
 /** TalonFX */
@@ -427,9 +425,7 @@ public class TalonFX extends LoggableHardware {
    * @param gravityType Type of gravity to use
    * @param staticffsign Static feedforward sign to use
    */
-  private void initializeTalonPID(TalonPIDConfig pidconfig,
-                                 GravityTypeValue gravityType,
-                                 StaticFeedforwardSignValue staticffsign) {
+  private void initializeTalonPID(TalonPIDConfig pidconfig) {
     //Initialize PID configs
     m_TalonPIDConfig = pidconfig;
 
@@ -459,12 +455,7 @@ public class TalonFX extends LoggableHardware {
      * ground), and the reported sensor position is 1:1 with the
      * mechanism.
      */
-    switch (gravityType) {
-      case Arm_Cosine:
-       slot0Configs.GravityType = GravityTypeValue.Arm_Cosine;
-      case Elevator_Static:
-         slot0Configs.GravityType = GravityTypeValue.Elevator_Static;
-    }
+   slot0Configs.GravityType = pidconfig.getGravityType();
 
      /**
      * Static Feedforward Sign during position closed loop
@@ -480,12 +471,7 @@ public class TalonFX extends LoggableHardware {
      * dither when closed loop error is near zero.
      * 
      */
-    switch (staticffsign) {
-      case UseClosedLoopSign:
-       slot0Configs.StaticFeedforwardSign = StaticFeedforwardSignValue.UseClosedLoopSign;
-      case UseVelocitySign:
-       slot0Configs.StaticFeedforwardSign = StaticFeedforwardSignValue.UseVelocitySign; 
-    }  
+  slot0Configs.StaticFeedforwardSign = pidconfig.getStaticFeedForward();
 
     //Configure MotionMagic
     MotionMagicConfigs m_motionMagic = m_TalonFXConfiguration.MotionMagic;
