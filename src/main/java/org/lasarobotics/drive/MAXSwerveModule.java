@@ -102,7 +102,7 @@ public class MAXSwerveModule implements AutoCloseable {
     }
   }
 
-  public static final Measure<Time> DEFAULT_PERIOD = Units.Milliseconds.of(20.0);
+  public static final Measure<Time> DEFAULT_PERIOD = Units.Milliseconds.of(10.0);
 
   private final double EPSILON = 5e-3;
   private final Measure<Current> DRIVE_MOTOR_CURRENT_LIMIT;
