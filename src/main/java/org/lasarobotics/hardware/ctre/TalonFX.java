@@ -13,9 +13,13 @@ import org.littletonrobotics.junction.Logger;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix6.StatusCode;
+import com.ctre.phoenix6.configs.AudioConfigs;
 import com.ctre.phoenix6.configs.ClosedLoopGeneralConfigs;
 import com.ctre.phoenix6.configs.ClosedLoopRampsConfigs;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
+import com.ctre.phoenix6.configs.CustomParamsConfigs;
+import com.ctre.phoenix6.configs.DifferentialConstantsConfigs;
+import com.ctre.phoenix6.configs.DifferentialSensorsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.HardwareLimitSwitchConfigs;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
@@ -276,10 +280,65 @@ public class TalonFX extends LoggableHardware {
    * @param configs Configs to apply against.
    * @return StatusCode of the set command
    */
+  public StatusCode applyConfigs(DifferentialConstantsConfigs configs) {
+     return m_talon.getConfigurator().apply(configs);
+  } 
+
+  /**
+   * Applies the contents of the specified config to the device.
+   * <p>
+   * This will wait up to {@link #DefaultTimeoutSeconds}.
+   * <p>
+   * Call to apply the selected configs.
+   *
+   * @param configs Configs to apply against.
+   * @return StatusCode of the set command
+   */
+  public StatusCode applyConfigs(DifferentialSensorsConfigs configs) {
+     return m_talon.getConfigurator().apply(configs);
+  }
+
+  /**
+   * Applies the contents of the specified config to the device.
+   * <p>
+   * This will wait up to {@link #DefaultTimeoutSeconds}.
+   * <p>
+   * Call to apply the selected configs.
+   *
+   * @param configs Configs to apply against.
+   * @return StatusCode of the set command
+   */
+  public StatusCode applyConfigs(CustomParamsConfigs configs) {
+     return m_talon.getConfigurator().apply(configs);
+  }
+
+  /**
+   * Applies the contents of the specified config to the device.
+   * <p>
+   * This will wait up to {@link #DefaultTimeoutSeconds}.
+   * <p>
+   * Call to apply the selected configs.
+   *
+   * @param configs Configs to apply against.
+   * @return StatusCode of the set command
+   */
+  public StatusCode applyConfigs(AudioConfigs configs) {
+     return m_talon.getConfigurator().apply(configs);
+  }
+
+  /**
+   * Applies the contents of the specified config to the device.
+   * <p>
+   * This will wait up to {@link #DefaultTimeoutSeconds}.
+   * <p>
+   * Call to apply the selected configs.
+   *
+   * @param configs Configs to apply against.
+   * @return StatusCode of the set command
+   */
   public StatusCode applyConfigs(ClosedLoopRampsConfigs configs) {
      return m_talon.getConfigurator().apply(configs);
   }
-  
 
   /**
    * Initiialize remote limit switches with TalonFX as the sensor
