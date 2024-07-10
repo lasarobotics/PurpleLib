@@ -26,19 +26,20 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.simulation.FlywheelSim;
 import edu.wpi.first.wpilibj.simulation.SimDeviceSim;
 
+@SuppressWarnings("unused")
 public class SparkSim {
   private static final String LOG_TAG = "SimSpark";
+  private static final int PID_SLOT = 0;
   private final SimDouble m_appliedOutput;
   private final SimDouble m_velocity;
   private final SimDouble m_position;
+  private final SimDouble m_analogVelocity;
+  private final SimDouble m_analogPosition;
+  private final SimDouble m_analogVoltage;
   private final SimDouble m_busVoltage;
   private final SimDouble m_motorCurrent;
-  private final SimDouble m_setpoint;
-  private final SimDouble m_arbFF;
   private final SimInt m_faults;
   private final SimInt m_stickyFaults;
-  private final SimInt m_pidSlot;
-  private final SimInt m_arbFFUnits;
   private final Spark m_spark;
   private final SimDynamics m_simulatedDynamics;
   private final SimInt m_controlMode;
@@ -73,14 +74,13 @@ public class SparkSim {
   public SparkSim(Spark spark, SimDynamics dynamicsSim) {
     SimDeviceSim simSpark = new SimDeviceSim("SPARK MAX" + " [" + spark.getID().deviceID + "]");
     m_appliedOutput = simSpark.getDouble("Applied Output");
-    m_position = simSpark.getDouble("Position");
     m_velocity = simSpark.getDouble("Velocity");
+    m_position = simSpark.getDouble("Position");
+    m_analogVelocity = simSpark.getDouble("Analog Velocity");
+    m_analogPosition = simSpark.getDouble("Analog Position");
+    m_analogVoltage = simSpark.getDouble("Analog Voltage");
     m_busVoltage = simSpark.getDouble("Bus Voltage");
     m_motorCurrent = simSpark.getDouble("Motor Current");
-    m_setpoint = simSpark.getDouble("Setpoint");
-    m_arbFF = simSpark.getDouble("Arbitrary Feedforward");
-    m_pidSlot = simSpark.getInt("PID Slot");
-    m_arbFFUnits = simSpark.getInt("ArbFF Units");
     m_controlMode = simSpark.getInt("Control Mode");
     m_faults = simSpark.getInt("Faults");
     m_stickyFaults = simSpark.getInt("Sticky Faults");
@@ -249,7 +249,7 @@ public class SparkSim {
 
         // Velocity
       case 1:
-        appliedOutput = runPID(m_pidSlot.get(), m_setpoint.get(), internalVelocity, GlobalConstants.ROBOT_LOOP_PERIOD);
+        appliedOutput = runPID(PID_SLOT, m_setpoint.get(), internalVelocity, GlobalConstants.ROBOT_LOOP_PERIOD);
         break;
 
         // Voltage
@@ -259,7 +259,7 @@ public class SparkSim {
 
         // Position
       case 3:
-        appliedOutput = runPID(m_pidSlot.get(), m_setpoint.get(), m_position.get(), GlobalConstants.ROBOT_LOOP_PERIOD);
+        appliedOutput = runPID(PID_SLOT, m_setpoint.get(), m_position.get(), GlobalConstants.ROBOT_LOOP_PERIOD);
         break;
 
         // Smart Motion
@@ -269,7 +269,7 @@ public class SparkSim {
 
         // Current
       case 5:
-        appliedOutput = runPID(m_pidSlot.get(), m_setpoint.get(), m_motorCurrent.get(), GlobalConstants.ROBOT_LOOP_PERIOD);
+        appliedOutput = runPID(PID_SLOT, m_setpoint.get(), m_motorCurrent.get(), GlobalConstants.ROBOT_LOOP_PERIOD);
         break;
 
         // Smart Velocity
