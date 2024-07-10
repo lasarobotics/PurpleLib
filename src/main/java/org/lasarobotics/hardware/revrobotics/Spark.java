@@ -26,6 +26,7 @@ import com.revrobotics.CANSparkBase.SoftLimitDirection;
 import com.revrobotics.CANSparkFlex;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 import com.revrobotics.CANSparkLowLevel.PeriodicFrame;
+import com.revrobotics.SparkPIDController.ArbFFUnits;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.MotorFeedbackSensor;
 import com.revrobotics.REVLibError;
@@ -99,6 +100,21 @@ public class Spark extends LoggableHardware {
     NEO_ENCODER, ANALOG, THROUGH_BORE_ENCODER;
   }
 
+  /** Spark output */
+  protected class SparkOutput {
+    public final double value;
+    public final ControlType ctrlType;
+    public final double arbFeedforward;
+    public final ArbFFUnits arbFFUnits;
+
+    public SparkOutput(double value, ControlType ctrlType, double arbFeedforward, ArbFFUnits arbFFUnits) {
+      this.value = value;
+      this.ctrlType = ctrlType;
+      this.arbFeedforward = arbFeedforward;
+      this.arbFFUnits = arbFFUnits;
+    }
+  }
+
   /**
    * Spark sensor inputs
    */
@@ -129,6 +145,8 @@ public class Spark extends LoggableHardware {
   private static final double SMOOTH_MOTION_DEBOUNCE_TIME = 0.1;
   private static final String VALUE_LOG_ENTRY = "/OutputValue";
   private static final String MODE_LOG_ENTRY = "/OutputMode";
+  private static final String ARB_FF_LOG_ENTRY = "/ArbitraryFF";
+  private static final String ARB_FF_UNITS_LOG_ENTRY = "/ArbitraryFFUnits";
   private static final String IDLE_MODE_LOG_ENTRY = "/IdleMode";
   private static final String CURRENT_LOG_ENTRY = "/Current";
   private static final String TEMPERATURE_LOG_ENTRY = "/Temperature";
@@ -159,6 +177,7 @@ public class Spark extends LoggableHardware {
   private SparkLimitSwitch.Type m_limitSwitchType = SparkLimitSwitch.Type.kNormallyOpen;
   private RelativeEncoder m_encoder;
 
+  private volatile SparkOutput m_output;
   private volatile SparkInputsAutoLogged m_inputs;
 
   /**
@@ -178,6 +197,7 @@ public class Spark extends LoggableHardware {
     }
     this.m_id = id;
     this.m_kind = kind;
+    this.m_output = new SparkOutput(0.0, ControlType.kDutyCycle, 0.0, ArbFFUnits.kVoltage);
     this.m_inputs = new SparkInputsAutoLogged();
     this.m_inputsThread = new Notifier(this::updateInputs);
     this.m_isSmoothMotionEnabled = false;
@@ -286,6 +306,14 @@ public class Spark extends LoggableHardware {
   }
 
   /**
+   * Get latest output
+   * @return Latest set output sent to Spark
+   */
+  SparkOutput getLatestOutput() {
+    return m_output;
+  }
+
+  /**
    * Attempt to apply parameter and check if specified parameter is set correctly
    * @param parameterSetter Method to set desired parameter
    * @param parameterCheckSupplier Method to check for parameter in question
@@ -339,9 +367,12 @@ public class Spark extends LoggableHardware {
    * @param value Value that was set
    * @param ctrl Control mode that was used
    */
-  private void logOutputs(double value, ControlType ctrl) {
+  private void logOutputs(double value, ControlType ctrl, double arbFeedforward, ArbFFUnits arbFFUnits) {
     Logger.recordOutput(m_id.name + VALUE_LOG_ENTRY, value);
     Logger.recordOutput(m_id.name + MODE_LOG_ENTRY, ctrl.toString());
+    Logger.recordOutput(m_id.name + ARB_FF_LOG_ENTRY, arbFeedforward);
+    Logger.recordOutput(m_id.name + ARB_FF_UNITS_LOG_ENTRY, arbFFUnits.toString());
+    m_output = new SparkOutput(value, ctrl, arbFeedforward, arbFFUnits);
   }
 
   /**
@@ -824,8 +855,7 @@ public class Spark extends LoggableHardware {
    * @param ctrl Desired control mode
    */
   public void set(double value, ControlType ctrl) {
-    m_spark.getPIDController().setReference(value, ctrl);
-    logOutputs(value, ctrl);
+    set(value, ctrl, 0.0, ArbFFUnits.kVoltage);
   }
 
   /**
@@ -837,7 +867,7 @@ public class Spark extends LoggableHardware {
    */
   public void set(double value, ControlType ctrl, double arbFeedforward, SparkPIDController.ArbFFUnits arbFFUnits) {
     m_spark.getPIDController().setReference(value, ctrl, PID_SLOT, arbFeedforward, arbFFUnits);
-    logOutputs(value, ctrl);
+    logOutputs(value, ctrl, arbFeedforward, arbFFUnits);
   }
 
   /**
@@ -1420,7 +1450,7 @@ public class Spark extends LoggableHardware {
    */
   public void stopMotor() {
     m_spark.stopMotor();
-    logOutputs(0.0, ControlType.kDutyCycle);
+    logOutputs(0.0, ControlType.kDutyCycle, 0.0, ArbFFUnits.kVoltage);
   }
 
   /**
