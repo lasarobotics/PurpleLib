@@ -588,7 +588,9 @@ public class MAXSwerveModule extends SwerveModule implements Sendable, AutoClose
    */
   @Override
   public Measure<Velocity<Distance>> getDriveVelocity() {
-    return Units.MetersPerSecond.of(m_driveMotor.getInputs().encoderVelocity);
+    synchronized (m_driveMotor.getInputs()) {
+      return Units.MetersPerSecond.of(m_driveMotor.getInputs().encoderVelocity);
+    }
   }
 
   /**
@@ -597,10 +599,12 @@ public class MAXSwerveModule extends SwerveModule implements Sendable, AutoClose
    */
   @Override
   public SwerveModuleState getState() {
-    return new SwerveModuleState(
-      getDriveVelocity(),
-      Rotation2d.fromRadians(m_rotateMotor.getInputs().absoluteEncoderPosition).minus(m_location.offset)
-    );
+    synchronized (m_rotateMotor.getInputs()) {
+      return new SwerveModuleState(
+        getDriveVelocity(),
+        Rotation2d.fromRadians(m_rotateMotor.getInputs().absoluteEncoderPosition).minus(m_location.offset)
+      );
+    }
   }
 
   /**
