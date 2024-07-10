@@ -37,6 +37,9 @@ dependencies {
   nativeRelease wpi.java.vendor.jniRelease(wpi.platforms.desktop)
   simulationRelease wpi.sim.enableRelease()
 
+  implementation 'org.tinylog:tinylog-api:2.7.0'
+  implementation 'org.tinylog:tinylog-impl:2.7.0'
+
   implementation 'org.apache.commons:commons-math3:3.+'
 
   testImplementation 'org.junit.jupiter:junit-jupiter:5.+'

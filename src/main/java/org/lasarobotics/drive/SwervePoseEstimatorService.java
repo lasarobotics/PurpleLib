@@ -77,7 +77,7 @@ public class SwervePoseEstimatorService {
    * @param imu NavX2 MXP IMU
    * @param modules MAXSwerve modules
    */
-  public SwervePoseEstimatorService(Matrix<N3,N1> odometryStdDev, NavX2 imu, MAXSwerveModule... modules) {
+  public SwervePoseEstimatorService(Matrix<N3,N1> odometryStdDev, NavX2 imu, SwerveModule... modules) {
     this(odometryStdDev, () -> imu.getInputs().rotation2d, () -> imu.getInputs().yawRate, modules);
   }
 
@@ -89,14 +89,14 @@ public class SwervePoseEstimatorService {
    * @param imu CTRE Pigeon 2.0 IMU
    * @param modules MAXSwerve modules
    */
-  public SwervePoseEstimatorService(Matrix<N3,N1> odometryStdDev, Pigeon2 imu, MAXSwerveModule... modules) {
+  public SwervePoseEstimatorService(Matrix<N3,N1> odometryStdDev, Pigeon2 imu, SwerveModule... modules) {
     this(odometryStdDev, () -> imu.getInputs().rotation2d, () -> imu.getInputs().yawRate, modules);
   }
 
   private SwervePoseEstimatorService(Matrix<N3,N1> odometryStdDev,
                                      Supplier<Rotation2d> rotation2dSupplier,
                                      Supplier<Measure<Velocity<Angle>>> yawRateSupplier,
-                                     MAXSwerveModule... modules) {
+                                     SwerveModule... modules) {
     if (modules.length != 4) throw new IllegalArgumentException("Four (4) modules must be used!");
     this.m_running = false;
     // Remember how to get rotation2d from IMU

@@ -86,10 +86,26 @@ public class SparkPIDConfig {
   }
 
   /**
+   * Set proportional gain
+   * @param kP value
+   */
+  public void setP(double kP) {
+    m_kP = kP;
+  }
+
+  /**
    * @return Proportional gain
    */
   public double getP() {
     return m_kP;
+  }
+
+  /**
+   * Set integral gain
+   * @param kI value
+   */
+  public void setI(double kI) {
+    m_kI = kI;
   }
 
   /**
@@ -100,6 +116,14 @@ public class SparkPIDConfig {
   }
 
   /**
+   * Set derivative gain
+   * @param kD value
+   */
+  public void setD(double kD) {
+    m_kD = kD;
+  }
+
+  /**
    * @return Derivative gain
    */
   public double getD() {
@@ -107,10 +131,26 @@ public class SparkPIDConfig {
   }
 
   /**
+   * Set feed-forward gain
+   * @param kF value
+   */
+  public void setF(double kF) {
+    m_kF = kF;
+  }
+
+  /**
    * @return Feed-forward gain
    */
   public double getF() {
     return m_kF;
+  }
+
+  /**
+   * Set integral zone
+   * @param kIZone value
+   */
+  public void setIZone(double kIZone) {
+    m_kIZone = kIZone;
   }
 
   /**

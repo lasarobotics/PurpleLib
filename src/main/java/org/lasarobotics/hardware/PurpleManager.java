@@ -38,10 +38,30 @@ import edu.wpi.first.wpilibj.RobotBase;
 /** PurpleLib Hardware Logging Manager */
 public class PurpleManager {
   private static List<LoggableHardware> m_hardware = new ArrayList<>();
+  private static List<Monitorable> m_monitored = new ArrayList<>();
   private static List<Runnable> m_callbacks = new ArrayList<>();
   private static List<Runnable> m_simCallbacks = new ArrayList<>();
   private static VisionSystemSim m_visionSim = new VisionSystemSim("PurpleManager");
   private static Supplier<Pose2d> m_poseSupplier = null;
+
+  /**
+   * Monitor health of components
+   */
+  private static void monitorHealth() {
+    for (Monitorable component : m_monitored) {
+      if (component.isHealthy()) {
+        component.setErrorCount(component.getErrorCount() - 1);
+        continue;
+      }
+      if (component.getErrorCount() < component.getMaxRetries()) {
+        boolean hasError = component.reinit();
+        if (!hasError) {
+          component.setErrorCount(0);
+          continue;
+        } else component.setErrorCount(component.getErrorCount() + 1);
+      }
+    }
+  }
 
   /**
    * Initialize and start logging
@@ -130,13 +150,22 @@ public class PurpleManager {
   }
 
   /**
-   * Add hardware device to PurpleLib hardware logging manager
+   * Add hardware device to PurpleLib hardware manager
    * <p>
    * Should not be necessary to call this manually, PurpleLib devices register themselves when instantiated
    * @param devices Devices to add
    */
   public static void add(LoggableHardware... devices) {
     m_hardware.addAll(Arrays.asList(devices));
+    m_monitored.addAll(Arrays.asList(devices));
+  }
+
+  /**
+   * Add other components to PurpleLib hardware manager to be health monitored
+   * @param components Components to be monitored
+   */
+  public static void add(Monitorable... components) {
+    m_monitored.addAll(Arrays.asList(components));
   }
 
   /**
@@ -147,6 +176,15 @@ public class PurpleManager {
    */
   public static void remove(LoggableHardware... devices) {
     m_hardware.removeAll(Arrays.asList(devices));
+    m_monitored.removeAll(Arrays.asList(devices));
+  }
+
+  /**
+   * Remove other components from PurpleLib hardware manager to stop health monitoring
+   * @param components Components to stop monitoring
+   */
+  public static void remove(Monitorable... components) {
+    m_monitored.removeAll(Arrays.asList(components));
   }
 
   /**
@@ -173,6 +211,7 @@ public class PurpleManager {
    * Call this peridically, preferably in the beginning of <code>robotPeriodic()</code> every loop
    */
   public static void update() {
+    monitorHealth();
     m_hardware.stream().forEach((device) -> device.periodic());
     m_callbacks.stream().forEach(Runnable::run);
 
