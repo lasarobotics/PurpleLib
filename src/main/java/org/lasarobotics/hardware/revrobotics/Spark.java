@@ -609,6 +609,55 @@ public class Spark extends LoggableHardware {
   }
 
   /**
+   * Get if Spark is healthy
+   * <p>
+   * Checks if Spark has NOT reset
+   */
+  @Override
+  public boolean isHealthy() {
+    return !m_spark.getStickyFault(FaultID.kHasReset);
+  }
+
+  /**
+   * Method to re-initialize Spark after reset
+   */
+  @Override
+  public boolean reinit() {
+    boolean success = true;
+    if (m_invertedRunner != null) m_invertedRunner.run();
+    for (var parameterApplier : m_parameterChain) {
+      var status = parameterApplier.get();
+      success &= status.equals(REVLibError.kOk);
+    }
+    return success;
+  }
+
+  /**
+   * Get maximum number of times to try to re-initialize Spark
+   */
+  @Override
+  public int getMaxRetries() {
+    return MAX_ATTEMPTS;
+  }
+
+  /**
+   * Save number of errors that have occurred
+   * @param num Number of errors
+   */
+  @Override
+  public void setErrorCount(int num) {
+    m_errorCount = num;
+  }
+
+  /**
+   * Get number of failures that have occured
+   * @return number of failures
+   */
+  public int getErrorCount() {
+    return m_errorCount;
+  }
+
+  /**
    * Writes all settings to flash
    * @return {@link REVLibError#kOk} if successful
    */
