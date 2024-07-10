@@ -32,7 +32,9 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Current;
+import edu.wpi.first.units.Dimensionless;
 import edu.wpi.first.units.Distance;
+import edu.wpi.first.units.Mass;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Time;
 import edu.wpi.first.units.Units;
@@ -100,7 +102,7 @@ public class MAXSwerveModule implements AutoCloseable {
     }
   }
 
-  public static final Measure<Time> DEFAULT_PERIOD = Units.Milliseconds.of(20.0);
+  public static final Measure<Time> DEFAULT_PERIOD = Units.Milliseconds.of(10.0);
 
   private final double EPSILON = 5e-3;
   private final Measure<Current> DRIVE_MOTOR_CURRENT_LIMIT;
@@ -161,14 +163,16 @@ public class MAXSwerveModule implements AutoCloseable {
    * @param driveGearRatio Gear ratio for driving wheel
    * @param wheelbase Robot wheelbase
    * @param trackWidth Robot track width
+   * @param mass Robot mass
    * @param autoLockTime Time before rotating module to locked position [0.0, 10.0]
-   * @param maxSlippingTime Maximum time that wheel is allowed to slip
    * @param driveMotorCurrentLimit Desired current limit for the drive motor
-   * @param slipRatio Desired slip ratio [+0.01, +0.40]
+   * @param slipRatio Desired slip ratio [1%, 40%]
+   * @param frictionCoefficient CoF between wheel and field surface
    */
   public MAXSwerveModule(Hardware swerveHardware, ModuleLocation location, GearRatio driveGearRatio,
-                         Measure<Distance> wheelbase, Measure<Distance> trackWidth, Measure<Time> autoLockTime,
-                         Measure<Time> maxSlippingTime, Measure<Current> driveMotorCurrentLimit, double slipRatio) {
+                         Measure<Distance> wheelbase, Measure<Distance> trackWidth, Measure<Mass> mass,
+                         Measure<Time> autoLockTime, Measure<Current> driveMotorCurrentLimit,
+                         Measure<Dimensionless> slipRatio, Measure<Dimensionless> frictionCoefficient) {
     int encoderTicksPerRotation = swerveHardware.driveMotor.getKind().equals(MotorKind.NEO)
       ? GlobalConstants.NEO_ENCODER_TICKS_PER_ROTATION
       : GlobalConstants.VORTEX_ENCODER_TICKS_PER_ROTATION;
@@ -189,7 +193,7 @@ public class MAXSwerveModule implements AutoCloseable {
     this.m_desiredState = new SwerveModuleState(Units.MetersPerSecond.of(0.0), LOCK_POSITION);
     this.m_autoLockTime = MathUtil.clamp(autoLockTime.in(Units.Milliseconds), 0.0, MAX_AUTO_LOCK_TIME * 1000);
     this.m_previousRotatePosition = LOCK_POSITION;
-    this.m_tractionControlController =  new TractionControlController(Units.MetersPerSecond.of(DRIVE_MAX_LINEAR_SPEED), maxSlippingTime, slipRatio);
+    this.m_tractionControlController =  new TractionControlController(slipRatio, frictionCoefficient, mass, Units.MetersPerSecond.of(DRIVE_MAX_LINEAR_SPEED));
     this.m_autoLockTimer = Instant.now();
     this.m_runningOdometer = 0.0;
 
