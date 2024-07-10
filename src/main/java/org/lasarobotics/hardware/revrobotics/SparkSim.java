@@ -65,7 +65,7 @@ public class SparkSim {
    * the device.
    *
    * @param spark The Spark to simulate.
-   * @param FlywheelSim A basic dynamics model. If you are not modeling the system externally this
+   * @param dynamicsSim A basic dynamics model. If you are not modeling the system externally this
    *     can be used instead. If you have a second motor controller as a follower, you can use a
    *     single CANSparkMaxSim object on the leader, and specify multiple motors using the DCMotor
    *     constructor.
@@ -185,7 +185,6 @@ public class SparkSim {
    * using the built in dynamics, call the three parameter version instead.
    *
    * @param vbus Bus voltage
-   * @param dt Simulation time step
    */
   public void update(Measure<Voltage> vbus) {
     update(Units.Value.of(m_simulatedDynamics.getAngularVelocity().in(Units.RPM)), vbus);
@@ -200,7 +199,6 @@ public class SparkSim {
    *
    * @param position Position of mechanism
    * @param vbus Bus voltage
-   * @param dtSeconds Simulation time step
    */
   public void updateByPosition(Measure<Dimensionless> position, Measure<Voltage> vbus) {
     // Non-ideal way to do this, but okay. Calculate the velocity here and force position
@@ -221,7 +219,6 @@ public class SparkSim {
    *     Noise will also be added.
    * @param velocity Mechanism velocity
    * @param vbus Bus voltage
-   * @param dt Simulation time step
    */
   public void update(Measure<Dimensionless> velocity, Measure<Voltage> vbus) {
     // Velocity input is the system simulated input.
