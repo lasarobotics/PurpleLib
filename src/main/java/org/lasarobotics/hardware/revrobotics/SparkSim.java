@@ -4,8 +4,11 @@
 
 package org.lasarobotics.hardware.revrobotics;
 
+import java.util.function.Supplier;
+
 import org.lasarobotics.hardware.revrobotics.Spark.FeedbackSensor;
 import org.lasarobotics.hardware.revrobotics.Spark.MotorKind;
+import org.lasarobotics.hardware.revrobotics.Spark.SparkOutput;
 import org.lasarobotics.utils.GlobalConstants;
 import org.lasarobotics.utils.MovingAverageFilterSim;
 import org.lasarobotics.utils.NoiseGenerator;
@@ -48,11 +51,12 @@ public class SparkSim {
   private boolean m_reverseLimit = false;
   private Boolean m_enable = null;
   private double m_iterateByPositionLast = 0.0;
+  private Supplier<SparkOutput> m_latestOutput;
 
   // PID State
-  double m_iState = 0.0;
-  double m_prev_err = 0.0;
-  double m_pidOutput = 0.0;
+  private double m_iState = 0.0;
+  private double m_prev_err = 0.0;
+  private double m_pidOutput = 0.0;
 
   /**
    * This *should* track to the API version. Since this file is dependent on REV, warn if the
@@ -73,22 +77,23 @@ public class SparkSim {
    */
   public SparkSim(Spark spark, SimDynamics dynamicsSim) {
     SimDeviceSim simSpark = new SimDeviceSim("SPARK MAX" + " [" + spark.getID().deviceID + "]");
-    m_appliedOutput = simSpark.getDouble("Applied Output");
-    m_velocity = simSpark.getDouble("Velocity");
-    m_position = simSpark.getDouble("Position");
-    m_analogVelocity = simSpark.getDouble("Analog Velocity");
-    m_analogPosition = simSpark.getDouble("Analog Position");
-    m_analogVoltage = simSpark.getDouble("Analog Voltage");
-    m_busVoltage = simSpark.getDouble("Bus Voltage");
-    m_motorCurrent = simSpark.getDouble("Motor Current");
-    m_controlMode = simSpark.getInt("Control Mode");
-    m_faults = simSpark.getInt("Faults");
-    m_stickyFaults = simSpark.getInt("Sticky Faults");
-    m_spark = spark;
-    m_velocityAverage = m_spark.getKind().equals(MotorKind.NEO_VORTEX)
+    this.m_appliedOutput = simSpark.getDouble("Applied Output");
+    this.m_velocity = simSpark.getDouble("Velocity");
+    this.m_position = simSpark.getDouble("Position");
+    this.m_analogVelocity = simSpark.getDouble("Analog Velocity");
+    this.m_analogPosition = simSpark.getDouble("Analog Position");
+    this.m_analogVoltage = simSpark.getDouble("Analog Voltage");
+    this.m_busVoltage = simSpark.getDouble("Bus Voltage");
+    this.m_motorCurrent = simSpark.getDouble("Motor Current");
+    this.m_controlMode = simSpark.getInt("Control Mode");
+    this.m_faults = simSpark.getInt("Faults");
+    this.m_stickyFaults = simSpark.getInt("Sticky Faults");
+    this.m_spark = spark;
+    this.m_latestOutput = () -> m_spark.getLatestOutput();
+    this.m_velocityAverage = m_spark.getKind().equals(MotorKind.NEO_VORTEX)
       ? new MovingAverageFilterSim(8, 0.032)
       : new MovingAverageFilterSim(2, 0.016);
-    m_simulatedDynamics = dynamicsSim;
+    this.m_simulatedDynamics = dynamicsSim;
 
 
     // int apiVersion = CANSparkMaxJNI.c_SparkMax_GetAPIVersion();
@@ -226,6 +231,8 @@ public class SparkSim {
     m_velocityAverage.put(internalVelocity, GlobalConstants.ROBOT_LOOP_PERIOD);
     internalVelocity = m_velocityAverage.get();
 
+    var latestOutput = m_latestOutput.get();
+
     // First set the states that are given
     m_velocity.set(internalVelocity);
 
@@ -244,22 +251,22 @@ public class SparkSim {
     switch (m_controlMode.get()) {
         // Duty Cycle
       case 0:
-        appliedOutput = m_setpoint.get();
+        appliedOutput = m_latestOutput.get().value;
         break;
 
         // Velocity
       case 1:
-        appliedOutput = runPID(PID_SLOT, m_setpoint.get(), internalVelocity, GlobalConstants.ROBOT_LOOP_PERIOD);
+        appliedOutput = runPID(PID_SLOT, latestOutput.value, internalVelocity, GlobalConstants.ROBOT_LOOP_PERIOD);
         break;
 
         // Voltage
       case 2:
-        appliedOutput = m_setpoint.get() / vbus.in(Units.Volts);
+        appliedOutput = m_latestOutput.get().value / vbus.in(Units.Volts);
         break;
 
         // Position
       case 3:
-        appliedOutput = runPID(PID_SLOT, m_setpoint.get(), m_position.get(), GlobalConstants.ROBOT_LOOP_PERIOD);
+        appliedOutput = runPID(PID_SLOT, latestOutput.value, m_position.get(), GlobalConstants.ROBOT_LOOP_PERIOD);
         break;
 
         // Smart Motion
@@ -269,7 +276,7 @@ public class SparkSim {
 
         // Current
       case 5:
-        appliedOutput = runPID(PID_SLOT, m_setpoint.get(), m_motorCurrent.get(), GlobalConstants.ROBOT_LOOP_PERIOD);
+        appliedOutput = runPID(PID_SLOT, latestOutput.value, m_motorCurrent.get(), GlobalConstants.ROBOT_LOOP_PERIOD);
         break;
 
         // Smart Velocity
@@ -282,12 +289,12 @@ public class SparkSim {
     }
 
     // ArbFF
-    if (m_arbFFUnits.get() == 0) {
+    if (latestOutput.arbFFUnits.value == 0) {
       // Voltage
-      appliedOutput += m_arbFF.get() / vbus.in(Units.Volts);
+      appliedOutput += latestOutput.arbFeedforward / vbus.in(Units.Volts);
     } else {
       // Duty Cycle
-      appliedOutput += m_arbFF.get();
+      appliedOutput += latestOutput.arbFeedforward;
     }
 
     // Limit to [-1, 1] or limit switch value
@@ -453,7 +460,7 @@ public class SparkSim {
   }
 
   public double getSetpoint() {
-    return m_setpoint.get();
+    return m_latestOutput.get().value;
   }
 
   public void enable() {
