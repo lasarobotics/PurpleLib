@@ -71,7 +71,7 @@ public class SparkSim {
    *     constructor.
    */
   public SparkSim(Spark spark, SimDynamics dynamicsSim) {
-    SimDeviceSim simSpark = new SimDeviceSim("Spark" + " [" + spark.getID().deviceID + "]");
+    SimDeviceSim simSpark = new SimDeviceSim("SPARK MAX" + " [" + spark.getID().deviceID + "]");
     m_appliedOutput = simSpark.getDouble("Applied Output");
     m_position = simSpark.getDouble("Position");
     m_velocity = simSpark.getDouble("Velocity");
