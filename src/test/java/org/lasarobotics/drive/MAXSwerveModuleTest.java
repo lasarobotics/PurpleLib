@@ -54,6 +54,14 @@ public class MAXSwerveModuleTest {
   private final Measure<Time> AUTO_LOCK_TIME = Units.Seconds.of(3.0);
   private final Measure<Current> DRIVE_CURRENT_LIMIT = Units.Amps.of(50.0);
   private final Measure<Dimensionless> SLIP_RATIO = Units.Percent.of(8.0);
+  private final Spark.ID LEFT_FRONT_DRIVE_MOTOR_ID = new Spark.ID("DriveHardware/Swerve/LeftFront/Drive", 2);
+  private final Spark.ID LEFT_FRONT_ROTATE_MOTOR_ID = new Spark.ID("DriveHardware/Swerve/LeftFront/Rotate", 3);
+  private final Spark.ID RIGHT_FRONT_DRIVE_MOTOR_ID = new Spark.ID("DriveHardware/Swerve/RightFront/Drive", 4);
+  private final Spark.ID RIGHT_FRONT_ROTATE_MOTOR_ID = new Spark.ID("DriveHardware/Swerve/RightFront/Rotate", 5);
+  private final Spark.ID LEFT_REAR_DRIVE_MOTOR_ID = new Spark.ID("DriveHardware/Swerve/LeftRear/Drive", 6);
+  private final Spark.ID LEFT_REAR_ROTATE_MOTOR_ID = new Spark.ID("DriveHardware/Swerve/LeftRear/Rotate", 7);
+  private final Spark.ID RIGHT_REAR_DRIVE_MOTOR_ID = new Spark.ID("DriveHardware/Swerve/RightRear/Drive", 8);
+  private final Spark.ID RIGHT_REAR_ROTATE_MOTOR_ID = new Spark.ID("DriveHardware/Swerve/RightRear/Rotate", 9);
 
   private final Measure<Velocity<Distance>> NEO_MAX_LINEAR_SPEED = Units.MetersPerSecond.of(4.327);
   private final Measure<Velocity<Distance>> VORTEX_MAX_LINEAR_SPEED = Units.MetersPerSecond.of(5.172);
@@ -81,11 +89,27 @@ public class MAXSwerveModuleTest {
     m_rRearDriveMotor = mock(Spark.class);
     m_rRearRotateMotor = mock(Spark.class);
 
-    // Hardcode motor kind
+    // Hardcode motor IDs
+    when(m_lFrontDriveMotor.getID()).thenReturn(LEFT_FRONT_DRIVE_MOTOR_ID);
+    when(m_lFrontRotateMotor.getID()).thenReturn(LEFT_FRONT_ROTATE_MOTOR_ID);
+    when(m_rFrontDriveMotor.getID()).thenReturn(RIGHT_FRONT_DRIVE_MOTOR_ID);
+    when(m_rFrontRotateMotor.getID()).thenReturn(RIGHT_FRONT_ROTATE_MOTOR_ID);
+    when(m_lRearDriveMotor.getID()).thenReturn(LEFT_REAR_DRIVE_MOTOR_ID);
+    when(m_lRearRotateMotor.getID()).thenReturn(LEFT_REAR_ROTATE_MOTOR_ID);
+    when(m_rRearDriveMotor.getID()).thenReturn(RIGHT_REAR_DRIVE_MOTOR_ID);
+    when(m_rRearRotateMotor.getID()).thenReturn(RIGHT_REAR_ROTATE_MOTOR_ID);
+
+    // Hardcode drive motor kind
     when(m_lFrontDriveMotor.getKind()).thenReturn(MotorKind.NEO);
     when(m_rFrontDriveMotor.getKind()).thenReturn(MotorKind.NEO);
     when(m_lRearDriveMotor.getKind()).thenReturn(MotorKind.NEO_VORTEX);
     when(m_rRearDriveMotor.getKind()).thenReturn(MotorKind.NEO_VORTEX);
+
+    // Hardcode rotate motor kind
+    when(m_lFrontRotateMotor.getKind()).thenReturn(MotorKind.NEO_550);
+    when(m_rFrontRotateMotor.getKind()).thenReturn(MotorKind.NEO_550);
+    when(m_lRearRotateMotor.getKind()).thenReturn(MotorKind.NEO_550);
+    when(m_rRearRotateMotor.getKind()).thenReturn(MotorKind.NEO_550);
 
     // Hardcode sample ID
     Spark.ID id = new Spark.ID("moduleName", 0);
@@ -188,6 +212,12 @@ public class MAXSwerveModuleTest {
     m_lRearModule.set(state);
     m_rRearModule.set(state);
 
+    // Update modules
+    m_lFrontModule.periodic();
+    m_rFrontModule.periodic();
+    m_lRearModule.periodic();
+    m_rRearModule.periodic();
+
     // Verify that motors are being driven with expected values
     verify(m_lFrontDriveMotor, times(1)).set(AdditionalMatchers.eq(-2.0, DELTA), ArgumentMatchers.eq(ControlType.kVelocity));
     verify(m_lFrontRotateMotor, times(1)).set(AdditionalMatchers.eq(-Math.PI / 2, DELTA), ArgumentMatchers.eq(ControlType.kPosition));
@@ -220,6 +250,12 @@ public class MAXSwerveModuleTest {
     m_lRearModule.set(state);
     m_rRearModule.set(state);
 
+    // Update modules
+    m_lFrontModule.periodic();
+    m_rFrontModule.periodic();
+    m_lRearModule.periodic();
+    m_rRearModule.periodic();
+
     // Verify that motors are being driven with expected values
     verify(m_lFrontDriveMotor, times(1)).set(AdditionalMatchers.eq(0.0, DELTA), ArgumentMatchers.eq(ControlType.kVelocity));
     verify(m_lFrontRotateMotor, times(1)).set(AdditionalMatchers.eq(+Math.PI / 4, DELTA), ArgumentMatchers.eq(ControlType.kPosition));
@@ -251,6 +287,7 @@ public class MAXSwerveModuleTest {
     // Set state
     SwerveModuleState desiredState = new SwerveModuleState(2.0, Rotation2d.fromRadians(+Math.PI));
     m_lFrontModule.set(desiredState);
+    m_lFrontModule.periodic();
 
     // Verify module reports expected position
     assertEquals(new SwerveModulePosition(-desiredState.speedMetersPerSecond * MAXSwerveModule.DEFAULT_PERIOD.in(Units.Seconds), desiredState.angle.minus(ROTATION_PI)), m_lFrontModule.getPosition());
