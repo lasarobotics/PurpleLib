@@ -6,7 +6,7 @@ package org.lasarobotics.hardware;
 
 import org.littletonrobotics.junction.inputs.LoggableInputs;
 
-public class LoggableHardware implements AutoCloseable {
+public class LoggableHardware implements Monitorable, AutoCloseable {
   /**
    * Call this method periodically
    */

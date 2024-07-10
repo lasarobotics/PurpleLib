@@ -37,4 +37,25 @@ public class SparkHelpers {
   public static REVLibError enablePIDVoltageOutput(CANSparkBase spark) {
     return REVLibError.fromInt(CANSparkMaxJNI.c_SparkMax_SetParameterUint32(spark.sparkMaxHandle, 74, 1));
   }
+
+  /**
+   * Convert Spark faults to human-readable strings
+   * @param faults Sticky fault bits
+   * @return All sticky fault messages
+   */
+  public static String faultWordToString(short faults) {
+    if (faults == 0) {
+      return "";
+    }
+
+    StringBuilder builder = new StringBuilder();
+    int faultsInt = faults;
+    for (int i = 0; i < 16; i++) {
+      if (((1 << i) & faultsInt) != 0) {
+        builder.append(CANSparkMax.FaultID.fromId(i).toString());
+        builder.append(" ");
+      }
+    }
+    return builder.toString();
+  }
 }
