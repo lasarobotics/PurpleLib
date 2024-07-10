@@ -123,7 +123,7 @@ public class MAXSwerveModule extends SwerveModule implements Sendable, AutoClose
   // Swerve rotate PID settings
   private static final PIDConstants DRIVE_ROTATE_PID = new PIDConstants(2.1, 0.0, 0.2, 0.0, 0.0);
   private static final double DRIVE_ROTATE_kS = 0.2;
-  private static final double DRIVE_ROTATE_kA = 0.1;
+  private static final double DRIVE_ROTATE_kA = 0.01;
   private static final double DRIVE_ROTATE_TOLERANCE = 0.01;
   private static final double DRIVE_ROTATE_LOWER_LIMIT = 0.0;
   private static final double DRIVE_ROTATE_UPPER_LIMIT = 0.0;
@@ -298,7 +298,7 @@ public class MAXSwerveModule extends SwerveModule implements Sendable, AutoClose
       m_driveMotor.getKind().motor.withReduction(m_driveGearRatio.value),
       new FFConstants(DRIVE_VELOCITY_kS, 0.0, m_driveMotorConfig.getF() * 10, DRIVE_VELOCITY_kA),
       m_rotateMotor.getKind().motor.withReduction(DRIVE_ROTATE_GEAR_RATIO),
-      new FFConstants(DRIVE_ROTATE_kS, 0.0, rotate_kV, DRIVE_ROTATE_kA)
+      new FFConstants(DRIVE_ROTATE_kS, 0.0, rotate_kV * 500, DRIVE_ROTATE_kA * 500)
     );
 
     // Read odometer file if exists
