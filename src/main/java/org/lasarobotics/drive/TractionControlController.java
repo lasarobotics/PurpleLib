@@ -98,8 +98,8 @@ public class TractionControlController {
     ) / m_maxPredictedSlipRatio;
 
     // Calculate correction based on difference between optimal and predicted slip ratio
-    double weightedSlipRatio = predictedSlipRatio * PREDICTED_SLIP_RATIO_WEIGHT + (m_isSlipping ? (currentSlipRatio * (1 - PREDICTED_SLIP_RATIO_WEIGHT)) : 0.0);
-    double velocityCorrection = velocityOutput.in(Units.MetersPerSecond) * (m_optimalSlipRatio - weightedSlipRatio) * m_state.value;
+    //double weightedSlipRatio = predictedSlipRatio * PREDICTED_SLIP_RATIO_WEIGHT + (m_isSlipping ? (currentSlipRatio * (1 - PREDICTED_SLIP_RATIO_WEIGHT)) : 0.0);
+    double velocityCorrection = velocityOutput.in(Units.MetersPerSecond) * (m_optimalSlipRatio - predictedSlipRatio) * m_state.value;
 
     // Update output, clamping to max linear speed
     velocityOutput = Units.MetersPerSecond.of(MathUtil.clamp(
