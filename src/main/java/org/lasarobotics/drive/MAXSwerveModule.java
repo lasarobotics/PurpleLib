@@ -117,7 +117,7 @@ public class MAXSwerveModule extends SwerveModule implements Sendable, AutoClose
   private static final double DRIVE_VELOCITY_kP = 0.18;
   private static final double DRIVE_VELOCITY_kD = 0.001;
   private static final double DRIVE_VELOCITY_kS = 0.2;
-  private static final double DRIVE_VELOCITY_kA = 0.9;
+  private static final double DRIVE_VELOCITY_kA = 0.5;
   private static final double DRIVE_VELOCITY_TOLERANCE = 0.01;
   private static final boolean DRIVE_VELOCITY_SENSOR_PHASE = false;
   private static final boolean DRIVE_INVERT_MOTOR = false;
