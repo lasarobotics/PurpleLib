@@ -27,8 +27,10 @@ import org.littletonrobotics.junction.Logger;
 import com.revrobotics.CANSparkBase.ControlType;
 import com.revrobotics.CANSparkBase.IdleMode;
 import com.revrobotics.CANSparkLowLevel.PeriodicFrame;
+import com.revrobotics.SparkPIDController.ArbFFUnits;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -117,7 +119,7 @@ public class MAXSwerveModule extends SwerveModule implements Sendable, AutoClose
   private static final double DRIVE_VELOCITY_kP = 0.18;
   private static final double DRIVE_VELOCITY_kD = 0.001;
   private static final double DRIVE_VELOCITY_kS = 0.2;
-  private static final double DRIVE_VELOCITY_kA = 0.5;
+  private static final double DRIVE_VELOCITY_kA = 0.9;
   private static final double DRIVE_VELOCITY_TOLERANCE = 0.01;
   private static final boolean DRIVE_VELOCITY_SENSOR_PHASE = false;
   private static final boolean DRIVE_INVERT_MOTOR = false;
@@ -139,6 +141,7 @@ public class MAXSwerveModule extends SwerveModule implements Sendable, AutoClose
   private SparkSim m_driveMotorSim;
   private SparkSim m_rotateMotorSim;
   private SwerveModuleSim m_moduleSim;
+  private SimpleMotorFeedforward m_driveFeedForward;
   private SparkPIDConfig m_driveMotorConfig;
   private SparkPIDConfig m_rotateMotorConfig;
   private Translation2d m_moduleCoordinate;
@@ -300,6 +303,7 @@ public class MAXSwerveModule extends SwerveModule implements Sendable, AutoClose
     double rotate_kV = 1 / ((m_rotateMotor.getKind().getMaxRPM() / 60) * (m_rotateConversionFactor / DRIVE_ROTATE_GEAR_RATIO)) * 10;
     m_driveMotorSim = new SparkSim(m_driveMotor);
     m_rotateMotorSim = new SparkSim(m_rotateMotor);
+    m_driveFeedForward = new SimpleMotorFeedforward(DRIVE_VELOCITY_kS, m_driveMotorConfig.getF() * 10, DRIVE_VELOCITY_kA);
     m_moduleSim = new SwerveModuleSim(
       m_driveMotor.getKind().motor.withReduction(m_driveGearRatio.value),
       new FFConstants(DRIVE_VELOCITY_kS, 0.0, m_driveMotorConfig.getF() * 10, DRIVE_VELOCITY_kA),
@@ -395,7 +399,12 @@ public class MAXSwerveModule extends SwerveModule implements Sendable, AutoClose
     m_rotateMotor.set(m_commandedState.angle.getRadians(), ControlType.kPosition);
 
     // Set drive motor speed
-    m_driveMotor.set(m_commandedState.speedMetersPerSecond, ControlType.kVelocity);
+    m_driveMotor.set(
+      m_commandedState.speedMetersPerSecond,
+      ControlType.kVelocity,
+      m_driveFeedForward.calculate(m_commandedState.speedMetersPerSecond),
+      ArbFFUnits.kVoltage
+    );
 
     // Save rotate position
     m_previousRotatePosition = m_commandedState.angle;
