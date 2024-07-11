@@ -231,11 +231,13 @@ public class SparkSim {
     m_velocityAverage.put(internalVelocity, GlobalConstants.ROBOT_LOOP_PERIOD);
     internalVelocity = m_velocityAverage.get();
 
+    // Get latest output
     var latestOutput = m_latestOutput.get();
 
     // First set the states that are given
     m_velocity.set(velocity.in(Units.Value));
 
+    // Get conversion factors
     double positionFactor = m_spark.getPositionConversionFactor(FeedbackSensor.NEO_ENCODER);
     double velocityFactor = m_spark.getVelocityConversionFactor(FeedbackSensor.NEO_ENCODER);
 
