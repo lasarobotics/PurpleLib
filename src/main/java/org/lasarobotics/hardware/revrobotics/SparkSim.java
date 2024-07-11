@@ -130,7 +130,7 @@ public class SparkSim {
   }
 
   /**
-   * Set the simulated applied output. Use this only in place of iterate().
+   * Set the simulated applied output. Use this only in place of {@link SparkSim#update()}.
    *
    * @param appliedOutput simulated applied output value [-1, 1]
    */
@@ -340,7 +340,7 @@ public class SparkSim {
    * Set the simulation velocity. This method expects units after the conversion factor (your
    * program's native units).
    *
-   * <p>Only use this method if not calling iterate()
+   * <p>Only use this method if not calling {@link SparkSim#update()}
    *
    * @param velocity simulation velocity
    */
@@ -351,7 +351,7 @@ public class SparkSim {
   /**
    * Set the simulated position. This is equivilant to calling CANEncoder().setPosition(), in fact
    * you probably are using that unless you have a good reason to set the sim value separately, or
-   * are running simulation without using iterate()
+   * are running simulation without using {@link SparkSim#update()}
    *
    * @param position simulated position in your programs units (after conversion)
    */
@@ -360,7 +360,7 @@ public class SparkSim {
   }
 
   /**
-   * Set the simulated bus voltage. Use this if you are not using the iterate() method.
+   * Set the simulated bus voltage. Use this if you are not using the {@link SparkSim#update()} method.
    * @param vbus Bus voltage
    */
   public void setBusVoltage(Measure<Voltage> vbus) {
@@ -368,9 +368,9 @@ public class SparkSim {
   }
 
   /**
-   * Set the simulated motor current. The iterate() method also sets this value. If you are using an
-   * external method to calculate the current, but still want to use the iterate() method, call this
-   * function *after* iterate()
+   * Set the simulated motor current. The {@link SparkSim#update()} method also sets this value. If you are using an
+   * external method to calculate the current, but still want to use the {@link SparkSim#update()} method, call this
+   * function *after* {@link SparkSim#update()}
    *
    * @param current Motor current
    */
