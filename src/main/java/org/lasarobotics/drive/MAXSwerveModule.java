@@ -439,7 +439,6 @@ public class MAXSwerveModule extends SwerveModule implements Sendable, AutoClose
    */
   @Override
   public void initSendable(SendableBuilder builder) {
-    builder.setSafeState(this::lock);
     // Control drive velocity
     builder.addDoubleProperty(
       "Velocity",
