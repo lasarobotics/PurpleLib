@@ -242,8 +242,8 @@ public class SparkSim {
     assert positionFactor != 0.0;
     assert velocityFactor != 0.0;
 
-    double velocityRPM = velocity.in(Units.Value) / velocityFactor;
-    m_position.set(m_position.get() + ((velocityRPM / 60) * GlobalConstants.ROBOT_LOOP_PERIOD) / positionFactor);
+    double velocityRPM = velocity.in(Units.Value) * velocityFactor;
+    m_position.set(m_position.get() + ((velocityRPM / 60) * GlobalConstants.ROBOT_LOOP_PERIOD) * positionFactor);
     m_busVoltage.set(vbus.in(Units.Volts));
 
     // Calcuate the applied output
