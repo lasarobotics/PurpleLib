@@ -278,6 +278,7 @@ public class LEDStrip implements AutoCloseable {
     this.m_tempLEDPatterns = new HashMap<Section[], Pattern>();
 
     m_sectionLEDPatterns.put(Section.FULL, Pattern.TEAM_COLOR_SOLID);
+    m_leds.start();
   }
 
   /**
