@@ -234,7 +234,7 @@ public class SparkSim {
     var latestOutput = m_latestOutput.get();
 
     // First set the states that are given
-    m_velocity.set(internalVelocity);
+    m_velocity.set(velocity.in(Units.Value));
 
     double positionFactor = m_spark.getPositionConversionFactor(FeedbackSensor.NEO_ENCODER);
     double velocityFactor = m_spark.getVelocityConversionFactor(FeedbackSensor.NEO_ENCODER);
