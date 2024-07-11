@@ -22,6 +22,7 @@ import org.lasarobotics.hardware.revrobotics.SparkSim;
 import org.lasarobotics.utils.FFConstants;
 import org.lasarobotics.utils.GlobalConstants;
 import org.lasarobotics.utils.PIDConstants;
+import org.lasarobotics.utils.SimDynamics;
 import org.littletonrobotics.junction.Logger;
 
 import com.revrobotics.CANSparkBase.ControlType;
@@ -298,14 +299,14 @@ public class MAXSwerveModule extends SwerveModule implements Sendable, AutoClose
 
     // Setup sim
     double rotate_kV = 1 / ((m_rotateMotor.getKind().getMaxRPM() / 60) * (m_rotateConversionFactor / DRIVE_ROTATE_GEAR_RATIO)) * 10;
-    m_driveMotorSim = new SparkSim(m_driveMotor);
-    m_rotateMotorSim = new SparkSim(m_rotateMotor);
     m_moduleSim = new SwerveModuleSim(
       m_driveMotor.getKind().motor.withReduction(m_driveGearRatio.value),
       new FFConstants(DRIVE_VELOCITY_kS, 0.0, m_driveMotorConfig.getF() * 10, DRIVE_VELOCITY_kA),
       m_rotateMotor.getKind().motor.withReduction(DRIVE_ROTATE_GEAR_RATIO),
       new FFConstants(DRIVE_ROTATE_kS, 0.0, rotate_kV * 500, DRIVE_ROTATE_kA * 500)
     );
+    m_driveMotorSim = new SparkSim(m_driveMotor, SimDynamics.fromSim(m_moduleSim.getDriveSim()));
+    m_rotateMotorSim = new SparkSim(m_rotateMotor, SimDynamics.fromSim(m_moduleSim.getRotateSim()));
 
     // Read odometer file if exists
     m_odometerOutputPath = (m_driveMotor.getID().name + "-odometer.txt").replace('/', '-');
