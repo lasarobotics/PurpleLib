@@ -260,12 +260,12 @@ public class LEDStrip implements AutoCloseable {
   private HashMap<Section[], Pattern> m_sectionLEDPatterns, m_tempLEDPatterns;
 
   private static final double STROBE_DURATION = 0.2;
-  private static final double BREATHE_DURATION = 5.0;
+  private static final double BREATHE_DURATION = 4.0;
   private static final double RAINBOW_CYCLE_LENGTH = 25.0;
-  private static final double RAINBOW_DURATION = 1.5;
+  private static final double RAINBOW_DURATION = 2.0;
   private static final double WAVE_EXPONENT = 0.4;
   private static final double WAVE_CYCLE_LENGTH = 25.0;
-  private static final double WAVE_DURATION = 1.5;
+  private static final double WAVE_DURATION = 2.0;
 
   /**
    * Create an instance of an LED strip
