@@ -234,7 +234,7 @@ public class SparkSim {
     var latestOutput = m_latestOutput.get();
 
     // First set the states that are given
-    m_velocity.set(velocity.in(Units.Value));
+    //m_velocity.set(velocity.in(Units.Value));
 
     double positionFactor = m_spark.getPositionConversionFactor(FeedbackSensor.NEO_ENCODER);
     double velocityFactor = m_spark.getVelocityConversionFactor(FeedbackSensor.NEO_ENCODER);
@@ -256,7 +256,7 @@ public class SparkSim {
 
         // Velocity
       case 1:
-        appliedOutput = runPID(PID_SLOT, latestOutput.value, internalVelocity, GlobalConstants.ROBOT_LOOP_PERIOD);
+        appliedOutput = runPID(PID_SLOT, latestOutput.value, m_velocity.get(), GlobalConstants.ROBOT_LOOP_PERIOD);
         break;
 
         // Voltage
