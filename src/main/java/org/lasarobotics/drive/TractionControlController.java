@@ -80,10 +80,12 @@ public class TractionControlController {
     inertialVelocity = Units.MetersPerSecond.of(Math.abs(inertialVelocity.in(Units.MetersPerSecond)));
     double currentSlipRatio = Math.abs(
       inertialVelocity.lte(INERTIAL_VELOCITY_THRESHOLD)
-        ? wheelSpeed.in(Units.MetersPerSecond) - m_optimalSlipRatio
+        ? wheelSpeed.in(Units.MetersPerSecond) / m_maxLinearSpeed
         : (Math.abs(wheelSpeed.in(Units.MetersPerSecond)) - inertialVelocity.in(Units.MetersPerSecond)) / inertialVelocity.in(Units.MetersPerSecond)
     );
-    m_isSlipping = currentSlipRatio > m_optimalSlipRatio & isEnabled();
+    m_isSlipping = currentSlipRatio > m_optimalSlipRatio
+      & Math.abs(wheelSpeed.in(Units.MetersPerSecond)) > m_maxLinearSpeed * m_optimalSlipRatio
+      & isEnabled();
 
     // Get desired acceleration
     var desiredAcceleration = velocityRequest.minus(inertialVelocity).per(Units.Seconds.of(GlobalConstants.ROBOT_LOOP_PERIOD));
@@ -91,12 +93,14 @@ public class TractionControlController {
     // Simplified prediction of future slip ratio based on desired acceleration
     double predictedSlipRatio = Math.abs(
       desiredAcceleration.in(Units.MetersPerSecondPerSecond) /
-        (inertialVelocity.in(Units.MetersPerSecond) *
-          GlobalConstants.GRAVITATIONAL_ACCELERATION.in(Units.MetersPerSecondPerSecond) + m_frictionCoefficient * m_mass * GlobalConstants.GRAVITATIONAL_ACCELERATION.in(Units.MetersPerSecondPerSecond))
+        (inertialVelocity.in(Units.MetersPerSecond) * GlobalConstants.GRAVITATIONAL_ACCELERATION.in(Units.MetersPerSecondPerSecond)
+          + m_frictionCoefficient * m_mass * GlobalConstants.GRAVITATIONAL_ACCELERATION.in(Units.MetersPerSecondPerSecond))
     ) / m_maxPredictedSlipRatio;
 
-    // Calculate correction based on difference between optimal and predicted slip ratio
-    double velocityCorrection = velocityOutput.in(Units.MetersPerSecond) * (m_optimalSlipRatio - predictedSlipRatio) * m_state.value;
+    // Calculate correction based on difference between optimal and weighted slip ratio, which combines the predicted and current slip ratios
+    double weightedSlipRatio = predictedSlipRatio * (m_isSlipping ? PREDICTED_SLIP_RATIO_WEIGHT : 1.0)
+      + (m_isSlipping ? currentSlipRatio * (1 - PREDICTED_SLIP_RATIO_WEIGHT) : 0.0);
+    double velocityCorrection = velocityOutput.in(Units.MetersPerSecond) * (m_optimalSlipRatio - weightedSlipRatio) * m_state.value;
 
     // Update output, clamping to max linear speed
     velocityOutput = Units.MetersPerSecond.of(MathUtil.clamp(
