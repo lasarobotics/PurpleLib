@@ -4,7 +4,6 @@
 
 package org.lasarobotics.drive;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.commons.math3.analysis.interpolation.SplineInterpolator;
@@ -22,8 +21,6 @@ import edu.wpi.first.units.Units;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class RotatePIDControllerTest {
-  private final double DELTA = 1e-5;
-
   private static final double CONTROLLER_DEADBAND = 0.10;
   private static final double[] DRIVE_TURN_INPUT_CURVE_X = { 0.0, 0.100, 0.200, 0.300, 0.400, 0.500, 0.600, 0.700, 0.800, 0.900, 1.0 };
   private static final double[] DRIVE_TURN_INPUT_CURVE_Y = { 0.0, 0.008, 0.032, 0.072, 0.128, 0.200, 0.288, 0.392, 0.512, 0.768, 1.0 };
@@ -43,28 +40,28 @@ public class RotatePIDControllerTest {
   @Order(1)
   @DisplayName("Test if turn PID controller returns zero")
   public void zero() {
-    assertEquals(0.0, m_turnPIDController.calculate(Units.Degrees.of(0.0), Units.DegreesPerSecond.of(0.0), 0.0), DELTA);
+    assertTrue(m_turnPIDController.calculate(Units.Degrees.of(0.0), Units.DegreesPerSecond.of(0.0), 0.0).equals(Units.DegreesPerSecond.of(0.0)));
   }
 
   @Test
   @Order(2)
   @DisplayName("Test if turn PID controller ignores values within deadband")
   public void deadband() {
-    assertEquals(0.0,m_turnPIDController.calculate(Units.Degrees.of(0.0), Units.DegreesPerSecond.of(0.0), 0.09), DELTA);
+    assertTrue(m_turnPIDController.calculate(Units.Degrees.of(0.0), Units.DegreesPerSecond.of(0.0), 0.09).equals(Units.DegreesPerSecond.of(0.0)));
   }
 
   @Test
   @Order(3)
   @DisplayName("Test if turn PID controller accepts negative input")
   public void negative() {
-    assertTrue(m_turnPIDController.calculate(Units.Degrees.of(0.0), Units.DegreesPerSecond.of(0.0), -1.0) < 0.0);
+    assertTrue(m_turnPIDController.calculate(Units.Degrees.of(0.0), Units.DegreesPerSecond.of(0.0), -1.0).lte(Units.DegreesPerSecond.of(0.0)));
   }
 
   @Test
   @Order(4)
   @DisplayName("Test if turn PID controller accepts positive input")
   public void positive() {
-    assertTrue(m_turnPIDController.calculate(Units.Degrees.of(0.0), Units.DegreesPerSecond.of(0.0), +1.0) > 0.0);
+    assertTrue(m_turnPIDController.calculate(Units.Degrees.of(0.0), Units.DegreesPerSecond.of(0.0), +1.0).gte(Units.DegreesPerSecond.of(0.0)));
   }
 
   @Test
