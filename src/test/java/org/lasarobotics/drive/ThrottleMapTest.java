@@ -4,7 +4,6 @@
 
 package org.lasarobotics.drive;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.commons.math3.analysis.interpolation.SplineInterpolator;
@@ -48,41 +47,41 @@ public class ThrottleMapTest {
   @Order(1)
   @DisplayName("Test if throttle map returns zero")
   public void returnZero() {
-    assertEquals(0.0, m_throttleMap.throttleLookup(0.0), DELTA);
+    assertTrue(m_throttleMap.throttleLookup(0.0).isNear(Units.MetersPerSecond.of(0.0), DELTA));
   }
 
   @Test
   @Order(2)
   @DisplayName("Test if throttle map ignores values within deadband")
   public void deadband() {
-    assertEquals(0.0, m_throttleMap.throttleLookup(0.0), DELTA);
+    assertTrue(m_throttleMap.throttleLookup(0.0).isNear(Units.MetersPerSecond.of(0.0), DELTA));
   }
 
   @Test
   @Order(3)
   @DisplayName("Test if throttle map can handle negative input")
   public void negative() {
-    assertTrue(m_throttleMap.throttleLookup(-0.5) < 0.0);
+    assertTrue(m_throttleMap.throttleLookup(-0.5).lte(Units.MetersPerSecond.of(0.0)));
   }
 
   @Test
   @Order(4)
   @DisplayName("Test if throttle map can handle positive input")
   public void positive() {
-    assertTrue(m_throttleMap.throttleLookup(+0.5) > 0.0);
+    assertTrue(m_throttleMap.throttleLookup(+0.5).gte(Units.MetersPerSecond.of(0.0)));
   }
 
   @Test
   @Order(5)
   @DisplayName("Test if throttle map can handle negative illegal input")
   public void illegalNegative() {
-    assertTrue(m_throttleMap.throttleLookup(-1.5) < 0.0);
+    assertTrue(m_throttleMap.throttleLookup(-1.5).lte(Units.MetersPerSecond.of(0.0)));
   }
 
   @Test
   @Order(6)
   @DisplayName("Test if throttle map can handle positive illegal input")
   public void illegalPositive() {
-    assertTrue(m_throttleMap.throttleLookup(+1.5) > 0.0);
+    assertTrue(m_throttleMap.throttleLookup(+1.5).gte(Units.MetersPerSecond.of(0.0)));
   }
 }
