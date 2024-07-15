@@ -59,13 +59,13 @@ public class RotatePIDController extends PIDController {
 
   /**
    * Returns next output of RotatePIDController
-   * @param currentAngle current yaw angle of robot (degrees)
-   * @param rotateRate current yaw rotate rate of robot (degrees/sec)
+   * @param currentAngle current yaw angle of robot
+   * @param rotateRate current yaw rotate rate of robot
    * @param rotateRequest rotate request [-1.0, +1.0]
    *
    * @return optimal turn output
    */
-  public double calculate(Measure<Angle> currentAngle, Measure<Velocity<Angle>> rotateRate, double rotateRequest) {
+  public Measure<Velocity<Angle>> calculate(Measure<Angle> currentAngle, Measure<Velocity<Angle>> rotateRate, double rotateRequest) {
     // Filter turnRequest
     m_rotateRequest -= (m_rotateRequest - rotateRequest) * FILTER_FACTOR;
 
@@ -85,7 +85,7 @@ public class RotatePIDController extends PIDController {
       }
     }
 
-    return super.calculate(currentAngle.in(Units.Degrees));
+    return Units.DegreesPerSecond.of(super.calculate(currentAngle.in(Units.Degrees)));
   }
 
   /**

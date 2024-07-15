@@ -49,10 +49,10 @@ public class ThrottleMap {
    * @param throttleLookup Throttle input [-1.0, +1.0]
    * @return Corresponding velocity
    */
-  public double throttleLookup(double throttleLookup) {
+  public Measure<Velocity<Distance>> throttleLookup(double throttleLookup) {
     throttleLookup = Math.copySign(Math.floor(Math.abs(throttleLookup) * 1000) / 1000, throttleLookup) + 0.0;
     throttleLookup = MathUtil.clamp(throttleLookup, -1.0, +1.0);
 
-    return m_throttleInputMap.get(throttleLookup);
+    return Units.MetersPerSecond.of(m_throttleInputMap.get(throttleLookup));
   }
 }
