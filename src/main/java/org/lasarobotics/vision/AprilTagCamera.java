@@ -40,7 +40,9 @@ public class AprilTagCamera implements AutoCloseable {
 
   private final double APRILTAG_POSE_AMBIGUITY_THRESHOLD = 0.1;
   private final Measure<Distance> POSE_MAX_HEIGHT = Units.Meters.of(0.75);
+  private final Measure<Distance> POSE_MAX_HEIGHT = Units.Meters.of(0.75);
   private final Measure<Distance> MAX_TAG_DISTANCE = Units.Meters.of(5.0);
+  private final Measure<Distance> SINGLE_TO_MULTI_TAG_POSE_DELTA = Units.Meters.of(2.0);
 
   public static class Result {
     public final EstimatedRobotPose estimatedRobotPose;
