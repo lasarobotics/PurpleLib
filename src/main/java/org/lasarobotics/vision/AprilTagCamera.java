@@ -39,9 +39,9 @@ public class AprilTagCamera implements AutoCloseable {
   public static final Object LOCK = new Object();
 
   private final double APRILTAG_POSE_AMBIGUITY_THRESHOLD = 0.1;
-  private final double POSE_MAX_HEIGHT = 0.75;
+  private final Measure<Distance> POSE_MAX_HEIGHT = Units.Meters.of(0.75);
   private final Measure<Distance> MAX_TAG_DISTANCE = Units.Meters.of(5.0);
-  private final Measure<Distance> SINGLE_TO_MULTI_TAG_POSE_DELTA = Units.Meters.of(1.0);
+  private final Measure<Distance> SINGLE_TO_MULTI_TAG_POSE_DELTA = Units.Meters.of(2.0);
 
   public static class Result {
     public final EstimatedRobotPose estimatedRobotPose;
@@ -122,7 +122,7 @@ public class AprilTagCamera implements AutoCloseable {
      || pose.getY() < 0.0 || pose.getY() > m_fieldLayout.getFieldWidth()) return false;
 
     // Make sure pose is near the floor
-    if (pose.getZ() < 0.0 || pose.getZ() > POSE_MAX_HEIGHT) return false;
+    if (pose.getZ() < 0.0 || pose.getZ() > POSE_MAX_HEIGHT.in(Units.Meters)) return false;
 
     // Pose is acceptable
     return true;
