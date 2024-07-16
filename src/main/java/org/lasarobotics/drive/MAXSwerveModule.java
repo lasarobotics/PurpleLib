@@ -172,18 +172,18 @@ public class MAXSwerveModule extends SwerveModule implements Sendable, AutoClose
    * @param wheelbase Robot wheelbase
    * @param trackWidth Robot track width
    * @param mass Robot mass
-   * @param autoLockTime Time before rotating module to locked position [0.0, 10.0]
+   * @param autoLockTime Time before automatically rotating module to locked position (10 seconds max)
    * @param driveMotorCurrentLimit Desired current limit for the drive motor
    * @param slipRatio Desired slip ratio [1%, 40%]
    * @param frictionCoefficient CoF between wheel and field surface
    */
-  public MAXSwerveModule(Hardware swerveHardware, ModuleLocation location, GearRatio driveGearRatio,
-                         Measure<Distance> wheelbase, Measure<Distance> trackWidth, Measure<Mass> mass,
-                         Measure<Time> autoLockTime, Measure<Current> driveMotorCurrentLimit,
-                         Measure<Dimensionless> slipRatio, Measure<Dimensionless> frictionCoefficient) {
-    int encoderTicksPerRotation = swerveHardware.driveMotor.getKind().equals(MotorKind.NEO)
-      ? GlobalConstants.NEO_ENCODER_TICKS_PER_ROTATION
-      : GlobalConstants.VORTEX_ENCODER_TICKS_PER_ROTATION;
+  public MAXSwerveModule(Hardware swerveHardware, ModuleLocation location, GearRatio driveGearRatio, DriveWheel driveWheel,
+                         Measure<Dimensionless> slipRatio, Measure<Mass> mass,
+                         Measure<Distance> wheelbase, Measure<Distance> trackWidth,
+                         Measure<Time> autoLockTime, Measure<Current> driveMotorCurrentLimit) {
+    int encoderTicksPerRotation = swerveHardware.driveMotor.getKind().equals(MotorKind.NEO_VORTEX)
+      ? GlobalConstants.VORTEX_ENCODER_TICKS_PER_ROTATION
+      : GlobalConstants.NEO_ENCODER_TICKS_PER_ROTATION;
     DRIVE_MOTOR_CURRENT_LIMIT = driveMotorCurrentLimit;
     DRIVE_TICKS_PER_METER =
       (encoderTicksPerRotation * driveGearRatio.value)
@@ -203,7 +203,7 @@ public class MAXSwerveModule extends SwerveModule implements Sendable, AutoClose
     this.m_commandedState = m_desiredState;
     this.m_autoLockTime = MathUtil.clamp(autoLockTime.in(Units.Milliseconds), 0.0, MAX_AUTO_LOCK_TIME * 1000);
     this.m_previousRotatePosition = LOCK_POSITION;
-    this.m_tractionControlController =  new TractionControlController(slipRatio, frictionCoefficient, mass, Units.MetersPerSecond.of(DRIVE_MAX_LINEAR_SPEED));
+    this.m_tractionControlController =  new TractionControlController(driveWheel, slipRatio, mass, Units.MetersPerSecond.of(DRIVE_MAX_LINEAR_SPEED));
     this.m_autoLockTimer = Instant.now();
     this.m_runningOdometer = 0.0;
 
