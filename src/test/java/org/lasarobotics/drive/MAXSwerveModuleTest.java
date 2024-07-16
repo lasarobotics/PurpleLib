@@ -227,12 +227,6 @@ public class MAXSwerveModuleTest {
     m_lRearModule.set(state);
     m_rRearModule.set(state);
 
-    // Update modules
-    m_lFrontModule.periodic();
-    m_rFrontModule.periodic();
-    m_lRearModule.periodic();
-    m_rRearModule.periodic();
-
     // Verify that motors are being driven with expected values
     verify(m_lFrontDriveMotor, times(1)).set(AdditionalMatchers.eq(-2.0, DELTA), ArgumentMatchers.eq(ControlType.kVelocity));
     verify(m_lFrontRotateMotor, times(1)).set(AdditionalMatchers.eq(-Math.PI / 2, DELTA), ArgumentMatchers.eq(ControlType.kPosition));
