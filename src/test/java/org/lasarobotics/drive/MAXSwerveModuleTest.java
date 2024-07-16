@@ -49,6 +49,7 @@ public class MAXSwerveModuleTest {
   private final Rotation2d ROTATION_PI = Rotation2d.fromRadians(Math.PI);
 
   private final GearRatio GEAR_RATIO = MAXSwerveModule.GearRatio.L3;
+  private final DriveWheel DRIVE_WHEEL = new DriveWheel(Units.Inches.of(3.0), Units.Value.of(1.0), Units.Value.of(0.8));
   private final Measure<Distance> WHEELBASE = Units.Meters.of(0.6);
   private final Measure<Distance> TRACK_WIDTH = Units.Meters.of(0.6);
   private final Measure<Mass> MASS = Units.Pounds.of(110.0);
@@ -131,11 +132,8 @@ public class MAXSwerveModuleTest {
       MASS,
       WHEELBASE,
       TRACK_WIDTH,
-      MASS,
       AUTO_LOCK_TIME,
-      DRIVE_CURRENT_LIMIT,
-      SLIP_RATIO,
-      FRICTION_COEFFICIENT
+      DRIVE_CURRENT_LIMIT
     );
     m_rFrontModule = new MAXSwerveModule(
       new MAXSwerveModule.Hardware(m_rFrontDriveMotor, m_rFrontRotateMotor),
@@ -146,11 +144,8 @@ public class MAXSwerveModuleTest {
       MASS,
       WHEELBASE,
       TRACK_WIDTH,
-      MASS,
       AUTO_LOCK_TIME,
-      DRIVE_CURRENT_LIMIT,
-      SLIP_RATIO,
-      FRICTION_COEFFICIENT
+      DRIVE_CURRENT_LIMIT
     );
     m_lRearModule = new MAXSwerveModule(
      new MAXSwerveModule.Hardware(m_lRearDriveMotor, m_lRearRotateMotor),
@@ -161,11 +156,8 @@ public class MAXSwerveModuleTest {
       MASS,
       WHEELBASE,
       TRACK_WIDTH,
-      MASS,
       AUTO_LOCK_TIME,
-      DRIVE_CURRENT_LIMIT,
-      SLIP_RATIO,
-      FRICTION_COEFFICIENT
+      DRIVE_CURRENT_LIMIT
     );
     m_rRearModule = new MAXSwerveModule(
       new MAXSwerveModule.Hardware(m_rRearDriveMotor, m_rRearRotateMotor),
@@ -176,11 +168,8 @@ public class MAXSwerveModuleTest {
       MASS,
       WHEELBASE,
       TRACK_WIDTH,
-      MASS,
       AUTO_LOCK_TIME,
-      DRIVE_CURRENT_LIMIT,
-      SLIP_RATIO,
-      FRICTION_COEFFICIENT
+      DRIVE_CURRENT_LIMIT
     );
 
     // Disable traction control for unit tests
