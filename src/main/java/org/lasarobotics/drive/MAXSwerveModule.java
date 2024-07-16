@@ -528,7 +528,7 @@ public class MAXSwerveModule extends SwerveModule implements Sendable, AutoClose
       m_autoLockTimer = Instant.now();
     }
 
-    m_desiredState = getDesiredState(m_desiredState);
+    m_desiredState = getDesiredState(state);
 
     // Set rotate motor position
     m_rotateMotor.set(m_desiredState.angle.getRadians(), ControlType.kPosition);
