@@ -160,13 +160,13 @@ public class MAXSwerveModule implements AutoCloseable {
    * @param swerveHardware Hardware devices required by swerve module
    * @param location Location of module
    * @param driveGearRatio Gear ratio for driving wheel
+   * @param driveWheel Wheel installed in swerve module
+   * @param slipRatio Desired slip ratio [1%, 40%]
+   * @param mass Robot mass
    * @param wheelbase Robot wheelbase
    * @param trackWidth Robot track width
-   * @param mass Robot mass
    * @param autoLockTime Time before automatically rotating module to locked position (10 seconds max)
    * @param driveMotorCurrentLimit Desired current limit for the drive motor
-   * @param slipRatio Desired slip ratio [1%, 40%]
-   * @param frictionCoefficient CoF between wheel and field surface
    */
   public MAXSwerveModule(Hardware swerveHardware, ModuleLocation location, GearRatio driveGearRatio, DriveWheel driveWheel,
                          Measure<Dimensionless> slipRatio, Measure<Mass> mass,
