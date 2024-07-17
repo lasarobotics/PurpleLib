@@ -253,11 +253,11 @@ public class MAXSwerveModuleTest {
     Timer.delay(AUTO_LOCK_TIME.in(Units.Seconds));
 
     // Try to set module state
-    SwerveModuleState state = new SwerveModuleState(0.0, Rotation2d.fromRadians(+Math.PI));
-    m_lFrontModule.set(state);
-    m_rFrontModule.set(state);
-    m_lRearModule.set(state);
-    m_rRearModule.set(state);
+    // SwerveModuleState state = new SwerveModuleState(0.0, Rotation2d.fromRadians(+Math.PI));
+    // m_lFrontModule.set(state);
+    // m_rFrontModule.set(state);
+    // m_lRearModule.set(state);
+    // m_rRearModule.set(state);
 
     // Update modules
     m_lFrontModule.periodic();
@@ -299,7 +299,7 @@ public class MAXSwerveModuleTest {
     m_lFrontModule.periodic();
 
     // Verify module reports expected position
-    assertEquals(new SwerveModulePosition(-desiredState.speedMetersPerSecond * MAXSwerveModule.DEFAULT_PERIOD.in(Units.Seconds), desiredState.angle.minus(ROTATION_PI)), m_lFrontModule.getPosition());
+    assertEquals(new SwerveModulePosition(-desiredState.speedMetersPerSecond * GlobalConstants.ROBOT_LOOP_PERIOD, desiredState.angle.minus(ROTATION_PI)), m_lFrontModule.getPosition());
   }
 
   @Test

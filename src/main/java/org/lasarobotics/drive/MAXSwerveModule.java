@@ -376,16 +376,12 @@ public class MAXSwerveModule extends SwerveModule implements Sendable, AutoClose
   @Override
   protected void periodic() {
     // Auto lock modules if auto lock enabled, speed not requested, and time has elapsed
-    if (m_autoLock && m_desiredState.speedMetersPerSecond < EPSILON) {
-      var state = m_desiredState;
-      state.speedMetersPerSecond = 0.0;
+    if (m_autoLock && Math.abs(m_desiredState.speedMetersPerSecond) < EPSILON) {
+      var state = new SwerveModuleState(Units.MetersPerSecond.of(0.0), m_previousRotatePosition.minus(m_location.offset));
       // Time's up, lock now...
       if (Duration.between(m_autoLockTimer, Instant.now()).toMillis() > m_autoLockTime) lock();
       // Waiting to lock...
-      else {
-        state.angle = m_previousRotatePosition.minus(m_location.offset);
-        set(state);
-      }
+      else set(state);
     } else {
       // Not locking this loop, restart timer...
       m_autoLockTimer = Instant.now();
@@ -623,7 +619,7 @@ public class MAXSwerveModule extends SwerveModule implements Sendable, AutoClose
       );
     }
 
-    m_simDrivePosition += m_desiredState.speedMetersPerSecond * DEFAULT_PERIOD.in(Units.Seconds);
+    m_simDrivePosition += m_desiredState.speedMetersPerSecond * GlobalConstants.ROBOT_LOOP_PERIOD;
     synchronized (m_driveMotor.getInputs()) {
       m_driveMotor.getInputs().encoderPosition = m_simDrivePosition;
       synchronized (m_rotateMotor.getInputs()) {
