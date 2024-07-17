@@ -232,7 +232,7 @@ public class SwervePoseEstimatorService {
   /**
    * Set how frequently the pose estimator should update
    * <p>
-   * Defaults to 10ms if not set (100Hz)
+   * Defaults to 10ms if not set (100Hz), 20ms for simulation (50Hz)
    * @param period Period between pose estimator updates
    */
   public void setPeriod(Measure<Time> period) {
