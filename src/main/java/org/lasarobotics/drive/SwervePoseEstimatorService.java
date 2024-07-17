@@ -37,6 +37,7 @@ import edu.wpi.first.units.Time;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.Velocity;
 import edu.wpi.first.wpilibj.Notifier;
+import edu.wpi.first.wpilibj.RobotBase;
 
 /** Swerve Odometry Service */
 public class SwervePoseEstimatorService {
@@ -214,6 +215,9 @@ public class SwervePoseEstimatorService {
 
     // Set last vision update time
     this.m_lastVisionUpdateTime = Instant.now();
+
+    // Set period if sim
+    if (RobotBase.isSimulation()) setPeriod(Units.Seconds.of(GlobalConstants.ROBOT_LOOP_PERIOD));
   }
 
   /**

@@ -229,6 +229,7 @@ public class Spark extends LoggableHardware {
     setPeriodicFrameRate(PeriodicFrame.kStatus6, DEFAULT_STATUS_FRAME_PERIOD);
 
     // Update inputs on init
+    stopMotor();
     updateInputs();
     periodic();
 
