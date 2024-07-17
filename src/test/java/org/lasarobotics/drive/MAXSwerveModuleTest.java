@@ -253,17 +253,11 @@ public class MAXSwerveModuleTest {
     Timer.delay(AUTO_LOCK_TIME.in(Units.Seconds));
 
     // Try to set module state
-    // SwerveModuleState state = new SwerveModuleState(0.0, Rotation2d.fromRadians(+Math.PI));
-    // m_lFrontModule.set(state);
-    // m_rFrontModule.set(state);
-    // m_lRearModule.set(state);
-    // m_rRearModule.set(state);
-
-    // Update modules
-    m_lFrontModule.periodic();
-    m_rFrontModule.periodic();
-    m_lRearModule.periodic();
-    m_rRearModule.periodic();
+    SwerveModuleState state = new SwerveModuleState(0.0, Rotation2d.fromRadians(+Math.PI));
+    m_lFrontModule.set(state);
+    m_rFrontModule.set(state);
+    m_lRearModule.set(state);
+    m_rRearModule.set(state);
 
     // Verify that motors are being driven with expected values
     verify(m_lFrontDriveMotor, times(1)).set(AdditionalMatchers.eq(0.0, DELTA), ArgumentMatchers.eq(ControlType.kVelocity));
