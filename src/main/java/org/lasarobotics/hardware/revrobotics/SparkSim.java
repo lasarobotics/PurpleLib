@@ -14,6 +14,7 @@ import org.lasarobotics.utils.MovingAverageFilterSim;
 import org.lasarobotics.utils.NoiseGenerator;
 import org.lasarobotics.utils.SimDynamics;
 
+import com.revrobotics.CANSparkBase.ControlType;
 import com.revrobotics.CANSparkBase.SoftLimitDirection;
 import com.revrobotics.CANSparkMax;
 
@@ -45,7 +46,7 @@ public class SparkSim {
   private final SimInt m_stickyFaults;
   private final Spark m_spark;
   private final SimDynamics m_simulatedDynamics;
-  private final SimInt m_controlMode;
+  private final SimInt m_controlType;
   private final MovingAverageFilterSim m_velocityAverage;
   private boolean m_forwardLimit = false;
   private boolean m_reverseLimit = false;
@@ -85,7 +86,7 @@ public class SparkSim {
     this.m_analogVoltage = simSpark.getDouble("Analog Voltage");
     this.m_busVoltage = simSpark.getDouble("Bus Voltage");
     this.m_motorCurrent = simSpark.getDouble("Motor Current");
-    this.m_controlMode = simSpark.getInt("Control Mode");
+    this.m_controlType = simSpark.getInt("Control Type");
     this.m_faults = simSpark.getInt("Faults");
     this.m_stickyFaults = simSpark.getInt("Sticky Faults");
     this.m_spark = spark;
@@ -95,6 +96,7 @@ public class SparkSim {
       : new MovingAverageFilterSim(2, 0.016);
     this.m_simulatedDynamics = dynamicsSim;
 
+    m_controlType.set(ControlType.kDutyCycle.value);
 
     // int apiVersion = CANSparkMaxJNI.c_SparkMax_GetAPIVersion();
     // if (apiVersion != kAPIversionExpected) {
@@ -250,7 +252,7 @@ public class SparkSim {
 
     // Calcuate the applied output
     double appliedOutput = 0.0;
-    switch (m_controlMode.get()) {
+    switch (m_controlType.get()) {
         // Duty Cycle
       case 0:
         appliedOutput = m_latestOutput.get().value;
@@ -287,7 +289,7 @@ public class SparkSim {
         break;
 
       default:
-        org.tinylog.Logger.tag(LOG_TAG).error(m_spark.getID().name + " Invalid control mode: {}", m_controlMode.get());
+        org.tinylog.Logger.tag(LOG_TAG).error(m_spark.getID().name + " Invalid control mode: {}", m_controlType.get());
     }
 
     // ArbFF
