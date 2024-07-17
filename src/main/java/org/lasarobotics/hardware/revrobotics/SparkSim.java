@@ -96,8 +96,6 @@ public class SparkSim {
       : new MovingAverageFilterSim(2, 0.016);
     this.m_simulatedDynamics = dynamicsSim;
 
-    m_controlType.set(ControlType.kDutyCycle.value);
-
     // int apiVersion = CANSparkMaxJNI.c_SparkMax_GetAPIVersion();
     // if (apiVersion != kAPIversionExpected) {
     //   System.err.printf(getClass().getSimpleName() +
