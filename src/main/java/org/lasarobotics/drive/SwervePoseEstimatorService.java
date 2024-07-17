@@ -282,6 +282,7 @@ public class SwervePoseEstimatorService {
     if (m_running) stop();
     // Reset pose estimator to desired pose
     m_poseResetMethod.accept(pose);
+    m_pose.currentPose = pose;
     // Restart service if it was previously running
     if (wasRunning) start();
   }
