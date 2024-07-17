@@ -86,7 +86,7 @@ public class SparkSim {
     this.m_analogVoltage = simSpark.getDouble("Analog Voltage");
     this.m_busVoltage = simSpark.getDouble("Bus Voltage");
     this.m_motorCurrent = simSpark.getDouble("Motor Current");
-    this.m_controlType = simSpark.getInt("Control Type");
+    this.m_controlType = simSpark.getInt("Control Mode");
     this.m_faults = simSpark.getInt("Faults");
     this.m_stickyFaults = simSpark.getInt("Sticky Faults");
     this.m_spark = spark;
@@ -95,6 +95,8 @@ public class SparkSim {
       ? new MovingAverageFilterSim(8, 0.032)
       : new MovingAverageFilterSim(2, 0.016);
     this.m_simulatedDynamics = dynamicsSim;
+
+    m_controlType.set(ControlType.kDutyCycle.value);
 
     // int apiVersion = CANSparkMaxJNI.c_SparkMax_GetAPIVersion();
     // if (apiVersion != kAPIversionExpected) {
