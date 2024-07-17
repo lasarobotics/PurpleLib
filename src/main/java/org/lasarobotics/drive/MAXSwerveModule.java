@@ -375,6 +375,25 @@ public class MAXSwerveModule extends SwerveModule implements Sendable, AutoClose
    */
   @Override
   protected void periodic() {
+    // Auto lock modules if auto lock enabled, speed not requested, and time has elapsed
+    if (m_autoLock && m_desiredState.speedMetersPerSecond < EPSILON) {
+      var state = m_desiredState;
+      state.speedMetersPerSecond = 0.0;
+      // Time's up, lock now...
+      if (Duration.between(m_autoLockTimer, Instant.now()).toMillis() > m_autoLockTime) lock();
+      // Waiting to lock...
+      else {
+        state.angle = m_previousRotatePosition.minus(m_location.offset);
+        set(state);
+      }
+    } else {
+      // Not locking this loop, restart timer...
+      m_autoLockTimer = Instant.now();
+    }
+
+    // Increment odometer
+    m_runningOdometer += Math.abs(m_desiredState.speedMetersPerSecond) * GlobalConstants.ROBOT_LOOP_PERIOD;
+
     // Log outputs
     Logger.recordOutput(m_driveMotor.getID().name + IS_SLIPPING_LOG_ENTRY, isSlipping());
     Logger.recordOutput(m_driveMotor.getID().name + ODOMETER_LOG_ENTRY, m_runningOdometer);
@@ -410,6 +429,7 @@ public class MAXSwerveModule extends SwerveModule implements Sendable, AutoClose
    */
   @Override
   public void initSendable(SendableBuilder builder) {
+    builder.setSafeState(this::lock);
     // Control drive velocity
     builder.addDoubleProperty(
       "Velocity",
@@ -515,19 +535,6 @@ public class MAXSwerveModule extends SwerveModule implements Sendable, AutoClose
    */
   @Override
   public void set(SwerveModuleState state) {
-     // Auto lock modules if auto lock enabled, speed not requested, and time has elapsed
-    if (m_autoLock && state.speedMetersPerSecond < EPSILON) {
-      state.speedMetersPerSecond = 0.0;
-      // Time's up, lock now...
-      if (Duration.between(m_autoLockTimer, Instant.now()).toMillis() > m_autoLockTime)
-        state.angle = LOCK_POSITION.minus(m_location.offset);
-      // Waiting to lock...
-      else state.angle = m_previousRotatePosition.minus(m_location.offset);
-    } else {
-      // Not locking this loop, restart timer...
-      m_autoLockTimer = Instant.now();
-    }
-
     m_desiredState = getDesiredState(state);
 
     // Set rotate motor position
@@ -538,9 +545,6 @@ public class MAXSwerveModule extends SwerveModule implements Sendable, AutoClose
 
     // Save rotate position
     m_previousRotatePosition = m_desiredState.angle;
-
-    // Increment odometer
-    m_runningOdometer += Math.abs(m_desiredState.speedMetersPerSecond) * GlobalConstants.ROBOT_LOOP_PERIOD;
   }
 
   /**

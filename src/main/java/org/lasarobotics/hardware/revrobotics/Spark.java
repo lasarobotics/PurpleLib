@@ -852,7 +852,7 @@ public class Spark extends LoggableHardware {
   /**
    * Set motor output value
    * @param value Value to set
-   * @param ctrl Desired control mode
+   * @param ctrl Desired control type
    */
   public void set(double value, ControlType ctrl) {
     set(value, ctrl, 0.0, ArbFFUnits.kVoltage);
@@ -861,7 +861,7 @@ public class Spark extends LoggableHardware {
   /**
    * Set motor output value with arbitrary feed forward
    * @param value Value to set
-   * @param ctrl Desired control mode
+   * @param ctrl Desired control type
    * @param arbFeedforward Feed forward value
    * @param arbFFUnits Feed forward units
    */
