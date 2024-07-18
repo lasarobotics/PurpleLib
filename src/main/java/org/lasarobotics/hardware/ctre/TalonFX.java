@@ -162,9 +162,6 @@ public class TalonFX extends LoggableHardware {
    * @param mode The output mode to apply
    */
   private void logOutputs(ControlRequest mode, double value) {
-    if (mode instanceof DutyCycleOut || mode instanceof TorqueCurrentFOC ||
-        mode instanceof 
-        )
     Logger.recordOutput(m_id.name + VALUE_LOG_ENTRY, value);
     Logger.recordOutput(m_id.name + MODE_LOG_ENTRY, mode.toString());
   }
@@ -753,7 +750,6 @@ public class TalonFX extends LoggableHardware {
    */
   public StatusCode setControl(TorqueCurrentFOC request)
   {
-    logOutputs(request, request.Output);
     return m_talon.setControl(request);
   }
   
@@ -866,7 +862,6 @@ public class TalonFX extends LoggableHardware {
    */
   public StatusCode setControl(PositionDutyCycle request)
   {
-    logOutputs(request, request.Output);
     return m_talon.setControl(request);
   }
   
@@ -926,7 +921,6 @@ public class TalonFX extends LoggableHardware {
    */
   public StatusCode setControl(PositionVoltage request)
   {
-    logOutputs(request, request.Output);
     return m_talon.setControl(request);
   }
   
@@ -976,7 +970,6 @@ public class TalonFX extends LoggableHardware {
    */
   public StatusCode setControl(PositionTorqueCurrentFOC request)
   {
-    logOutputs(request, request.Output);
     return m_talon.setControl(request);
   }
   
