@@ -50,8 +50,7 @@ public class TalonPIDConfig {
   private GravityTypeValue m_gravitytype;
   private StaticFeedforwardSignValue m_staticff;
 
-
-
+  
   /**
    * Create a TalonPIDConfig, without MotionMagic parameters
    * <p>
