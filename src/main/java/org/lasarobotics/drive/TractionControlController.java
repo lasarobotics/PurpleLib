@@ -7,10 +7,13 @@ package org.lasarobotics.drive;
 import org.lasarobotics.utils.GlobalConstants;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.filter.Debouncer;
+import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.units.Dimensionless;
 import edu.wpi.first.units.Distance;
 import edu.wpi.first.units.Mass;
 import edu.wpi.first.units.Measure;
+import edu.wpi.first.units.Time;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.Velocity;
 
@@ -36,7 +39,9 @@ public class TractionControlController {
 
   private final double MIN_SLIP_RATIO = 0.01;
   private final double MAX_SLIP_RATIO = 0.40;
+  private final int SIGMOID_K = 10;
   private final Measure<Velocity<Distance>> INERTIAL_VELOCITY_THRESHOLD = Units.MetersPerSecond.of(0.01);
+  private final Measure<Time> MIN_SLIPPING_TIME = Units.Seconds.of(1.0);
 
   private double m_optimalSlipRatio;
   private double m_mass;
@@ -45,6 +50,7 @@ public class TractionControlController {
   private double m_dynamicCoF;
   private double m_maxPredictedSlipRatio;
   private boolean m_isSlipping;
+  private Debouncer m_slippingDebouncer;
   private State m_state;
 
   /**
@@ -81,6 +87,7 @@ public class TractionControlController {
     this.m_maxPredictedSlipRatio = (m_maxLinearSpeed * GlobalConstants.ROBOT_LOOP_HZ)
       / (m_staticCoF * m_mass * GlobalConstants.GRAVITATIONAL_ACCELERATION.in(Units.MetersPerSecondPerSecond));
     this.m_isSlipping = false;
+    this.m_slippingDebouncer = new Debouncer(MIN_SLIPPING_TIME.in(Units.Seconds), DebounceType.kRising);
     this.m_state = State.ENABLED;
   }
 
@@ -103,21 +110,26 @@ public class TractionControlController {
         ? wheelSpeed.in(Units.MetersPerSecond) / m_maxLinearSpeed
         : (Math.abs(wheelSpeed.in(Units.MetersPerSecond)) - inertialVelocity.in(Units.MetersPerSecond)) / inertialVelocity.in(Units.MetersPerSecond)
     );
-    m_isSlipping = currentSlipRatio > m_optimalSlipRatio
+    m_isSlipping = m_slippingDebouncer.calculate(
+      currentSlipRatio > m_optimalSlipRatio
       & Math.abs(wheelSpeed.in(Units.MetersPerSecond)) > m_maxLinearSpeed * m_optimalSlipRatio
-      & isEnabled();
+      & isEnabled()
+    );
 
     // Get desired acceleration
     var desiredAcceleration = velocityRequest.minus(inertialVelocity).per(Units.Seconds.of(GlobalConstants.ROBOT_LOOP_PERIOD));
 
-    // Select CoF based on whether or not robot is currently slipping
-    double selectedCoF = m_isSlipping ? m_dynamicCoF : m_staticCoF;
+    // Get sigmoid value
+    double sigmoid = 1 / (1 + Math.exp(-SIGMOID_K * MathUtil.clamp(2 * (currentSlipRatio - m_optimalSlipRatio) - 1, -1.0, +1.0)));
+
+    // Scale CoF based on whether or not robot is currently slipping
+    double effectiveCoF =  m_isSlipping ? m_staticCoF * (1 - sigmoid) + m_dynamicCoF * sigmoid : m_staticCoF;
 
     // Simplified prediction of future slip ratio based on desired acceleration
     double predictedSlipRatio = Math.abs(
       desiredAcceleration.in(Units.MetersPerSecondPerSecond) /
         (inertialVelocity.in(Units.MetersPerSecond) * GlobalConstants.GRAVITATIONAL_ACCELERATION.in(Units.MetersPerSecondPerSecond)
-          + selectedCoF * m_mass * GlobalConstants.GRAVITATIONAL_ACCELERATION.in(Units.MetersPerSecondPerSecond))
+          + effectiveCoF * m_mass * GlobalConstants.GRAVITATIONAL_ACCELERATION.in(Units.MetersPerSecondPerSecond))
     ) / m_maxPredictedSlipRatio;
 
     // Calculate correction based on difference between optimal and weighted slip ratio, which combines the predicted and current slip ratios
