@@ -162,9 +162,34 @@ public class TalonFX extends LoggableHardware {
    * @param mode The output mode to apply
    */
   private void logOutputs(ControlRequest mode, double value) {
+    if (mode instanceof DutyCycleOut || mode instanceof TorqueCurrentFOC ||
+        mode instanceof VoltageOut) {
+        }
+    else if (mode instanceof PositionDutyCycle || mode instanceof PositionVoltage ||
+             mode instanceof PositionTorqueCurrentFOC) {
+
+             }
+    else if (mode instanceof VelocityDutyCycle || mode instanceof VelocityVoltage ||
+             mode instanceof VelocityTorqueCurrentFOC)
     Logger.recordOutput(m_id.name + VALUE_LOG_ENTRY, value);
     Logger.recordOutput(m_id.name + MODE_LOG_ENTRY, mode.toString());
   }
+
+ // positiondutycycle
+ // positionvoltage
+ // PositionTorqueCurrentFOC
+//
+ // velocitydutycycle
+ // velocityvoltage
+ // velocitytorquecurrentfoc
+//
+ // MotionMagicDutyCycle
+ // MotionMagicVoltage
+ // MotionMagicTorqueCurrentFOC
+//
+ // DifferentialDutyCycle
+//
+
 
   /**
    * Get the selected sensor position (in raw sensor units).
