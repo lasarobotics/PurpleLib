@@ -28,6 +28,8 @@ def AdvantageKitJSON = new groovy.json.JsonSlurper().parseText(new File(projectD
 dependencies {
   implementation wpi.java.deps.wpilib()
   implementation wpi.java.vendor.java()
+  
+  implementation group: 'org.dyn4j', name: 'dyn4j', version: '5.0.2'
 
   nativeDebug wpi.java.deps.wpilibJniDebug(wpi.platforms.desktop)
   nativeDebug wpi.java.vendor.jniDebug(wpi.platforms.desktop)

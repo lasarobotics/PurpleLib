@@ -68,6 +68,7 @@ public class SwervePoseEstimatorService {
   private volatile List<AprilTag> m_visibleTags;
   private volatile List<Pose3d> m_visibleTagPoses;
   private volatile SwervePoseEstimatorServiceInputsAutoLogged m_pose;
+  private static CollisionDetection m_collisionDetector;
 
   /**
    * Create Swerve Pose Estimator Service
@@ -132,6 +133,7 @@ public class SwervePoseEstimatorService {
       lRearModule.get().getModuleCoordinate(),
       rRearModule.get().getModuleCoordinate()
     );
+    m_collisionDetector = new CollisionDetection();
 
     // Register callback with PurpleManager
     PurpleManager.addCallback(() -> periodic());
@@ -208,6 +210,7 @@ public class SwervePoseEstimatorService {
 
     // Register service as pose supplier with PurpleManager for simulation
     PurpleManager.setPoseSupplier(this::getPose);
+    PurpleManager.addCallbackSim(() -> simulationPeriodic());
 
     // Set thread period to default
     this.m_threadPeriod = DEFAULT_THREAD_PERIOD;
@@ -223,6 +226,13 @@ public class SwervePoseEstimatorService {
     Logger.processInputs(NAME, m_pose);
     Logger.recordOutput(NAME + VISIBLE_TAGS_LOG_ENTRY, m_visibleTagPoses.toArray(new Pose3d[0]));
     Logger.recordOutput(NAME + ESTIMATED_POSES_LOG_ENTRY, m_visionEstimatedPoses.toArray(new Pose2d[0]));
+  }
+
+  /*
+   * This method will be called once per scheduler run during simulation (for tests)
+   */
+  private void simulationPeriodic() {
+    Logger.recordOutput(NAME + "IS_DETECTED", m_collisionDetector.checkRobotCollision(getPose(), 0.7, 0.7));
   }
 
   /**
