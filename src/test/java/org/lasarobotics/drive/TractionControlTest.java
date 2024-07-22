@@ -45,7 +45,7 @@ public class TractionControlTest {
   public void limitSlip() {
     // Simulate scenario
     var outputSpeed = Units.MetersPerSecond.of(100.0);
-    for (int i = 0; i < 50; i++) {
+    for (int i = 0; i < GlobalConstants.ROBOT_LOOP_HZ * 2; i++) {
       Timer.delay(GlobalConstants.ROBOT_LOOP_PERIOD);
       outputSpeed = m_tractionControlController.calculate(MAX_LINEAR_SPEED, Units.MetersPerSecond.of(0.0), MAX_LINEAR_SPEED.divide(2));
     }
