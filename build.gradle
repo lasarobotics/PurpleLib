@@ -57,6 +57,10 @@ sourceSets {
   }
 }
 
+processResources {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
 test {
   useJUnitPlatform()
   systemProperty 'junit.jupiter.extensions.autodetection.enabled', 'true'
@@ -76,6 +80,7 @@ tasks.withType(JavaCompile) {
 
 task sourcesJar(type: Jar, dependsOn: classes) {
   archiveClassifier = "sources"
+  duplicatesStrategy = DuplicatesStrategy.EXCLUDE
   from sourceSets.main.allSource
 }
 
