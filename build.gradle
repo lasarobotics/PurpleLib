@@ -49,6 +49,14 @@ dependencies {
   annotationProcessor "org.littletonrobotics.akit.junction:junction-autolog:$AdvantageKitJSON.version"
 }
 
+sourceSets {
+  main {
+    resources {
+      srcDir 'src/main/resources'
+    }
+  }
+}
+
 test {
   useJUnitPlatform()
   systemProperty 'junit.jupiter.extensions.autodetection.enabled', 'true'

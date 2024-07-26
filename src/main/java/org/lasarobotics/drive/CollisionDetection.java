@@ -1,7 +1,7 @@
 package org.lasarobotics.drive;
 
-import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 
 import org.dyn4j.collision.narrowphase.Gjk;
@@ -35,10 +35,13 @@ public class CollisionDetection {
     m_detector = new Gjk();
     m_penetration = new Penetration();
 
-    try {
-      // Read and parse the JSON file
+    try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream("2024.json")) {
+      if (inputStream == null) {
+        throw new IllegalArgumentException("Resource not found: " + "2024.json");
+      }
+      // Parse the JSON resource
       ObjectMapper objectMapper = new ObjectMapper();
-      JsonNode rootNode = objectMapper.readTree(new File("2024.json"));
+      JsonNode rootNode = objectMapper.readTree(inputStream);
 
       // Extract obstacles from the JSON
       JsonNode obstaclesNode = rootNode.get("obstacles");
@@ -57,7 +60,7 @@ public class CollisionDetection {
         addObstacles(vertices);
       }
 
-    // Now you can proceed with your collision detection logic
+      // Now you can proceed with your collision detection logic
     } catch (IOException e) {
       e.printStackTrace();
     }
