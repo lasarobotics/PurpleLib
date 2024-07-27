@@ -51,7 +51,7 @@ public class TractionControlController {
   private double m_maxPredictedSlipRatio;
   private boolean m_isSlipping;
   private Debouncer m_slippingDebouncer;
-  private volatile State m_state;
+  private State m_state;
 
   /**
    * Create an instance of TractionControlController
@@ -102,6 +102,9 @@ public class TractionControlController {
                                                Measure<Velocity<Distance>> inertialVelocity,
                                                Measure<Velocity<Distance>> wheelSpeed) {
     var velocityOutput = velocityRequest;
+
+    // Passthrough input if disabled
+    if (!isEnabled()) return velocityOutput;
 
     // Get current slip ratio, and check if slipping
     inertialVelocity = Units.MetersPerSecond.of(Math.abs(inertialVelocity.in(Units.MetersPerSecond)));
