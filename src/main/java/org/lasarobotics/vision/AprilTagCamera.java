@@ -41,7 +41,6 @@ public class AprilTagCamera implements AutoCloseable {
   private final double APRILTAG_POSE_AMBIGUITY_THRESHOLD = 0.1;
   private final Measure<Distance> POSE_MAX_HEIGHT = Units.Meters.of(0.75);
   private final Measure<Distance> MAX_TAG_DISTANCE = Units.Meters.of(5.0);
-  private final Measure<Distance> SINGLE_TO_MULTI_TAG_POSE_DELTA = Units.Meters.of(2.0);
 
   public static class Result {
     public final EstimatedRobotPose estimatedRobotPose;
@@ -182,20 +181,8 @@ public class AprilTagCamera implements AutoCloseable {
       int numOfTagsInRange = 0;
       // Loop through all targets used for this estimate
       for (var target : estimatedRobotPose.targetsUsed) {
-        // Get tag
-        var tag = getTag(target.getFiducialId());
         // Get distance to tag
         var tagDistance = Units.Meters.of(target.getBestCameraToTarget().getTranslation().getNorm());
-        // Get pose estimate based on just this tag
-        var singleTargetPose = tag.get().pose
-                              .transformBy(target.getBestCameraToTarget().inverse())
-                              .transformBy(m_transform.inverse());
-        // Ignore if single tag pose estimate is too far from multi-tag estimate
-        if (estimatedRobotPose.estimatedPose.relativeTo(singleTargetPose).getTranslation().getNorm() >
-            SINGLE_TO_MULTI_TAG_POSE_DELTA.in(Units.Meters)) {
-          m_latestResult.set(null);
-          return;
-        }
         // Check if tag distance is closest yet
         if (tagDistance.lte(closestTagDistance)) closestTagDistance = tagDistance;
         // Increment number of tags in range if applicable
