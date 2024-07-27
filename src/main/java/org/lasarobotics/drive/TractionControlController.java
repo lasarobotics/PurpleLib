@@ -51,7 +51,7 @@ public class TractionControlController {
   private double m_maxPredictedSlipRatio;
   private boolean m_isSlipping;
   private Debouncer m_slippingDebouncer;
-  private State m_state;
+  private volatile State m_state;
 
   /**
    * Create an instance of TractionControlController
