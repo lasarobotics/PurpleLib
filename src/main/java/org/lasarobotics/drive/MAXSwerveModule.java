@@ -329,8 +329,11 @@ public class MAXSwerveModule implements AutoCloseable {
 
     // Scale speed by cosine of angle error. This scales down movement perpendicular to the desired
     // direction of travel that can occur when modules change directions. This results in smoother driving.
-    desiredState.speedMetersPerSecond *= desiredState.angle.minus(currentAngle).getCos();
-
+    if (RobotBase.isReal() && RobotBase.isSimulation()){
+      desiredState.speedMetersPerSecond*=1;
+    } else{
+      desiredState.speedMetersPerSecond *= desiredState.angle.minus(currentAngle).getCos();
+    }
     // Return corrected desired swerve module state
     return desiredState;
   }
