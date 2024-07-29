@@ -100,6 +100,7 @@ public class MAXSwerveModule implements AutoCloseable {
   private final double DRIVE_METERS_PER_TICK;
   private final double DRIVE_METERS_PER_ROTATION;
   private final double DRIVE_MAX_LINEAR_SPEED;
+  private final int COSINE_CORRECTION;
 
   // Swerve velocity PID settings
   private static final double DRIVE_VELOCITY_kP = 0.18;
@@ -165,6 +166,7 @@ public class MAXSwerveModule implements AutoCloseable {
     DRIVE_METERS_PER_TICK = 1 / DRIVE_TICKS_PER_METER;
     DRIVE_METERS_PER_ROTATION = DRIVE_METERS_PER_TICK * encoderTicksPerRotation;
     DRIVE_MAX_LINEAR_SPEED = (swerveHardware.driveMotor.getKind().getMaxRPM() / 60) * DRIVE_METERS_PER_ROTATION * DRIVETRAIN_EFFICIENCY;
+    COSINE_CORRECTION = RobotBase.isReal() ? 1 : 0;
 
     this.m_driveMotor = swerveHardware.driveMotor;
     this.m_rotateMotor = swerveHardware.rotateMotor;
@@ -299,7 +301,6 @@ public class MAXSwerveModule implements AutoCloseable {
   public static Hardware initializeHardware(Spark.ID driveMotorID, Spark.ID rotateMotorID, MotorKind driveMotorKind) {
     if (driveMotorKind != MotorKind.NEO && driveMotorKind != MotorKind.NEO_VORTEX)
       throw new IllegalArgumentException("Drive motor MUST be a NEO or a NEO Vortex!");
-    //var period = RobotBase.isReal() ? DEFAULT_PERIOD : Units.Seconds.of(GlobalConstants.ROBOT_LOOP_PERIOD);
     Hardware swerveModuleHardware = new Hardware(
       new Spark(driveMotorID, driveMotorKind, DEFAULT_PERIOD),
       new Spark(rotateMotorID, MotorKind.NEO_550, DEFAULT_PERIOD)
@@ -329,11 +330,8 @@ public class MAXSwerveModule implements AutoCloseable {
 
     // Scale speed by cosine of angle error. This scales down movement perpendicular to the desired
     // direction of travel that can occur when modules change directions. This results in smoother driving.
-    if ((!RobotBase.isReal()) && RobotBase.isSimulation()){
-      desiredState.speedMetersPerSecond*=1;
-    } else{
-      desiredState.speedMetersPerSecond *= desiredState.angle.minus(currentAngle).getCos();
-    }
+    desiredState.speedMetersPerSecond *= Math.pow(desiredState.angle.minus(currentAngle).getCos(), COSINE_CORRECTION);
+
     // Return corrected desired swerve module state
     return desiredState;
   }
