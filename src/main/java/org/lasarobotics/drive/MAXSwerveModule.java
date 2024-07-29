@@ -301,9 +301,10 @@ public class MAXSwerveModule implements AutoCloseable {
   public static Hardware initializeHardware(Spark.ID driveMotorID, Spark.ID rotateMotorID, MotorKind driveMotorKind) {
     if (driveMotorKind != MotorKind.NEO && driveMotorKind != MotorKind.NEO_VORTEX)
       throw new IllegalArgumentException("Drive motor MUST be a NEO or a NEO Vortex!");
+    var period = RobotBase.isReal() ? DEFAULT_PERIOD : Units.Seconds.of(GlobalConstants.ROBOT_LOOP_PERIOD);
     Hardware swerveModuleHardware = new Hardware(
-      new Spark(driveMotorID, driveMotorKind, DEFAULT_PERIOD),
-      new Spark(rotateMotorID, MotorKind.NEO_550, DEFAULT_PERIOD)
+      new Spark(driveMotorID, driveMotorKind, period),
+      new Spark(rotateMotorID, MotorKind.NEO_550, period)
     );
 
     return swerveModuleHardware;
