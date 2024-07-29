@@ -114,7 +114,7 @@ public class Spark extends LoggableHardware {
 
   private static final int CAN_TIMEOUT_MS = 50;
   private static final int PID_SLOT = 0;
-  private static final int MAX_ATTEMPTS = 20;
+  private static final int MAX_ATTEMPTS = 5;
   private static final int SPARK_MAX_MEASUREMENT_PERIOD = 16;
   private static final int SPARK_FLEX_MEASUREMENT_PERIOD = 32;
   private static final int SPARK_MAX_AVERAGE_DEPTH = 2;
