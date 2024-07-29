@@ -109,6 +109,7 @@ public class MAXSwerveModule extends SwerveModule implements Sendable, AutoClose
   private final double DRIVE_METERS_PER_TICK;
   private final double DRIVE_METERS_PER_ROTATION;
   private final double DRIVE_MAX_LINEAR_SPEED;
+  private final int COSINE_CORRECTION;
 
   // Swerve velocity PID settings
   private static final double DRIVE_VELOCITY_kP = 0.18;
@@ -184,6 +185,7 @@ public class MAXSwerveModule extends SwerveModule implements Sendable, AutoClose
     DRIVE_METERS_PER_TICK = 1 / DRIVE_TICKS_PER_METER;
     DRIVE_METERS_PER_ROTATION = DRIVE_METERS_PER_TICK * encoderTicksPerRotation;
     DRIVE_MAX_LINEAR_SPEED = (swerveHardware.driveMotor.getKind().getMaxRPM() / 60) * DRIVE_METERS_PER_ROTATION * DRIVETRAIN_EFFICIENCY;
+    COSINE_CORRECTION = RobotBase.isReal() ? 1 : 0;
 
     this.m_driveMotor = swerveHardware.driveMotor;
     this.m_rotateMotor = swerveHardware.rotateMotor;
@@ -360,7 +362,7 @@ public class MAXSwerveModule extends SwerveModule implements Sendable, AutoClose
 
     // Scale speed by cosine of angle error. This scales down movement perpendicular to the desired
     // direction of travel that can occur when modules change directions. This results in smoother driving.
-    desiredState.speedMetersPerSecond *= desiredState.angle.minus(currentAngle).getCos();
+    desiredState.speedMetersPerSecond *= Math.pow(desiredState.angle.minus(currentAngle).getCos(), COSINE_CORRECTION);
 
     // Return corrected desired swerve module state
     return desiredState;
