@@ -39,6 +39,7 @@ public class TractionControlController {
 
   private final double MIN_SLIP_RATIO = 0.01;
   private final double MAX_SLIP_RATIO = 0.40;
+  private final double VELOCITY_CORRECTION_SCALAR = 0.7;
   private final int SIGMOID_K = 10;
   private final Measure<Velocity<Distance>> INERTIAL_VELOCITY_THRESHOLD = Units.MetersPerSecond.of(0.01);
   private final Measure<Time> MIN_SLIPPING_TIME = Units.Seconds.of(1.1);
@@ -136,7 +137,7 @@ public class TractionControlController {
     ) / m_maxPredictedSlipRatio;
 
     // Calculate correction based on difference between optimal and weighted slip ratio, which combines the predicted and current slip ratios
-    var velocityCorrection = velocityOutput.times((m_optimalSlipRatio - predictedSlipRatio) * m_state.value);
+    var velocityCorrection = velocityOutput.times((m_optimalSlipRatio - predictedSlipRatio) * VELOCITY_CORRECTION_SCALAR * m_state.value);
 
     // Update output, clamping to max linear speed
     velocityOutput = Units.MetersPerSecond.of(MathUtil.clamp(
