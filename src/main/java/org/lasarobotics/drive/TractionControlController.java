@@ -37,9 +37,10 @@ public class TractionControlController {
     public abstract State toggle();
   }
 
+  public static final double VELOCITY_CORRECTION_SCALAR = 0.7;
+
   private final double MIN_SLIP_RATIO = 0.01;
   private final double MAX_SLIP_RATIO = 0.40;
-  private final double VELOCITY_CORRECTION_SCALAR = 0.7;
   private final int SIGMOID_K = 10;
   private final Measure<Velocity<Distance>> INERTIAL_VELOCITY_THRESHOLD = Units.MetersPerSecond.of(0.01);
   private final Measure<Time> MIN_SLIPPING_TIME = Units.Seconds.of(1.1);
