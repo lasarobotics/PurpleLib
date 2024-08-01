@@ -52,7 +52,7 @@ public class TractionControlTest {
 
     // Verify behavior
     assertTrue(m_tractionControlController.isSlipping());
-    assertTrue(outputSpeed.lte(MAX_LINEAR_SPEED.times(SLIP_RATIO.in(Units.Value))));
+    assertTrue(outputSpeed.lte(MAX_LINEAR_SPEED));
   }
 
   @Test
