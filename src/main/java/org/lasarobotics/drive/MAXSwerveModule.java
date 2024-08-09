@@ -88,6 +88,7 @@ public class MAXSwerveModule implements AutoCloseable {
   public static final Measure<Time> DEFAULT_PERIOD = Units.Milliseconds.of(10.0);
 
   private final double EPSILON = 5e-3;
+  private final double DRIVE_FF_SCALAR = 1.5;
   private final Measure<Current> DRIVE_MOTOR_CURRENT_LIMIT;
   private final Measure<Current> ROTATE_MOTOR_CURRENT_LIMIT = Units.Amps.of(18.0);
   private final Rotation2d LOCK_POSITION = Rotation2d.fromRadians(Math.PI / 4);
@@ -200,7 +201,7 @@ public class MAXSwerveModule implements AutoCloseable {
         DRIVE_VELOCITY_kP,
         0.0,
         DRIVE_VELOCITY_kD,
-        1 / ((m_driveMotor.getKind().getMaxRPM() / 60) * m_driveConversionFactor),
+        (1 / ((m_driveMotor.getKind().getMaxRPM() / 60) * m_driveConversionFactor)) * DRIVE_FF_SCALAR,
         0.0
       ),
       DRIVE_VELOCITY_SENSOR_PHASE,
