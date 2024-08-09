@@ -37,7 +37,7 @@ public class TractionControlController {
     public abstract State toggle();
   }
 
-  public static final double VELOCITY_CORRECTION_SCALAR = 0.7;
+  public static final double VELOCITY_CORRECTION_SCALAR = 0.6;
 
   private final double MIN_SLIP_RATIO = 0.01;
   private final double MAX_SLIP_RATIO = 0.40;
