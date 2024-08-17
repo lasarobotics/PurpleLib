@@ -37,8 +37,6 @@ public class TractionControlController {
     public abstract State toggle();
   }
 
-  public static final double VELOCITY_CORRECTION_SCALAR = 0.6;
-
   private final double MIN_SLIP_RATIO = 0.01;
   private final double MAX_SLIP_RATIO = 0.40;
   private final int SIGMOID_K = 10;
@@ -48,6 +46,7 @@ public class TractionControlController {
   private double m_optimalSlipRatio;
   private double m_mass;
   private double m_maxLinearSpeed;
+  private double m_maxAcceleration;
   private double m_staticCoF;
   private double m_dynamicCoF;
   private double m_maxPredictedSlipRatio;
@@ -86,7 +85,8 @@ public class TractionControlController {
     this.m_optimalSlipRatio = MathUtil.clamp(optimalSlipRatio.in(Units.Value), MIN_SLIP_RATIO, MAX_SLIP_RATIO);
     this.m_mass = mass.divide(4).in(Units.Kilograms);
     this.m_maxLinearSpeed = Math.floor(maxLinearSpeed.in(Units.MetersPerSecond) * 1000) / 1000;
-    this.m_maxPredictedSlipRatio = (m_maxLinearSpeed * GlobalConstants.ROBOT_LOOP_HZ)
+    this.m_maxAcceleration = m_staticCoF * GlobalConstants.GRAVITATIONAL_ACCELERATION.in(Units.MetersPerSecondPerSecond);
+    this.m_maxPredictedSlipRatio = (m_maxAcceleration * GlobalConstants.ROBOT_LOOP_HZ)
       / (m_staticCoF * m_mass * GlobalConstants.GRAVITATIONAL_ACCELERATION.in(Units.MetersPerSecondPerSecond));
     this.m_isSlipping = false;
     this.m_slippingDebouncer = new Debouncer(MIN_SLIPPING_TIME.in(Units.Seconds), DebounceType.kRising);
@@ -105,9 +105,6 @@ public class TractionControlController {
                                                Measure<Velocity<Distance>> wheelSpeed) {
     var velocityOutput = velocityRequest;
 
-    // Passthrough input if disabled
-    if (!isEnabled()) return velocityOutput;
-
     // Get current slip ratio, and check if slipping
     inertialVelocity = Units.MetersPerSecond.of(Math.abs(inertialVelocity.in(Units.MetersPerSecond)));
     double currentSlipRatio = Math.abs(
@@ -121,8 +118,11 @@ public class TractionControlController {
       & isEnabled()
     );
 
-    // Get desired acceleration
-    var desiredAcceleration = velocityRequest.minus(inertialVelocity).per(Units.Seconds.of(GlobalConstants.ROBOT_LOOP_PERIOD));
+    // Get desired acceleration, capping at max possible acceleration
+    var desiredAcceleration = Units.MetersPerSecond.of(Math.copySign(
+      Math.min(velocityRequest.minus(inertialVelocity).in(Units.MetersPerSecond), m_maxAcceleration),
+      velocityRequest.minus(inertialVelocity).in(Units.MetersPerSecond)
+    )).per(Units.Seconds.of(GlobalConstants.ROBOT_LOOP_PERIOD));
 
     // Get sigmoid value
     double sigmoid = 1 / (1 + Math.exp(-SIGMOID_K * MathUtil.clamp(2 * (currentSlipRatio - m_optimalSlipRatio) - 1, -1.0, +1.0)));
@@ -138,7 +138,7 @@ public class TractionControlController {
     ) / m_maxPredictedSlipRatio;
 
     // Calculate correction based on difference between optimal and weighted slip ratio, which combines the predicted and current slip ratios
-    var velocityCorrection = velocityOutput.times((m_optimalSlipRatio - predictedSlipRatio) * VELOCITY_CORRECTION_SCALAR * m_state.value);
+    var velocityCorrection = velocityOutput.times((m_optimalSlipRatio - predictedSlipRatio) * m_state.value);
 
     // Update output, clamping to max linear speed
     velocityOutput = Units.MetersPerSecond.of(MathUtil.clamp(
