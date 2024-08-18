@@ -119,9 +119,10 @@ public class TractionControlController {
     );
 
     // Get desired acceleration, capping at max possible acceleration
+    double requestedAcceleration = velocityRequest.minus(inertialVelocity).in(Units.MetersPerSecond);
     var desiredAcceleration = Units.MetersPerSecond.of(Math.copySign(
-      Math.min(velocityRequest.minus(inertialVelocity).in(Units.MetersPerSecond), m_maxAcceleration),
-      velocityRequest.minus(inertialVelocity).in(Units.MetersPerSecond)
+      Math.min(requestedAcceleration, m_maxAcceleration),
+      requestedAcceleration
     )).per(Units.Seconds.of(GlobalConstants.ROBOT_LOOP_PERIOD));
 
     // Get sigmoid value
