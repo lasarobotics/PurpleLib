@@ -25,7 +25,7 @@ import edu.wpi.first.wpilibj.Timer;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class TractionControlTest {
-  private final Measure<Dimensionless> SLIP_RATIO = Units.Percent.of(.0);
+  private final Measure<Dimensionless> SLIP_RATIO = Units.Percent.of(8.0);
   private final Measure<Dimensionless> STATIC_FRICTION_COEFFICIENT = Units.Value.of(1.1);
   private final Measure<Dimensionless> DYNAMIC_FRICTION_COEFFICIENT = Units.Value.of(0.8);
   private final Measure<Mass> MASS = Units.Pounds.of(110.0);
