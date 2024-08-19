@@ -26,11 +26,12 @@ import com.revrobotics.CANSparkBase.IdleMode;
 import com.revrobotics.CANSparkLowLevel.PeriodicFrame;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.Pair;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
-import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Current;
 import edu.wpi.first.units.Dimensionless;
 import edu.wpi.first.units.Distance;
@@ -131,7 +132,6 @@ public class MAXSwerveModule implements AutoCloseable {
   private GearRatio m_driveGearRatio;
   private double m_driveConversionFactor;
   private double m_rotateConversionFactor;
-  private double m_radius;
   private double m_autoLockTime;
   private boolean m_autoLock;
   private double m_runningOdometer;
@@ -139,6 +139,7 @@ public class MAXSwerveModule implements AutoCloseable {
 
   private TractionControlController m_tractionControlController;
   private Instant m_autoLockTimer;
+  private Pair<Pose2d, Instant> m_previousPose;
 
   /**
    * Create an instance of a MAXSwerveModule
@@ -168,7 +169,6 @@ public class MAXSwerveModule implements AutoCloseable {
     DRIVE_METERS_PER_ROTATION = DRIVE_METERS_PER_TICK * encoderTicksPerRotation;
     DRIVE_MAX_LINEAR_SPEED = (swerveHardware.driveMotor.getKind().getMaxRPM() / 60) * DRIVE_METERS_PER_ROTATION * DRIVETRAIN_EFFICIENCY;
     COSINE_CORRECTION = RobotBase.isReal() ? 1 : 0;
-
     this.m_driveMotor = swerveHardware.driveMotor;
     this.m_rotateMotor = swerveHardware.rotateMotor;
     this.m_location = location;
@@ -181,6 +181,7 @@ public class MAXSwerveModule implements AutoCloseable {
     this.m_tractionControlController =  new TractionControlController(driveWheel, slipRatio, mass, Units.MetersPerSecond.of(DRIVE_MAX_LINEAR_SPEED));
     this.m_autoLockTimer = Instant.now();
     this.m_runningOdometer = 0.0;
+    this.m_previousPose = new Pair<Pose2d, Instant>(new Pose2d(), Instant.now());
 
     // Set drive encoder conversion factor
     m_driveConversionFactor = driveWheel.diameter.in(Units.Meters) * Math.PI / m_driveGearRatio.value;
@@ -267,9 +268,6 @@ public class MAXSwerveModule implements AutoCloseable {
     RobotModeTriggers.disabled().onTrue(Commands.runOnce(() -> disabledInit()).ignoringDisable(true));
     RobotModeTriggers.disabled().onFalse(Commands.runOnce(() -> disabledExit()).ignoringDisable(true));
 
-    // Get distance from center of robot
-    m_radius = m_moduleCoordinate.getNorm();
-
     // Make sure settings are burned to flash
     m_driveMotor.burnFlash();
     m_rotateMotor.burnFlash();
@@ -340,12 +338,20 @@ public class MAXSwerveModule implements AutoCloseable {
 
   /**
    * Get real speed of module
-   * @param inertialVelocity Inertial velocity of robot (m/s)
-   * @param rotateRate Rotate rate of robot (degrees/s)
+   * @param currentPose Current pose of robot
    * @return Speed of module (m/s)
    */
-  private Measure<Velocity<Distance>> calculateRealSpeed(double inertialVelocity, double rotateRate) {
-    return Units.MetersPerSecond.of(inertialVelocity + Math.toRadians(rotateRate) * m_radius);
+  private Measure<Velocity<Distance>> calculateRealSpeed(Pose2d currentPose) {
+    var previousPose = m_previousPose.getFirst();
+    var now = Instant.now();
+    var delta = Units.Milliseconds.of(Duration.between(m_previousPose.getSecond(), now).toMillis());
+    var velocity = Units.Meters.of(
+      currentPose.getTranslation().plus(m_moduleCoordinate).getDistance(previousPose.getTranslation())
+    ).per(delta);
+
+    m_previousPose = new Pair<Pose2d, Instant>(currentPose, now);
+
+    return velocity;
   }
 
   /**
@@ -415,14 +421,13 @@ public class MAXSwerveModule implements AutoCloseable {
   /**
    * Set swerve module direction and speed, automatically applying traction control
    * @param state Desired swerve module state
-   * @param inertialVelocity Current inertial velocity
-   * @param rotateRate Current robot rotate rate
+   * @param currentPose Current robot pose
    */
-  public void set(SwerveModuleState state, Measure<Velocity<Distance>> inertialVelocity, Measure<Velocity<Angle>> rotateRate) {
+  public void set(SwerveModuleState state, Pose2d currentPose) {
     // Apply traction control
     state.speedMetersPerSecond = m_tractionControlController.calculate(
       Units.MetersPerSecond.of(state.speedMetersPerSecond),
-      calculateRealSpeed(inertialVelocity.in(Units.MetersPerSecond), rotateRate.in(Units.DegreesPerSecond)),
+      calculateRealSpeed(currentPose),
       getDriveVelocity()
     ).in(Units.MetersPerSecond);
 
@@ -441,11 +446,10 @@ public class MAXSwerveModule implements AutoCloseable {
   /**
    * Set swerve module direction and speed, automatically applying traction control
    * @param states Array of states for all swerve modules
-   * @param inertialVelocity Current inertial velocity
-   * @param rotateRate Current rotate rate
+   * @param currentPose Current robot pose
    */
-  public void set(SwerveModuleState[] states, Measure<Velocity<Distance>> inertialVelocity, Measure<Velocity<Angle>> rotateRate) {
-    set(states[m_location.index], inertialVelocity, rotateRate);
+  public void set(SwerveModuleState[] states, Pose2d currentPose) {
+    set(states[m_location.index], currentPose);
   }
 
   /**
