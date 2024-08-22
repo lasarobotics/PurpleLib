@@ -71,6 +71,7 @@ public class CollisionDetection {
    * @param vertices An array of vertices representing the shape of the obstacle.
    */
   public void addObstacles(Vector2[] vertices) {
+    System.out.println(vertices);
     Body obstacle = new Body();
     obstacle.addFixture(Geometry.createPolygon(vertices));
     m_obstacles.add(obstacle);
