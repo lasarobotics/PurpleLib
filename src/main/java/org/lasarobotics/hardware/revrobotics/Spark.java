@@ -177,6 +177,12 @@ public class Spark extends LoggableHardware {
   private FeedbackSensor m_feedbackSensor;
   private SparkLimitSwitch.Type m_limitSwitchType = SparkLimitSwitch.Type.kNormallyOpen;
   private RelativeEncoder m_encoder;
+  private boolean forwardLimitSwitchShouldReset = false;
+  private boolean reverseLimitSwitchShouldReset = false;
+  private double forwardLimitSwitchResetValue = 1;
+  private double reverseLimitSwitchResetValue = 0;
+  private boolean forwardLimitSwitchJustHit = false;
+  private boolean reverseLimitSwitchJustHit = false;
 
   private volatile SparkOutput m_output;
   private volatile SparkInputsAutoLogged m_inputs;
@@ -555,6 +561,8 @@ public class Spark extends LoggableHardware {
       m_inputs.absoluteEncoderVelocity = getAbsoluteEncoderVelocity();
       m_inputs.forwardLimitSwitch = getForwardLimitSwitch().isPressed();
       m_inputs.reverseLimitSwitch = getReverseLimitSwitch().isPressed();
+      if (m_inputs.forwardLimitSwitch) forwardLimitSwitchJustHit = true;
+      if (m_inputs.reverseLimitSwitch) reverseLimitSwitchJustHit = true;
 
       // Get motor encoder
       if (!getMotorType().equals(MotorType.kBrushed) && !m_feedbackSensor.equals(FeedbackSensor.FUSED_ENCODER)) {
@@ -565,6 +573,21 @@ public class Spark extends LoggableHardware {
       // Fuse encoder if required
       fuseEncoders();
     }
+  }
+
+  /**
+   * Handle limit switches 
+   */
+  private void handleLimitSwitches() {
+    if (forwardLimitSwitchShouldReset) {
+      if (forwardLimitSwitchJustHit) resetEncoder(forwardLimitSwitchResetValue);
+    }
+    if (reverseLimitSwitchShouldReset) {
+      if (reverseLimitSwitchJustHit) resetEncoder(reverseLimitSwitchResetValue);
+    }
+
+    if (forwardLimitSwitchJustHit) forwardLimitSwitchJustHit = false;
+    if (reverseLimitSwitchJustHit) reverseLimitSwitchJustHit = false;
   }
 
   /**
@@ -600,6 +623,7 @@ public class Spark extends LoggableHardware {
   protected void periodic() {
     Logger.processInputs(m_id.name, m_inputs);
 
+    handleLimitSwitches();
     handleSmoothMotion();
 
     Logger.recordOutput(m_id.name + CURRENT_LOG_ENTRY, getOutputCurrent());
@@ -1173,6 +1197,57 @@ public class Spark extends LoggableHardware {
    */
   public REVLibError resetEncoder() {
     return resetEncoder(0.0);
+  }
+
+  /**
+   * Sets whether the encoder should be reset once the forward limit switch is hit
+   * The value to set it to can be changed with setForwardLimitSwitchResetValue(double value)
+   * @param value Whether the encoder should be reset
+   */
+  public void setForwardLimitSwitchShouldReset(boolean value) {
+    forwardLimitSwitchShouldReset = value;
+  }
+
+  /**
+   * Change what value the encoder should be reset to once the forward limit switch is hit
+   * Only matters if forwardLimitSwitchShouldReset is true, which has its own get and set methods
+   * @param value Desired encoder value
+   */
+  public void setForwardLimitSwitchResetValue(double value) {
+    forwardLimitSwitchResetValue = value;
+  }
+  /**
+   * @return What value the encoder will be reset to once the forward limit switch is hit
+   * Only matters if forwardLimitSwitchShouldReset is true, which has its own get and set methods
+   */
+  public double getForwardLimitSwitchResetValue() {
+    return forwardLimitSwitchResetValue;
+  }
+
+
+  /**
+   * Sets whether the encoder should be reset once the reverse limit switch is hit
+   * The value to set it to can be changed with setReverseLimitSwitchResetValue(double value)
+   * @param value Whether the encoder should be reset
+   */
+  public void setReverseLimitSwitchShouldReset(boolean value) {
+    reverseLimitSwitchShouldReset = value;
+  }
+
+  /**
+   * Change what value the encoder should be reset to once the reverse limit switch is hit
+   * Only matters if reverseLimitSwitchShouldReset is true, which has its own get and set methods
+   * @param value Desired encoder value
+   */
+  public void setReverseLimitSwitchResetValue(double value) {
+    reverseLimitSwitchResetValue = value;
+  }
+  /**
+   * @return What value the encoder will be reset to once the reverse limit switch is hit
+   * Only matters if reverseLimitSwitchShouldReset is true, which has its own get and set methods
+   */
+  public double getReverseLimitSwitchResetValue() {
+    return reverseLimitSwitchResetValue;
   }
 
   /**
