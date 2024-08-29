@@ -399,9 +399,8 @@ public class MAXSwerveModule implements AutoCloseable {
 
   /**
    * Set swerve module direction and speed, automatically applying traction control
-   * @param state Desired swerve module state
-   * @param inertialVelocity Current inertial velocity
-   * @param rotateRate Current robot rotate rate
+   * @param state Desired swerve module state representing desired speed
+   * @param realState Real swerve module state representing actual speed
    */
   public void set(SwerveModuleState state, SwerveModuleState realState) {
     // Apply traction control
@@ -425,9 +424,8 @@ public class MAXSwerveModule implements AutoCloseable {
 
   /**
    * Set swerve module direction and speed, automatically applying traction control
-   * @param states Array of states for all swerve modules
-   * @param inertialVelocity Current inertial velocity
-   * @param rotateRate Current rotate rate
+   * @param states Array of states for all swerve modules representing desired speed
+   * @param realStates Array of states for all swerve modules representing actual speed
    */
   public void set(SwerveModuleState[] states, SwerveModuleState[] realStates) {
     set(states[m_location.index], realStates[m_location.index]);
