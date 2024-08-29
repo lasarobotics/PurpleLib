@@ -28,6 +28,7 @@ import com.revrobotics.CANSparkLowLevel.PeriodicFrame;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.Current;
@@ -400,13 +401,14 @@ public class MAXSwerveModule implements AutoCloseable {
   /**
    * Set swerve module direction and speed, automatically applying traction control
    * @param state Desired swerve module state representing desired speed
-   * @param realState Real swerve module state representing actual speed
+   * @param realSpeeds Real speeds of robot from IMU
    */
-  public void set(SwerveModuleState state, SwerveModuleState realState) {
+  public void set(SwerveModuleState state, ChassisSpeeds realSpeeds) {
+    var inertialVelocity = Units.MetersPerSecond.of(AdvancedSwerveKinematics.getRealModuleSpeed(m_moduleCoordinate, realSpeeds).speedMetersPerSecond);
     // Apply traction control
     state.speedMetersPerSecond = m_tractionControlController.calculate(
       Units.MetersPerSecond.of(state.speedMetersPerSecond),
-      Units.MetersPerSecond.of(realState.speedMetersPerSecond),
+      inertialVelocity,
       getDriveVelocity()
     ).in(Units.MetersPerSecond);
 
@@ -425,10 +427,10 @@ public class MAXSwerveModule implements AutoCloseable {
   /**
    * Set swerve module direction and speed, automatically applying traction control
    * @param states Array of states for all swerve modules representing desired speed
-   * @param realStates Array of states for all swerve modules representing actual speed
+   * @param realSpeeds Real speeds of robot from IMU
    */
-  public void set(SwerveModuleState[] states, SwerveModuleState[] realStates) {
-    set(states[m_location.index], realStates[m_location.index]);
+  public void set(SwerveModuleState[] states, ChassisSpeeds realSpeeds) {
+    set(states[m_location.index], realSpeeds);
   }
 
   /**
