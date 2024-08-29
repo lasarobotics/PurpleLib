@@ -50,6 +50,8 @@ import edu.wpi.first.units.Voltage;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 
 /** REV Spark */
 public class Spark extends LoggableHardware {
@@ -181,8 +183,6 @@ public class Spark extends LoggableHardware {
   private boolean m_reverseLimitSwitchShouldReset = false;
   private double m_forwardLimitSwitchResetValue = 1;
   private double m_reverseLimitSwitchResetValue = 0;
-  private boolean m_forwardLimitSwitchJustHit = false;
-  private boolean m_reverseLimitSwitchJustHit = false;
 
   private volatile SparkOutput m_output;
   private volatile SparkInputsAutoLogged m_inputs;
@@ -214,6 +214,8 @@ public class Spark extends LoggableHardware {
     this.m_parameterChain = new LinkedHashSet<>();
     this.m_invertedRunner = () -> {};
     this.m_feedbackSensor = FeedbackSensor.NEO_ENCODER;
+
+    initLimitSwitcheResets();
 
     // Set CAN timeout
     m_spark.setCANTimeout(CAN_TIMEOUT_MS);
@@ -561,8 +563,6 @@ public class Spark extends LoggableHardware {
       m_inputs.absoluteEncoderVelocity = getAbsoluteEncoderVelocity();
       m_inputs.forwardLimitSwitch = getForwardLimitSwitch().isPressed();
       m_inputs.reverseLimitSwitch = getReverseLimitSwitch().isPressed();
-      if (m_inputs.forwardLimitSwitch) m_forwardLimitSwitchJustHit = true;
-      if (m_inputs.reverseLimitSwitch) m_reverseLimitSwitchJustHit = true;
 
       // Get motor encoder
       if (!getMotorType().equals(MotorType.kBrushed) && !m_feedbackSensor.equals(FeedbackSensor.FUSED_ENCODER)) {
@@ -576,18 +576,16 @@ public class Spark extends LoggableHardware {
   }
 
   /**
-   * Handle limit switches 
+   * Declare triggers for limit switches so the encoders reset once the limit switches are hit
    */
-  private void handleLimitSwitches() {
-    if (m_forwardLimitSwitchShouldReset) {
-      if (m_forwardLimitSwitchJustHit) resetEncoder(m_forwardLimitSwitchResetValue);
-    }
-    if (m_reverseLimitSwitchShouldReset) {
-      if (m_reverseLimitSwitchJustHit) resetEncoder(m_reverseLimitSwitchResetValue);
-    }
+  private void initLimitSwitcheResets() {
+    Trigger resetOnForwardLimit = new Trigger(() -> m_forwardLimitSwitchShouldReset && getInputs().forwardLimitSwitch);
+    resetOnForwardLimit.onTrue(Commands.runOnce(() -> resetEncoder(m_forwardLimitSwitchResetValue)));
+    resetOnForwardLimit.onTrue(Commands.none());
 
-    if (m_forwardLimitSwitchJustHit) m_forwardLimitSwitchJustHit = false;
-    if (m_reverseLimitSwitchJustHit) m_reverseLimitSwitchJustHit = false;
+    Trigger resetOnReverseLimit = new Trigger(() -> m_reverseLimitSwitchShouldReset && getInputs().reverseLimitSwitch);
+    resetOnReverseLimit.onTrue(Commands.runOnce(() -> resetEncoder(m_reverseLimitSwitchResetValue)));
+    resetOnReverseLimit.onTrue(Commands.none());
   }
 
   /**
@@ -623,7 +621,6 @@ public class Spark extends LoggableHardware {
   protected void periodic() {
     Logger.processInputs(m_id.name, m_inputs);
 
-    handleLimitSwitches();
     handleSmoothMotion();
 
     Logger.recordOutput(m_id.name + CURRENT_LOG_ENTRY, getOutputCurrent());
@@ -1204,7 +1201,7 @@ public class Spark extends LoggableHardware {
    * The value to set it to can be changed with setForwardLimitSwitchResetValue(double value)
    * @param value Whether the encoder should be reset
    */
-  public void setM_forwardLimitSwitchShouldReset(boolean value) {
+  public void setForwardLimitSwitchShouldReset(boolean value) {
     m_forwardLimitSwitchShouldReset = value;
   }
 
@@ -1213,14 +1210,14 @@ public class Spark extends LoggableHardware {
    * Only matters if forwardLimitSwitchShouldReset is true, which has its own get and set methods
    * @param value Desired encoder value
    */
-  public void setM_forwardLimitSwitchResetValue(double value) {
+  public void setForwardLimitSwitchResetValue(double value) {
     m_forwardLimitSwitchResetValue = value;
   }
   /**
    * @return What value the encoder will be reset to once the forward limit switch is hit
    * Only matters if forwardLimitSwitchShouldReset is true, which has its own get and set methods
    */
-  public double getM_forwardLimitSwitchResetValue() {
+  public double getForwardLimitSwitchResetValue() {
     return m_forwardLimitSwitchResetValue;
   }
 
@@ -1230,7 +1227,7 @@ public class Spark extends LoggableHardware {
    * The value to set it to can be changed with setReverseLimitSwitchResetValue(double value)
    * @param value Whether the encoder should be reset
    */
-  public void setM_reverseLimitSwitchShouldReset(boolean value) {
+  public void setReverseLimitSwitchShouldReset(boolean value) {
     m_reverseLimitSwitchShouldReset = value;
   }
 
@@ -1239,14 +1236,14 @@ public class Spark extends LoggableHardware {
    * Only matters if reverseLimitSwitchShouldReset is true, which has its own get and set methods
    * @param value Desired encoder value
    */
-  public void setM_reverseLimitSwitchResetValue(double value) {
+  public void setReverseLimitSwitchResetValue(double value) {
     m_reverseLimitSwitchResetValue = value;
   }
   /**
    * @return What value the encoder will be reset to once the reverse limit switch is hit
    * Only matters if reverseLimitSwitchShouldReset is true, which has its own get and set methods
    */
-  public double getM_reverseLimitSwitchResetValue() {
+  public double getReverseLimitSwitchResetValue() {
     return m_reverseLimitSwitchResetValue;
   }
 
