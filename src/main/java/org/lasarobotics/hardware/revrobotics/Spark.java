@@ -564,6 +564,15 @@ public class Spark extends LoggableHardware {
     );
 
     m_isSmoothMotionEnabled = !isSmoothMotionFinished();
+
+    if (!m_isSmoothMotionEnabled) {
+      set(
+        m_desiredState.position,
+        ControlType.kPosition,
+        m_feedforwardSupplier.apply(m_desiredState),
+        SparkPIDController.ArbFFUnits.kVoltage
+      );
+    }
   }
 
   /**
