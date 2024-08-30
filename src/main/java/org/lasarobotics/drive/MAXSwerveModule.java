@@ -202,7 +202,7 @@ public class MAXSwerveModule extends SwerveModule implements Sendable, AutoClose
     this.m_desiredState = new SwerveModuleState(Units.MetersPerSecond.of(0.0), LOCK_POSITION);
     this.m_autoLockTime = MathUtil.clamp(autoLockTime.in(Units.Milliseconds), 0.0, MAX_AUTO_LOCK_TIME * 1000);
     this.m_previousRotatePosition = LOCK_POSITION;
-    this.m_tractionControlController =  new TractionControlController(slipRatio, frictionCoefficient, mass, Units.MetersPerSecond.of(DRIVE_MAX_LINEAR_SPEED));
+    this.m_tractionControlController =  new TractionControlController(driveWheel, slipRatio, mass, Units.MetersPerSecond.of(DRIVE_MAX_LINEAR_SPEED));
     this.m_autoLockTimer = Instant.now();
     this.m_runningOdometer = 0.0;
 
