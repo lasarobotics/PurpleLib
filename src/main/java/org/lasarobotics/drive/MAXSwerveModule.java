@@ -37,9 +37,7 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.Current;
 import edu.wpi.first.units.Dimensionless;
-import edu.wpi.first.units.Dimensionless;
 import edu.wpi.first.units.Distance;
-import edu.wpi.first.units.Mass;
 import edu.wpi.first.units.Mass;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Time;
@@ -176,7 +174,7 @@ public class MAXSwerveModule extends SwerveModule implements Sendable, AutoClose
    * @param autoLockTime Time before automatically rotating module to locked position (10 seconds max)
    * @param driveMotorCurrentLimit Desired current limit for the drive motor
    */
-  public MAXSwerveModule(Hardware swerveHardware, ModuleLocation location, GearRatio driveGearRatio,
+  public MAXSwerveModule(Hardware swerveHardware, ModuleLocation location, GearRatio driveGearRatio, DriveWheel driveWheel,
                          Measure<Distance> wheelbase, Measure<Distance> trackWidth, Measure<Mass> mass,
                          Measure<Time> autoLockTime, Measure<Current> driveMotorCurrentLimit,
                          Measure<Dimensionless> slipRatio, Measure<Dimensionless> frictionCoefficient) {
