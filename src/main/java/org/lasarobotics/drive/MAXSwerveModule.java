@@ -458,7 +458,7 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
       () -> m_rotateMotorConfig.getP(),
       (value) -> {
         m_rotateMotorConfig.setP(value);
-        m_rotateMotor.setP(value);
+        m_rotateMotor.initializeSparkPID(m_rotateMotorConfig, FeedbackSensor.ABSOLUTE_ENCODER);
       }
     );
     // Configure rotate kI
@@ -467,7 +467,7 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
       () -> m_rotateMotorConfig.getI(),
       (value) -> {
         m_rotateMotorConfig.setI(value);
-        m_rotateMotor.setI(value);
+        m_rotateMotor.initializeSparkPID(m_rotateMotorConfig, FeedbackSensor.ABSOLUTE_ENCODER);
       }
     );
     // Configure rotate kD
@@ -476,7 +476,7 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
       () -> m_rotateMotorConfig.getD(),
       (value) -> {
         m_rotateMotorConfig.setD(value);
-        m_rotateMotor.setD(value);
+        m_rotateMotor.initializeSparkPID(m_rotateMotorConfig, FeedbackSensor.ABSOLUTE_ENCODER);
       }
     );
   }
