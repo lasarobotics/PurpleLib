@@ -535,6 +535,21 @@ public class Spark extends LoggableHardware {
   }
 
   /**
+   * Fuse absolute encoder to NEO built-in encoder
+   * @return {@link REVLibError#kOk} if successful
+   */
+  private REVLibError fuseEncoder() {
+    // Fuse encoder if required
+    if (m_feedbackSensor.equals(FeedbackSensor.FUSED_ENCODER)) {
+      m_inputs.encoderPosition = m_inputs.absoluteEncoderPosition * m_motorToSensorRatio;
+      m_inputs.encoderVelocity = m_inputs.absoluteEncoderVelocity * m_motorToSensorRatio;
+      getEncoder().setPosition(m_inputs.absoluteEncoderPosition * m_motorToSensorRatio);
+    }
+
+    return REVLibError.kOk;
+  }
+
+  /**
    * Update sensor input readings
    */
   private void updateInputs() {
@@ -554,11 +569,7 @@ public class Spark extends LoggableHardware {
       }
 
       // Fuse encoder if required
-      if (m_feedbackSensor.equals(FeedbackSensor.FUSED_ENCODER)) {
-        m_inputs.encoderPosition = m_inputs.absoluteEncoderPosition * m_motorToSensorRatio;
-        m_inputs.encoderVelocity = m_inputs.absoluteEncoderVelocity * m_motorToSensorRatio;
-        resetEncoder(m_inputs.absoluteEncoderPosition * m_motorToSensorRatio);
-      }
+      fuseEncoder();
     }
   }
 
