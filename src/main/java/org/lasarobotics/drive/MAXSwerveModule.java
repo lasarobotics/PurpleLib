@@ -175,9 +175,9 @@ public class MAXSwerveModule extends SwerveModule implements Sendable, AutoClose
    * @param driveMotorCurrentLimit Desired current limit for the drive motor
    */
   public MAXSwerveModule(Hardware swerveHardware, ModuleLocation location, GearRatio driveGearRatio, DriveWheel driveWheel,
-                         Measure<Distance> wheelbase, Measure<Distance> trackWidth, Measure<Mass> mass,
-                         Measure<Time> autoLockTime, Measure<Current> driveMotorCurrentLimit,
-                         Measure<Dimensionless> slipRatio, Measure<Dimensionless> frictionCoefficient) {
+                         Measure<Dimensionless> slipRatio, Measure<Mass> mass,
+                         Measure<Distance> wheelbase, Measure<Distance> trackWidth,
+                         Measure<Time> autoLockTime, Measure<Current> driveMotorCurrentLimit) {
     int encoderTicksPerRotation = swerveHardware.driveMotor.getKind().equals(MotorKind.NEO)
       ? GlobalConstants.NEO_ENCODER_TICKS_PER_ROTATION
       : GlobalConstants.VORTEX_ENCODER_TICKS_PER_ROTATION;
@@ -199,7 +199,7 @@ public class MAXSwerveModule extends SwerveModule implements Sendable, AutoClose
     this.m_desiredState = new SwerveModuleState(Units.MetersPerSecond.of(0.0), LOCK_POSITION);
     this.m_autoLockTime = MathUtil.clamp(autoLockTime.in(Units.Milliseconds), 0.0, MAX_AUTO_LOCK_TIME * 1000);
     this.m_previousRotatePosition = LOCK_POSITION;
-    this.m_tractionControlController =  new TractionControlController(slipRatio, frictionCoefficient, mass, Units.MetersPerSecond.of(DRIVE_MAX_LINEAR_SPEED));
+    this.m_tractionControlController =  new TractionControlController(driveWheel, slipRatio, mass, Units.MetersPerSecond.of(DRIVE_MAX_LINEAR_SPEED));
     this.m_autoLockTimer = Instant.now();
     this.m_runningOdometer = 0.0;
 
