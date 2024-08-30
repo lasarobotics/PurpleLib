@@ -207,6 +207,7 @@ public class Spark extends LoggableHardware {
     this.m_limitSwitchType = limitSwitchType;
     this.m_parameterChain = new LinkedHashSet<>();
     this.m_invertedRunner = () -> {};
+    this.m_feedbackSensor = FeedbackSensor.NEO_ENCODER;
     this.m_motorToSensorRatio = 1.0;
 
     // Set CAN timeout
