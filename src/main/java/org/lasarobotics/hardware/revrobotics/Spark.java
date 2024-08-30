@@ -759,7 +759,7 @@ public class Spark extends LoggableHardware {
 
     // Configure feedback sensor and set sensor phase
     m_spark.getPIDController().setFeedbackDevice(selectedSensor);
-    if (!m_feedbackSensor.equals(FeedbackSensor.NEO_ENCODER) || !m_feedbackSensor.equals(FeedbackSensor.FUSED_ENCODER)) {
+    if (!m_feedbackSensor.equals(FeedbackSensor.NEO_ENCODER) && !m_feedbackSensor.equals(FeedbackSensor.FUSED_ENCODER)) {
        parameterApplier = () -> applyParameter(
         () -> selectedSensor.setInverted(m_config.getSensorPhase()),
         () -> selectedSensor.getInverted() == m_config.getSensorPhase(),
