@@ -33,9 +33,7 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.Current;
 import edu.wpi.first.units.Dimensionless;
-import edu.wpi.first.units.Dimensionless;
 import edu.wpi.first.units.Distance;
-import edu.wpi.first.units.Mass;
 import edu.wpi.first.units.Mass;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Time;
@@ -49,14 +47,13 @@ public class MAXSwerveModuleTest {
   private final Rotation2d ROTATION_PI = Rotation2d.fromRadians(Math.PI);
 
   private final GearRatio GEAR_RATIO = MAXSwerveModule.GearRatio.L3;
+  private final DriveWheel DRIVE_WHEEL = new DriveWheel(Units.Inches.of(3.0), Units.Value.of(1.0), Units.Value.of(0.8));
   private final Measure<Distance> WHEELBASE = Units.Meters.of(0.6);
   private final Measure<Distance> TRACK_WIDTH = Units.Meters.of(0.6);
-  private final Measure<Mass> MASS = Units.Pounds.of(110.0);
   private final Measure<Mass> MASS = Units.Pounds.of(110.0);
   private final Measure<Time> AUTO_LOCK_TIME = Units.Seconds.of(3.0);
   private final Measure<Current> DRIVE_CURRENT_LIMIT = Units.Amps.of(50.0);
   private final Measure<Dimensionless> SLIP_RATIO = Units.Percent.of(8.0);
-  private final Measure<Dimensionless> FRICTION_COEFFICIENT = Units.Value.of(1.1);
   private final Spark.ID LEFT_FRONT_DRIVE_MOTOR_ID = new Spark.ID("DriveHardware/Swerve/LeftFront/Drive", 2);
   private final Spark.ID LEFT_FRONT_ROTATE_MOTOR_ID = new Spark.ID("DriveHardware/Swerve/LeftFront/Rotate", 3);
   private final Spark.ID RIGHT_FRONT_DRIVE_MOTOR_ID = new Spark.ID("DriveHardware/Swerve/RightFront/Drive", 4);
@@ -131,11 +128,8 @@ public class MAXSwerveModuleTest {
       MASS,
       WHEELBASE,
       TRACK_WIDTH,
-      MASS,
       AUTO_LOCK_TIME,
-      DRIVE_CURRENT_LIMIT,
-      SLIP_RATIO,
-      FRICTION_COEFFICIENT
+      DRIVE_CURRENT_LIMIT
     );
     m_rFrontModule = new MAXSwerveModule(
       new MAXSwerveModule.Hardware(m_rFrontDriveMotor, m_rFrontRotateMotor),
@@ -146,11 +140,8 @@ public class MAXSwerveModuleTest {
       MASS,
       WHEELBASE,
       TRACK_WIDTH,
-      MASS,
       AUTO_LOCK_TIME,
-      DRIVE_CURRENT_LIMIT,
-      SLIP_RATIO,
-      FRICTION_COEFFICIENT
+      DRIVE_CURRENT_LIMIT
     );
     m_lRearModule = new MAXSwerveModule(
      new MAXSwerveModule.Hardware(m_lRearDriveMotor, m_lRearRotateMotor),
@@ -161,11 +152,8 @@ public class MAXSwerveModuleTest {
       MASS,
       WHEELBASE,
       TRACK_WIDTH,
-      MASS,
       AUTO_LOCK_TIME,
-      DRIVE_CURRENT_LIMIT,
-      SLIP_RATIO,
-      FRICTION_COEFFICIENT
+      DRIVE_CURRENT_LIMIT
     );
     m_rRearModule = new MAXSwerveModule(
       new MAXSwerveModule.Hardware(m_rRearDriveMotor, m_rRearRotateMotor),
@@ -176,11 +164,8 @@ public class MAXSwerveModuleTest {
       MASS,
       WHEELBASE,
       TRACK_WIDTH,
-      MASS,
       AUTO_LOCK_TIME,
-      DRIVE_CURRENT_LIMIT,
-      SLIP_RATIO,
-      FRICTION_COEFFICIENT
+      DRIVE_CURRENT_LIMIT
     );
 
     // Disable traction control for unit tests
@@ -290,7 +275,7 @@ public class MAXSwerveModuleTest {
     // Set state
     SwerveModuleState desiredState = new SwerveModuleState(2.0, Rotation2d.fromRadians(+Math.PI));
     m_lFrontModule.set(desiredState);
-    m_lFrontModule.periodic();
+    m_lFrontModule.getPosition();
 
     // Verify module reports expected position
     assertEquals(new SwerveModulePosition(-desiredState.speedMetersPerSecond * GlobalConstants.ROBOT_LOOP_PERIOD, desiredState.angle.minus(ROTATION_PI)), m_lFrontModule.getPosition());
