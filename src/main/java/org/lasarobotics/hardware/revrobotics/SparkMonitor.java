@@ -32,7 +32,7 @@ public class SparkMonitor {
   }
 
   /**
-   * Add Spark to be monitor for faults
+   * Add Spark to be monitored for faults
    * @param spark Spark to monitor
    * @return True if added successfully
    */
