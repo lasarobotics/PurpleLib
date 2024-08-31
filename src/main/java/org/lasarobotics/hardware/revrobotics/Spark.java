@@ -180,8 +180,6 @@ public class Spark extends LoggableHardware {
   private volatile SparkOutput m_output;
   private volatile SparkInputsAutoLogged m_inputs;
 
-  private volatile double m_motorToSensorRatio;
-
   /**
    * Create a Spark that is unit-testing friendly with built-in logging
    * @param id Spark ID
@@ -208,7 +206,6 @@ public class Spark extends LoggableHardware {
     this.m_parameterChain = new LinkedHashSet<>();
     this.m_invertedRunner = () -> {};
     this.m_feedbackSensor = FeedbackSensor.NEO_ENCODER;
-    this.m_motorToSensorRatio = 1.0;
 
     // Set CAN timeout
     m_spark.setCANTimeout(CAN_TIMEOUT_MS);
@@ -541,9 +538,9 @@ public class Spark extends LoggableHardware {
   private REVLibError fuseEncoder() {
     // Fuse encoder if required
     if (m_feedbackSensor.equals(FeedbackSensor.FUSED_ENCODER)) {
-      m_inputs.encoderPosition = m_inputs.absoluteEncoderPosition * m_motorToSensorRatio;
-      m_inputs.encoderVelocity = m_inputs.absoluteEncoderVelocity * m_motorToSensorRatio;
-      getEncoder().setPosition(m_inputs.absoluteEncoderPosition * m_motorToSensorRatio);
+      m_inputs.encoderPosition = m_inputs.absoluteEncoderPosition;
+      m_inputs.encoderVelocity = m_inputs.absoluteEncoderVelocity;
+      getEncoder().setPosition(m_inputs.absoluteEncoderPosition);
     }
 
     return REVLibError.kOk;
@@ -776,6 +773,9 @@ public class Spark extends LoggableHardware {
         m_currentStateSupplier = () -> new TrapezoidProfile.State(getInputs().encoderPosition, getInputs().encoderVelocity);
         break;
     }
+
+    // If fused, seed NEO encoder with absolute
+    if (m_feedbackSensor.equals(FeedbackSensor.FUSED_ENCODER)) resetEncoder(getAbsoluteEncoderPosition());
 
     // Configure feedback sensor and set sensor phase
     m_spark.getPIDController().setFeedbackDevice(selectedSensor);
@@ -1148,7 +1148,8 @@ public class Spark extends LoggableHardware {
    * @param ratio Gear ratio
    */
   public void setMotorToSensorRatio(double ratio) {
-    m_motorToSensorRatio = ratio;
+    setPositionConversionFactor(FeedbackSensor.NEO_ENCODER, getPositionConversionFactor(FeedbackSensor.NEO_ENCODER) / ratio);
+    setVelocityConversionFactor(FeedbackSensor.NEO_ENCODER, getVelocityConversionFactor(FeedbackSensor.NEO_ENCODER) / ratio);
   }
 
   /**

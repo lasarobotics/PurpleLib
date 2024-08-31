@@ -205,7 +205,7 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
     m_driveMotor.setVelocityConversionFactor(Spark.FeedbackSensor.NEO_ENCODER, m_driveConversionFactor / 60);
 
     // Set rotate encoder conversion factor
-    m_rotateConversionFactor = 2 * Math.PI / DRIVE_ROTATE_GEAR_RATIO;
+    m_rotateConversionFactor = 2 * Math.PI;
     m_rotateMotor.setPositionConversionFactor(Spark.FeedbackSensor.ABSOLUTE_ENCODER, m_rotateConversionFactor);
     m_rotateMotor.setVelocityConversionFactor(Spark.FeedbackSensor.ABSOLUTE_ENCODER, m_rotateConversionFactor / 60);
 
