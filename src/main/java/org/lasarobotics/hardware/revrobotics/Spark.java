@@ -1148,8 +1148,15 @@ public class Spark extends LoggableHardware {
    * @param ratio Gear ratio
    */
   public void setMotorToSensorRatio(double ratio) {
-    setPositionConversionFactor(FeedbackSensor.NEO_ENCODER, getPositionConversionFactor(FeedbackSensor.NEO_ENCODER) / ratio);
-    setVelocityConversionFactor(FeedbackSensor.NEO_ENCODER, getVelocityConversionFactor(FeedbackSensor.NEO_ENCODER) / ratio);
+    if (!m_feedbackSensor.equals(FeedbackSensor.FUSED_ENCODER)) {
+      org.tinylog.Logger.tag(LOG_TAG)
+        .warn(
+          "Feedback sensor is not set to fused, currently set to {}",
+          m_feedbackSensor.toString()
+        );
+    }
+    setPositionConversionFactor(FeedbackSensor.NEO_ENCODER, getPositionConversionFactor(FeedbackSensor.ABSOLUTE_ENCODER) / ratio);
+    setVelocityConversionFactor(FeedbackSensor.NEO_ENCODER, getVelocityConversionFactor(FeedbackSensor.ABSOLUTE_ENCODER) / ratio);
   }
 
   /**
