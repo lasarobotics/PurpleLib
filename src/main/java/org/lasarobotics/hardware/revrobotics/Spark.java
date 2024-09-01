@@ -158,7 +158,8 @@ public class Spark extends LoggableHardware {
 
   private ID m_id;
   private MotorKind m_kind;
-  private Notifier m_inputsThread;
+  private Notifier m_inputThread;
+  private Measure<Time> m_inputThreadPeriod;
 
   private int m_errorCount;
   private boolean m_isSmoothMotionEnabled;
@@ -199,7 +200,8 @@ public class Spark extends LoggableHardware {
     this.m_kind = kind;
     this.m_output = new SparkOutput(0.0, ControlType.kDutyCycle, 0.0, ArbFFUnits.kVoltage);
     this.m_inputs = new SparkInputsAutoLogged();
-    this.m_inputsThread = new Notifier(this::updateInputs);
+    this.m_inputThread = new Notifier(this::updateInputs);
+    this.m_inputThreadPeriod = inputThreadPeriod;
     this.m_isSmoothMotionEnabled = false;
     this.m_errorCount = 0;
     this.m_limitSwitchType = limitSwitchType;
@@ -239,8 +241,8 @@ public class Spark extends LoggableHardware {
     PurpleManager.add(this);
 
     // Start sensor input thread
-    m_inputsThread.setName(m_id.name);
-    if (!Logger.hasReplaySource()) m_inputsThread.startPeriodic(inputThreadPeriod.in(Units.Seconds));
+    m_inputThread.setName(m_id.name);
+    if (!Logger.hasReplaySource()) m_inputThread.startPeriodic(m_inputThreadPeriod.in(Units.Seconds));
   }
 
   /**
@@ -535,15 +537,16 @@ public class Spark extends LoggableHardware {
    * Fuse absolute encoder to NEO built-in encoder
    * @return {@link REVLibError#kOk} if successful
    */
-  private REVLibError fuseEncoder() {
-    // Fuse encoder if required
-    if (m_feedbackSensor.equals(FeedbackSensor.FUSED_ENCODER)) {
-      m_inputs.encoderPosition = m_inputs.absoluteEncoderPosition;
-      m_inputs.encoderVelocity = m_inputs.absoluteEncoderVelocity;
-      getEncoder().setPosition(m_inputs.absoluteEncoderPosition);
-    }
+  private REVLibError fuseEncoders() {
+    // Return if not using fused mode
+    if (!m_feedbackSensor.equals(FeedbackSensor.FUSED_ENCODER)) return REVLibError.kOk;
 
-    return REVLibError.kOk;
+    // Fuse encoder if required
+    m_inputs.encoderPosition = m_inputs.absoluteEncoderPosition;
+    m_inputs.encoderVelocity = m_inputs.absoluteEncoderVelocity;
+
+    // Set encoder to fused value
+    return getEncoder().setPosition(m_inputs.encoderPosition);
   }
 
   /**
@@ -566,7 +569,7 @@ public class Spark extends LoggableHardware {
       }
 
       // Fuse encoder if required
-      fuseEncoder();
+      fuseEncoders();
     }
   }
 
@@ -774,8 +777,15 @@ public class Spark extends LoggableHardware {
         break;
     }
 
-    // If fused, seed NEO encoder with absolute
-    if (m_feedbackSensor.equals(FeedbackSensor.FUSED_ENCODER)) resetEncoder(getAbsoluteEncoderPosition());
+    // If fused, seed NEO encoder with absolute and increase relevant status frame rates
+    if (m_feedbackSensor.equals(FeedbackSensor.FUSED_ENCODER)) {
+      setPeriodicFrameRate(PeriodicFrame.kStatus1, m_inputThreadPeriod);
+      setPeriodicFrameRate(PeriodicFrame.kStatus2, m_inputThreadPeriod);
+      setPeriodicFrameRate(PeriodicFrame.kStatus5, m_inputThreadPeriod);
+      setPeriodicFrameRate(PeriodicFrame.kStatus6, m_inputThreadPeriod);
+      Timer.delay(APPLY_PARAMETER_WAIT_TIME);
+      resetEncoder(getAbsoluteEncoderPosition());
+    }
 
     // Configure feedback sensor and set sensor phase
     m_spark.getPIDController().setFeedbackDevice(selectedSensor);
