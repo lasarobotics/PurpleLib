@@ -27,6 +27,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Distance;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Units;
@@ -39,7 +40,9 @@ public class AprilTagCamera implements AutoCloseable {
   public static final Object LOCK = new Object();
 
   private final double APRILTAG_POSE_AMBIGUITY_THRESHOLD = 0.1;
-  private final Measure<Distance> POSE_MAX_HEIGHT = Units.Meters.of(0.75);
+  private final Measure<Distance> POSE_HEIGHT_TOLERANCE = Units.Meters.of(0.75);
+  private final Measure<Angle> POSE_PITCH_TOLERANCE = Units.Degrees.of(15.0);
+  private final Measure<Angle> POSE_ROLL_TOLERANCE = Units.Degrees.of(15.0);
   private final Measure<Distance> MAX_TAG_DISTANCE = Units.Meters.of(5.0);
 
   public static class Result {
@@ -121,7 +124,13 @@ public class AprilTagCamera implements AutoCloseable {
      || pose.getY() < 0.0 || pose.getY() > m_fieldLayout.getFieldWidth()) return false;
 
     // Make sure pose is near the floor
-    if (pose.getZ() < 0.0 || pose.getZ() > POSE_MAX_HEIGHT.in(Units.Meters)) return false;
+    if (pose.getZ() < 0.0 || pose.getZ() > POSE_HEIGHT_TOLERANCE.in(Units.Meters)) return false;
+
+    // Make sure robot pitch angle is valid
+    if (Math.abs(pose.getRotation().getX()) > POSE_PITCH_TOLERANCE.in(Units.Radians)) return false;
+
+    // Make sure robot roll angle is valid
+    if (Math.abs(pose.getRotation().getY()) > POSE_ROLL_TOLERANCE.in(Units.Radians)) return false;
 
     // Pose is acceptable
     return true;
