@@ -96,7 +96,6 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
   public static final Measure<Time> DEFAULT_PERIOD = Units.Milliseconds.of(10.0);
 
   private final double EPSILON = 5e-3;
-  private final double DRIVE_FF_SCALAR = 1.5;
   private final Measure<Current> DRIVE_MOTOR_CURRENT_LIMIT;
   private final Measure<Current> ROTATE_MOTOR_CURRENT_LIMIT = Units.Amps.of(18.0);
   private final Rotation2d LOCK_POSITION = Rotation2d.fromRadians(Math.PI / 4);
@@ -112,7 +111,7 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
   private final int COSINE_CORRECTION;
 
   // Swerve velocity PID settings
-  private static final double DRIVE_VELOCITY_kP = 0.18;
+  private static final double DRIVE_VELOCITY_kP = 0.2;
   private static final double DRIVE_VELOCITY_kD = 0.001;
   private static final double DRIVE_VELOCITY_kS = 0.2;
   private static final double DRIVE_VELOCITY_kA = 0.5;
@@ -121,7 +120,7 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
   private static final boolean DRIVE_INVERT_MOTOR = false;
 
   // Swerve rotate PID settings
-  private static final PIDConstants DRIVE_ROTATE_PID = new PIDConstants(2.1, 0.0, 0.2, 0.0, 0.0);
+  private static final PIDConstants DRIVE_ROTATE_PID = new PIDConstants(2.1, 0.0, 0.3, 0.0, 0.0);
   private static final double DRIVE_ROTATE_kS = 0.2;
   private static final double DRIVE_ROTATE_kA = 0.01;
   private static final double DRIVE_ROTATE_TOLERANCE = 0.01;
@@ -218,7 +217,7 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
         DRIVE_VELOCITY_kP,
         0.0,
         DRIVE_VELOCITY_kD,
-        (1 / ((m_driveMotor.getKind().getMaxRPM() / 60) * m_driveConversionFactor)) * DRIVE_FF_SCALAR,
+        1 / ((m_driveMotor.getKind().getMaxRPM() / 60) * m_driveConversionFactor),
         0.0
       ),
       DRIVE_VELOCITY_SENSOR_PHASE,
