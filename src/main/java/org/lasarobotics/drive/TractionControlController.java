@@ -119,9 +119,9 @@ public class TractionControlController {
     );
 
     // Get desired acceleration, capping at max possible acceleration
-    double requestedAcceleration = velocityRequest.minus(inertialVelocity).in(Units.MetersPerSecond);
+    double requestedAcceleration = velocityRequest.minus(inertialVelocity).per(Units.Seconds.of(GlobalConstants.ROBOT_LOOP_PERIOD)).in(Units.MetersPerSecondPerSecond);
     var desiredAcceleration = Units.MetersPerSecond.of(Math.copySign(
-      Math.min(requestedAcceleration, m_maxAcceleration),
+      Math.min(Math.abs(requestedAcceleration), m_maxAcceleration / GlobalConstants.ROBOT_LOOP_HZ),
       requestedAcceleration
     )).per(Units.Seconds.of(GlobalConstants.ROBOT_LOOP_PERIOD));
 
