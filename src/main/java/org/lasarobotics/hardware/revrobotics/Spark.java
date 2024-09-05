@@ -26,7 +26,6 @@ import com.revrobotics.CANSparkBase.SoftLimitDirection;
 import com.revrobotics.CANSparkFlex;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 import com.revrobotics.CANSparkLowLevel.PeriodicFrame;
-import com.revrobotics.SparkPIDController.ArbFFUnits;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.MotorFeedbackSensor;
 import com.revrobotics.REVLibError;
@@ -37,6 +36,7 @@ import com.revrobotics.SparkAnalogSensor;
 import com.revrobotics.SparkHelpers;
 import com.revrobotics.SparkLimitSwitch;
 import com.revrobotics.SparkPIDController;
+import com.revrobotics.SparkPIDController.ArbFFUnits;
 import com.revrobotics.SparkRelativeEncoder;
 
 import edu.wpi.first.math.filter.Debouncer;
@@ -181,8 +181,6 @@ public class Spark extends LoggableHardware {
   private volatile SparkOutput m_output;
   private volatile SparkInputsAutoLogged m_inputs;
 
-  private volatile double m_motorToSensorRatio;
-
   /**
    * Create a Spark that is unit-testing friendly with built-in logging
    * @param id Spark ID
@@ -210,7 +208,6 @@ public class Spark extends LoggableHardware {
     this.m_parameterChain = new LinkedHashSet<>();
     this.m_invertedRunner = () -> {};
     this.m_feedbackSensor = FeedbackSensor.NEO_ENCODER;
-    this.m_motorToSensorRatio = 1.0;
 
     // Set CAN timeout
     m_spark.setCANTimeout(CAN_TIMEOUT_MS);
