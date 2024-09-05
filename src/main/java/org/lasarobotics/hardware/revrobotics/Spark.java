@@ -179,8 +179,8 @@ public class Spark extends LoggableHardware {
   private FeedbackSensor m_feedbackSensor;
   private SparkLimitSwitch.Type m_limitSwitchType = SparkLimitSwitch.Type.kNormallyOpen;
   private RelativeEncoder m_encoder;
-  private boolean m_forwardLimitSwitchShouldReset = false;
-  private boolean m_reverseLimitSwitchShouldReset = false;
+  private Trigger m_forwardLimitSwitchTrigger;
+  private Trigger m_reverseLimitSwitchTrigger;
   private double m_forwardLimitSwitchResetValue = 1;
   private double m_reverseLimitSwitchResetValue = 0;
 
@@ -214,8 +214,9 @@ public class Spark extends LoggableHardware {
     this.m_parameterChain = new LinkedHashSet<>();
     this.m_invertedRunner = () -> {};
     this.m_feedbackSensor = FeedbackSensor.NEO_ENCODER;
+    this.m_forwardLimitSwitchTrigger = new Trigger(() -> getInputs().forwardLimitSwitch);
+    this.m_reverseLimitSwitchTrigger = new Trigger(() -> getInputs().reverseLimitSwitch);
 
-    initLimitSwitcheResets();
 
     // Set CAN timeout
     m_spark.setCANTimeout(CAN_TIMEOUT_MS);
@@ -575,18 +576,6 @@ public class Spark extends LoggableHardware {
     }
   }
 
-  /**
-   * Declare triggers for limit switches so the encoders reset once the limit switches are hit
-   */
-  private void initLimitSwitcheResets() {
-    Trigger resetOnForwardLimit = new Trigger(() -> m_forwardLimitSwitchShouldReset && getInputs().forwardLimitSwitch);
-    resetOnForwardLimit.onTrue(Commands.runOnce(() -> resetEncoder(m_forwardLimitSwitchResetValue)));
-    resetOnForwardLimit.onTrue(Commands.none());
-
-    Trigger resetOnReverseLimit = new Trigger(() -> m_reverseLimitSwitchShouldReset && getInputs().reverseLimitSwitch);
-    resetOnReverseLimit.onTrue(Commands.runOnce(() -> resetEncoder(m_reverseLimitSwitchResetValue)));
-    resetOnReverseLimit.onTrue(Commands.none());
-  }
 
   /**
    * Handle smooth motion
@@ -1202,7 +1191,11 @@ public class Spark extends LoggableHardware {
    * @param value Whether the encoder should be reset
    */
   public void setForwardLimitSwitchShouldReset(boolean value) {
-    m_forwardLimitSwitchShouldReset = value;
+    // This might look weird if you don't know a lot of Java, but it's literally just an if statement (is this true ? if it is return this : otherwise return this)
+    m_forwardLimitSwitchTrigger.onTrue(value ?
+      Commands.runOnce(() -> resetEncoder(m_forwardLimitSwitchResetValue)) :
+      Commands.none()
+    );
   }
 
   /**
@@ -1228,7 +1221,11 @@ public class Spark extends LoggableHardware {
    * @param value Whether the encoder should be reset
    */
   public void setReverseLimitSwitchShouldReset(boolean value) {
-    m_reverseLimitSwitchShouldReset = value;
+    // This might look weird if you don't know a lot of Java, but it's literally just an if statement (is this true ? if it is return this : otherwise return this)
+    m_reverseLimitSwitchTrigger.onTrue(value ?
+      Commands.runOnce(() -> resetEncoder(m_reverseLimitSwitchResetValue)) :
+      Commands.none()
+    );
   }
 
   /**
