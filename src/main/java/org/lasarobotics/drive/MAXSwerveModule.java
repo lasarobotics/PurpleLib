@@ -15,7 +15,6 @@ import java.time.Instant;
 
 import org.lasarobotics.hardware.PurpleManager;
 import org.lasarobotics.hardware.revrobotics.Spark;
-import org.lasarobotics.hardware.revrobotics.Spark.FeedbackSensor;
 import org.lasarobotics.hardware.revrobotics.Spark.MotorKind;
 import org.lasarobotics.hardware.revrobotics.SparkPIDConfig;
 import org.lasarobotics.hardware.revrobotics.SparkSim;
@@ -421,7 +420,7 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
       () -> m_driveMotorConfig.getP(),
       (value) -> {
         m_driveMotorConfig.setP(value);
-        m_driveMotor.initializeSparkPID(m_driveMotorConfig, FeedbackSensor.NEO_ENCODER);
+        m_driveMotor.setP(value);
       }
     );
     // Configure drive kI
@@ -430,7 +429,7 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
       () -> m_driveMotorConfig.getI(),
       (value) -> {
         m_driveMotorConfig.setI(value);
-        m_driveMotor.initializeSparkPID(m_driveMotorConfig, FeedbackSensor.NEO_ENCODER);
+        m_driveMotor.setI(value);
       }
     );
     // Configure drive kD
@@ -439,7 +438,7 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
       () -> m_driveMotorConfig.getD(),
       (value) -> {
         m_driveMotorConfig.setD(value);
-        m_driveMotor.initializeSparkPID(m_driveMotorConfig, FeedbackSensor.NEO_ENCODER);
+        m_driveMotor.setD(value);
       }
     );
     // Configure drive kF
@@ -448,7 +447,7 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
       () -> m_driveMotorConfig.getF(),
       (value) -> {
         m_driveMotorConfig.setF(value);
-        m_driveMotor.initializeSparkPID(m_driveMotorConfig, FeedbackSensor.NEO_ENCODER);
+        m_driveMotor.setF(value);
       }
     );
     // Configure rotate kP
@@ -457,7 +456,7 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
       () -> m_rotateMotorConfig.getP(),
       (value) -> {
         m_rotateMotorConfig.setP(value);
-        m_rotateMotor.initializeSparkPID(m_rotateMotorConfig, FeedbackSensor.THROUGH_BORE_ENCODER);
+        m_rotateMotor.setP(value);
       }
     );
     // Configure rotate kI
@@ -466,7 +465,7 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
       () -> m_rotateMotorConfig.getI(),
       (value) -> {
         m_rotateMotorConfig.setI(value);
-        m_rotateMotor.initializeSparkPID(m_rotateMotorConfig, FeedbackSensor.THROUGH_BORE_ENCODER);
+        m_rotateMotor.setI(value);
       }
     );
     // Configure rotate kD
@@ -475,7 +474,7 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
       () -> m_rotateMotorConfig.getD(),
       (value) -> {
         m_rotateMotorConfig.setD(value);
-        m_rotateMotor.initializeSparkPID(m_rotateMotorConfig, FeedbackSensor.THROUGH_BORE_ENCODER);
+        m_rotateMotor.setD(value);
       }
     );
   }
