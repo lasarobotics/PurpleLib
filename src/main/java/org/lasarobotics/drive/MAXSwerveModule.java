@@ -15,6 +15,7 @@ import java.time.Instant;
 
 import org.lasarobotics.hardware.PurpleManager;
 import org.lasarobotics.hardware.revrobotics.Spark;
+import org.lasarobotics.hardware.revrobotics.Spark.FeedbackSensor;
 import org.lasarobotics.hardware.revrobotics.Spark.MotorKind;
 import org.lasarobotics.hardware.revrobotics.SparkPIDConfig;
 import org.lasarobotics.hardware.revrobotics.SparkSim;
