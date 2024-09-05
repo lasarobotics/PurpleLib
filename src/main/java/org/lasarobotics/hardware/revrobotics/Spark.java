@@ -1155,6 +1155,12 @@ public class Spark extends LoggableHardware {
 
   /**
    * Set gear ratio between motor shaft and external absolute encoder
+   * <p>
+   * Sets the NEO encoder conversion factor to the absolute encoder conversion factor
+   * divided by the specified ratio.
+   * <p>
+   * {@link Spark#setPositionConversionFactor(FeedbackSensor, double)} and {@link Spark#setVelocityConversionFactor(FeedbackSensor, double)}
+   * should be called for the absolute encoder before this.
    * @param ratio Gear ratio
    */
   public void setMotorToSensorRatio(double ratio) {
