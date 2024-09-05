@@ -15,7 +15,6 @@ import java.time.Instant;
 
 import org.lasarobotics.hardware.PurpleManager;
 import org.lasarobotics.hardware.revrobotics.Spark;
-import org.lasarobotics.hardware.revrobotics.Spark.FeedbackSensor;
 import org.lasarobotics.hardware.revrobotics.Spark.MotorKind;
 import org.lasarobotics.hardware.revrobotics.SparkPIDConfig;
 import org.lasarobotics.hardware.revrobotics.SparkSim;
@@ -459,7 +458,7 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
       () -> m_rotateMotorConfig.getP(),
       (value) -> {
         m_rotateMotorConfig.setP(value);
-        m_rotateMotor.initializeSparkPID(m_rotateMotorConfig, FeedbackSensor.ABSOLUTE_ENCODER);
+        m_rotateMotor.setP(value);
       }
     );
     // Configure rotate kI
@@ -468,7 +467,7 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
       () -> m_rotateMotorConfig.getI(),
       (value) -> {
         m_rotateMotorConfig.setI(value);
-        m_rotateMotor.initializeSparkPID(m_rotateMotorConfig, FeedbackSensor.ABSOLUTE_ENCODER);
+        m_rotateMotor.setI(value);
       }
     );
     // Configure rotate kD
@@ -477,7 +476,7 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
       () -> m_rotateMotorConfig.getD(),
       (value) -> {
         m_rotateMotorConfig.setD(value);
-        m_rotateMotor.initializeSparkPID(m_rotateMotorConfig, FeedbackSensor.ABSOLUTE_ENCODER);
+        m_rotateMotor.setD(value);
       }
     );
   }
