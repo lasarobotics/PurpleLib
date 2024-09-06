@@ -26,7 +26,6 @@ import com.revrobotics.CANSparkBase.SoftLimitDirection;
 import com.revrobotics.CANSparkFlex;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 import com.revrobotics.CANSparkLowLevel.PeriodicFrame;
-import com.revrobotics.SparkPIDController.ArbFFUnits;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.MotorFeedbackSensor;
 import com.revrobotics.REVLibError;
@@ -37,6 +36,7 @@ import com.revrobotics.SparkAnalogSensor;
 import com.revrobotics.SparkHelpers;
 import com.revrobotics.SparkLimitSwitch;
 import com.revrobotics.SparkPIDController;
+import com.revrobotics.SparkPIDController.ArbFFUnits;
 import com.revrobotics.SparkRelativeEncoder;
 
 import edu.wpi.first.math.filter.Debouncer;
@@ -97,7 +97,7 @@ public class Spark extends LoggableHardware {
 
   /** Feedback sensor */
   public enum FeedbackSensor {
-    NEO_ENCODER, ANALOG, THROUGH_BORE_ENCODER;
+    NEO_ENCODER, ANALOG, ABSOLUTE_ENCODER, FUSED_ENCODER;
   }
 
   /** Spark output */
@@ -158,7 +158,8 @@ public class Spark extends LoggableHardware {
 
   private ID m_id;
   private MotorKind m_kind;
-  private Notifier m_inputsThread;
+  private Notifier m_inputThread;
+  private Measure<Time> m_inputThreadPeriod;
 
   private int m_errorCount;
   private boolean m_isSmoothMotionEnabled;
@@ -199,12 +200,14 @@ public class Spark extends LoggableHardware {
     this.m_kind = kind;
     this.m_output = new SparkOutput(0.0, ControlType.kDutyCycle, 0.0, ArbFFUnits.kVoltage);
     this.m_inputs = new SparkInputsAutoLogged();
-    this.m_inputsThread = new Notifier(this::updateInputs);
+    this.m_inputThread = new Notifier(this::updateInputs);
+    this.m_inputThreadPeriod = inputThreadPeriod;
     this.m_isSmoothMotionEnabled = false;
     this.m_errorCount = 0;
     this.m_limitSwitchType = limitSwitchType;
     this.m_parameterChain = new LinkedHashSet<>();
     this.m_invertedRunner = () -> {};
+    this.m_feedbackSensor = FeedbackSensor.NEO_ENCODER;
 
     // Set CAN timeout
     m_spark.setCANTimeout(CAN_TIMEOUT_MS);
@@ -238,8 +241,8 @@ public class Spark extends LoggableHardware {
     PurpleManager.add(this);
 
     // Start sensor input thread
-    m_inputsThread.setName(m_id.name);
-    if (!Logger.hasReplaySource()) m_inputsThread.startPeriodic(inputThreadPeriod.in(Units.Seconds));
+    m_inputThread.setName(m_id.name);
+    if (!Logger.hasReplaySource()) m_inputThread.startPeriodic(m_inputThreadPeriod.in(Units.Seconds));
   }
 
   /**
@@ -531,10 +534,27 @@ public class Spark extends LoggableHardware {
   }
 
   /**
+   * Fuse absolute encoder to NEO built-in encoder
+   * @return {@link REVLibError#kOk} if successful
+   */
+  private REVLibError fuseEncoders() {
+    // Return if not using fused mode
+    if (!m_feedbackSensor.equals(FeedbackSensor.FUSED_ENCODER)) return REVLibError.kOk;
+
+    // Fuse encoder if required
+    m_inputs.encoderPosition = m_inputs.absoluteEncoderPosition;
+    m_inputs.encoderVelocity = m_inputs.absoluteEncoderVelocity;
+
+    // Set encoder to fused value
+    return getEncoder().setPosition(m_inputs.encoderPosition);
+  }
+
+  /**
    * Update sensor input readings
    */
   private void updateInputs() {
     synchronized (m_inputs) {
+      // Get sensor inputs
       m_inputs.analogPosition = getAnalogPosition();
       m_inputs.analogVelocity = getAnalogVelocity();
       m_inputs.absoluteEncoderPosition = getAbsoluteEncoderPosition();
@@ -542,10 +562,14 @@ public class Spark extends LoggableHardware {
       m_inputs.forwardLimitSwitch = getForwardLimitSwitch().isPressed();
       m_inputs.reverseLimitSwitch = getReverseLimitSwitch().isPressed();
 
-      if (!getMotorType().equals(MotorType.kBrushed)) {
+      // Get motor encoder
+      if (!getMotorType().equals(MotorType.kBrushed) && !m_feedbackSensor.equals(FeedbackSensor.FUSED_ENCODER)) {
         m_inputs.encoderPosition = getEncoderPosition();
         m_inputs.encoderVelocity = getEncoderVelocity();
       }
+
+      // Fuse encoder if required
+      fuseEncoders();
     }
   }
 
@@ -741,20 +765,31 @@ public class Spark extends LoggableHardware {
         selectedSensor = getAnalog();
         m_currentStateSupplier = () -> new TrapezoidProfile.State(getInputs().analogPosition, getInputs().analogVelocity);
         break;
-      case THROUGH_BORE_ENCODER:
+      case ABSOLUTE_ENCODER:
         selectedSensor = getAbsoluteEncoder();
         m_currentStateSupplier = () -> new TrapezoidProfile.State(getInputs().absoluteEncoderPosition, getInputs().absoluteEncoderVelocity);
         break;
       case NEO_ENCODER:
+      case FUSED_ENCODER:
       default:
         selectedSensor = getEncoder();
         m_currentStateSupplier = () -> new TrapezoidProfile.State(getInputs().encoderPosition, getInputs().encoderVelocity);
         break;
     }
 
+    // If fused, seed NEO encoder with absolute and increase relevant status frame rates
+    if (m_feedbackSensor.equals(FeedbackSensor.FUSED_ENCODER)) {
+      setPeriodicFrameRate(PeriodicFrame.kStatus1, m_inputThreadPeriod);
+      setPeriodicFrameRate(PeriodicFrame.kStatus2, m_inputThreadPeriod);
+      setPeriodicFrameRate(PeriodicFrame.kStatus5, m_inputThreadPeriod);
+      setPeriodicFrameRate(PeriodicFrame.kStatus6, m_inputThreadPeriod);
+      Timer.delay(APPLY_PARAMETER_WAIT_TIME);
+      resetEncoder(getAbsoluteEncoderPosition());
+    }
+
     // Configure feedback sensor and set sensor phase
     m_spark.getPIDController().setFeedbackDevice(selectedSensor);
-    if (!m_feedbackSensor.equals(FeedbackSensor.NEO_ENCODER)) {
+    if (!m_feedbackSensor.equals(FeedbackSensor.NEO_ENCODER) && !m_feedbackSensor.equals(FeedbackSensor.FUSED_ENCODER)) {
        parameterApplier = () -> applyParameter(
         () -> selectedSensor.setInverted(m_config.getSensorPhase()),
         () -> selectedSensor.getInverted() == m_config.getSensorPhase(),
@@ -883,6 +918,9 @@ public class Spark extends LoggableHardware {
   /**
    * Set the conversion factor for position of the sensor. Multiplied by the native output units to
    * give you position.
+   * <p>
+   * Passing in {@link FeedbackSensor#ABSOLUTE_ENCODER} or {@link FeedbackSensor#FUSED_ENCODER}
+   * will set the conversion factor for a connected absolute encoder.
    * @param sensor Sensor to set conversion factor for
    * @param factor The conversion factor to multiply the native units by
    * @return {@link REVLibError#kOk} if successful
@@ -900,7 +938,8 @@ public class Spark extends LoggableHardware {
         parameterSetter = () -> getAnalog().setPositionConversionFactor(factor);
         parameterCheckSupplier = () -> Precision.equals(getAnalog().getPositionConversionFactor(), factor, EPSILON);
         break;
-      case THROUGH_BORE_ENCODER:
+      case FUSED_ENCODER:
+      case ABSOLUTE_ENCODER:
         parameterSetter = () -> getAbsoluteEncoder().setPositionConversionFactor(factor);
         parameterCheckSupplier = () -> Precision.equals(getAbsoluteEncoder().getPositionConversionFactor(), factor, EPSILON);
         break;
@@ -925,12 +964,11 @@ public class Spark extends LoggableHardware {
    */
   public double getPositionConversionFactor(FeedbackSensor sensor) {
     switch (sensor) {
-      case NEO_ENCODER:
-        return getEncoder().getPositionConversionFactor();
       case ANALOG:
         return getAnalog().getPositionConversionFactor();
-      case THROUGH_BORE_ENCODER:
+      case ABSOLUTE_ENCODER:
         return getAbsoluteEncoder().getPositionConversionFactor();
+      case NEO_ENCODER:
       default:
         return getEncoder().getPositionConversionFactor();
     }
@@ -939,6 +977,9 @@ public class Spark extends LoggableHardware {
   /**
    * Set the conversion factor for velocity of the sensor. Multiplied by the native output units to
    * give you velocity.
+   * <p>
+   * Passing in {@link FeedbackSensor#ABSOLUTE_ENCODER} or {@link FeedbackSensor#FUSED_ENCODER}
+   * will set the conversion factor for a connected absolute encoder.
    * @param sensor Sensor to set conversion factor for
    * @param factor The conversion factor to multiply the native units by
    * @return {@link REVLibError#kOk} if successful
@@ -956,7 +997,8 @@ public class Spark extends LoggableHardware {
         parameterSetter = () -> getAnalog().setVelocityConversionFactor(factor);
         parameterCheckSupplier = () -> Precision.equals(getAnalog().getVelocityConversionFactor(), factor, EPSILON);
         break;
-      case THROUGH_BORE_ENCODER:
+      case FUSED_ENCODER:
+      case ABSOLUTE_ENCODER:
         parameterSetter = () -> getAbsoluteEncoder().setVelocityConversionFactor(factor);
         parameterCheckSupplier = () -> Precision.equals(getAnalog().getVelocityConversionFactor(), factor, EPSILON);
         break;
@@ -985,7 +1027,7 @@ public class Spark extends LoggableHardware {
         return getEncoder().getVelocityConversionFactor();
       case ANALOG:
         return getAnalog().getVelocityConversionFactor();
-      case THROUGH_BORE_ENCODER:
+      case ABSOLUTE_ENCODER:
         return getAbsoluteEncoder().getVelocityConversionFactor();
       default:
         return getEncoder().getVelocityConversionFactor();
@@ -1115,6 +1157,29 @@ public class Spark extends LoggableHardware {
     smoothMotion(value, motionConstraint, (motionProfileState) -> 0.0);
   }
 
+  /**
+   * Set gear ratio between motor shaft and external absolute encoder
+   * <p>
+   * Sets the NEO encoder conversion factor to the absolute encoder conversion factor
+   * divided by the specified ratio.
+   * Call {@link Spark#setPositionConversionFactor(FeedbackSensor, double)} and/or {@link Spark#setVelocityConversionFactor(FeedbackSensor, double)}
+   * <i>before</i> this method.
+   * <p>
+   * {@link Spark#setPositionConversionFactor(FeedbackSensor, double)} and {@link Spark#setVelocityConversionFactor(FeedbackSensor, double)}
+   * should be called for the absolute encoder before this.
+   * @param ratio Gear ratio
+   */
+  public void setMotorToSensorRatio(double ratio) {
+    if (!m_feedbackSensor.equals(FeedbackSensor.FUSED_ENCODER)) {
+      org.tinylog.Logger.tag(LOG_TAG)
+        .warn(
+          "Feedback sensor is not set to fused, currently set to {}",
+          m_feedbackSensor.toString()
+        );
+    }
+    setPositionConversionFactor(FeedbackSensor.NEO_ENCODER, getPositionConversionFactor(FeedbackSensor.ABSOLUTE_ENCODER) / ratio);
+    setVelocityConversionFactor(FeedbackSensor.NEO_ENCODER, getVelocityConversionFactor(FeedbackSensor.ABSOLUTE_ENCODER) / ratio);
+  }
 
   /**
    * Reset NEO built-in encoder to desired value

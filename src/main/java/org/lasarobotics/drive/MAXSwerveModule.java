@@ -96,7 +96,6 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
   public static final Measure<Time> DEFAULT_PERIOD = Units.Milliseconds.of(10.0);
 
   private final double EPSILON = 5e-3;
-  private final double DRIVE_FF_SCALAR = 1.5;
   private final Measure<Current> DRIVE_MOTOR_CURRENT_LIMIT;
   private final Measure<Current> ROTATE_MOTOR_CURRENT_LIMIT = Units.Amps.of(18.0);
   private final Rotation2d LOCK_POSITION = Rotation2d.fromRadians(Math.PI / 4);
@@ -112,8 +111,8 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
   private final int COSINE_CORRECTION;
 
   // Swerve velocity PID settings
-  private static final double DRIVE_VELOCITY_kP = 0.18;
-  private static final double DRIVE_VELOCITY_kD = 0.001;
+  private static final double DRIVE_VELOCITY_kP = 0.4;
+  private static final double DRIVE_VELOCITY_kD = 0.002;
   private static final double DRIVE_VELOCITY_kS = 0.2;
   private static final double DRIVE_VELOCITY_kA = 0.5;
   private static final double DRIVE_VELOCITY_TOLERANCE = 0.01;
@@ -121,7 +120,7 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
   private static final boolean DRIVE_INVERT_MOTOR = false;
 
   // Swerve rotate PID settings
-  private static final PIDConstants DRIVE_ROTATE_PID = new PIDConstants(2.1, 0.0, 0.2, 0.0, 0.0);
+  private static final PIDConstants DRIVE_ROTATE_PID = new PIDConstants(0.9, 0.0, 0.1, 0.0, 0.0);
   private static final double DRIVE_ROTATE_kS = 0.2;
   private static final double DRIVE_ROTATE_kA = 0.01;
   private static final double DRIVE_ROTATE_TOLERANCE = 0.01;
@@ -206,8 +205,8 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
 
     // Set rotate encoder conversion factor
     m_rotateConversionFactor = 2 * Math.PI;
-    m_rotateMotor.setPositionConversionFactor(Spark.FeedbackSensor.THROUGH_BORE_ENCODER, m_rotateConversionFactor);
-    m_rotateMotor.setVelocityConversionFactor(Spark.FeedbackSensor.THROUGH_BORE_ENCODER, m_rotateConversionFactor / 60);
+    m_rotateMotor.setPositionConversionFactor(Spark.FeedbackSensor.ABSOLUTE_ENCODER, m_rotateConversionFactor);
+    m_rotateMotor.setVelocityConversionFactor(Spark.FeedbackSensor.ABSOLUTE_ENCODER, m_rotateConversionFactor / 60);
 
     // Enable PID wrapping
     m_rotateMotor.enablePIDWrapping(0.0, m_rotateConversionFactor);
@@ -218,7 +217,7 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
         DRIVE_VELOCITY_kP,
         0.0,
         DRIVE_VELOCITY_kD,
-        (1 / ((m_driveMotor.getKind().getMaxRPM() / 60) * m_driveConversionFactor)) * DRIVE_FF_SCALAR,
+        1 / ((m_driveMotor.getKind().getMaxRPM() / 60) * m_driveConversionFactor),
         0.0
       ),
       DRIVE_VELOCITY_SENSOR_PHASE,
@@ -237,7 +236,10 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
 
     // Initialize PID
     m_driveMotor.initializeSparkPID(m_driveMotorConfig, Spark.FeedbackSensor.NEO_ENCODER);
-    m_rotateMotor.initializeSparkPID(m_rotateMotorConfig, Spark.FeedbackSensor.THROUGH_BORE_ENCODER);
+    m_rotateMotor.initializeSparkPID(m_rotateMotorConfig, Spark.FeedbackSensor.FUSED_ENCODER);
+
+    // Set gear ratio between motor and rotate encoder
+    m_rotateMotor.setMotorToSensorRatio(DRIVE_ROTATE_GEAR_RATIO);
 
     // Set drive motor to coast
     m_driveMotor.setIdleMode(IdleMode.kCoast);
