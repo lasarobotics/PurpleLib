@@ -974,12 +974,11 @@ public class Spark extends LoggableHardware {
   }
 
   /**
-   * Sets whether the encoder should be reset once the forward limit switch is hit
-   * The value to set it to can be changed with setForwardLimitSwitchResetValue(double value)
+   * Sets whether the NEO encoder should be reset when the forward limit switch is hit
+   * The value to set it to can be configured using {@link Spark#setForwardLimitSwitchResetValue(double)}
    * @param value Whether the encoder should be reset
    */
   public void setForwardLimitSwitchShouldReset(boolean value) {
-    // This might look weird if you don't know a lot of Java, but it's literally just an if statement (is this true ? if it is return this : otherwise return this)
     m_forwardLimitSwitchTrigger.onTrue(value ?
       Commands.runOnce(() -> resetEncoder(m_forwardLimitSwitchResetValue)) :
       Commands.none()
@@ -988,28 +987,18 @@ public class Spark extends LoggableHardware {
 
   /**
    * Change what value the encoder should be reset to once the forward limit switch is hit
-   * Only matters if forwardLimitSwitchShouldReset is true, which has its own get and set methods
    * @param value Desired encoder value
    */
   public void setForwardLimitSwitchResetValue(double value) {
     m_forwardLimitSwitchResetValue = value;
   }
-  /**
-   * @return What value the encoder will be reset to once the forward limit switch is hit
-   * Only matters if forwardLimitSwitchShouldReset is true, which has its own get and set methods
-   */
-  public double getForwardLimitSwitchResetValue() {
-    return m_forwardLimitSwitchResetValue;
-  }
-
 
   /**
-   * Sets whether the encoder should be reset once the reverse limit switch is hit
-   * The value to set it to can be changed with setReverseLimitSwitchResetValue(double value)
+   * Sets whether the NEO encoder should be reset when the reverse limit switch is hit
+   * The value to set it to can be configured using {@link Spark#setReverseLimitSwitchResetValue(double)}
    * @param value Whether the encoder should be reset
    */
   public void setReverseLimitSwitchShouldReset(boolean value) {
-    // This might look weird if you don't know a lot of Java, but it's literally just an if statement (is this true ? if it is return this : otherwise return this)
     m_reverseLimitSwitchTrigger.onTrue(value ?
       Commands.runOnce(() -> resetEncoder(m_reverseLimitSwitchResetValue)) :
       Commands.none()
@@ -1018,18 +1007,10 @@ public class Spark extends LoggableHardware {
 
   /**
    * Change what value the encoder should be reset to once the reverse limit switch is hit
-   * Only matters if reverseLimitSwitchShouldReset is true, which has its own get and set methods
    * @param value Desired encoder value
    */
   public void setReverseLimitSwitchResetValue(double value) {
     m_reverseLimitSwitchResetValue = value;
-  }
-  /**
-   * @return What value the encoder will be reset to once the reverse limit switch is hit
-   * Only matters if reverseLimitSwitchShouldReset is true, which has its own get and set methods
-   */
-  public double getReverseLimitSwitchResetValue() {
-    return m_reverseLimitSwitchResetValue;
   }
 
   /**
