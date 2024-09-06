@@ -334,7 +334,11 @@ public class Spark extends LoggableHardware {
       Timer.delay(APPLY_PARAMETER_WAIT_TIME);
     }
 
-    checkStatus(status, errorMessage);
+    // Check if status is okay, add parameter to chain if successful
+    if (status != REVLibError.kOk)
+      org.tinylog.Logger.tag(LOG_TAG).error(String.join(" ", m_id.name, errorMessage, "-", status.toString()));
+    else m_parameterChain.add(parameterSetter);
+
     return status;
   }
 
@@ -354,16 +358,6 @@ public class Spark extends LoggableHardware {
     }
 
     org.tinylog.Logger.tag(LOG_TAG).error(String.join(" ", m_id.name, errorMessage));
-  }
-
-  /**
-   * Check status and print error message if necessary
-   * @param status Status to check
-   * @param errorMessage Error message to print
-   */
-  private void checkStatus(REVLibError status, String errorMessage) {
-    if (status != REVLibError.kOk)
-      org.tinylog.Logger.tag(LOG_TAG).error(String.join(" ", m_id.name, errorMessage, "-", status.toString()));
   }
 
   /**
@@ -693,14 +687,11 @@ public class Spark extends LoggableHardware {
    */
   public REVLibError restoreFactoryDefaults() {
     REVLibError status;
-    Supplier<REVLibError> parameterApplier = () -> applyParameter(
+    status = applyParameter(
       () -> m_spark.restoreFactoryDefaults(),
       () -> true,
       "Restore factory defaults failure!"
     );
-
-    status = parameterApplier.get();
-    if (status.equals(REVLibError.kOk)) m_parameterChain.add(parameterApplier);
 
     return status;
   }
@@ -751,7 +742,6 @@ public class Spark extends LoggableHardware {
     if (getMotorType().equals(MotorType.kBrushed) && feedbackSensor.equals(FeedbackSensor.NEO_ENCODER))
       throw new IllegalArgumentException("NEO encoder cannot be used with a brushed motor!");
 
-    Supplier<REVLibError> parameterApplier;
     m_config = config;
     m_feedbackSensor = feedbackSensor;
     m_smoothMotionFinishedDebouncer = new Debouncer(SMOOTH_MOTION_DEBOUNCE_TIME);
@@ -790,12 +780,11 @@ public class Spark extends LoggableHardware {
     // Configure feedback sensor and set sensor phase
     m_spark.getPIDController().setFeedbackDevice(selectedSensor);
     if (!m_feedbackSensor.equals(FeedbackSensor.NEO_ENCODER) && !m_feedbackSensor.equals(FeedbackSensor.FUSED_ENCODER)) {
-       parameterApplier = () -> applyParameter(
+      applyParameter(
         () -> selectedSensor.setInverted(m_config.getSensorPhase()),
         () -> selectedSensor.getInverted() == m_config.getSensorPhase(),
       "Set sensor phase failure!"
       );
-      if (parameterApplier.get().equals(REVLibError.kOk)) m_parameterChain.add(parameterApplier);
     }
 
     // Configure forward and reverse soft limits
@@ -840,13 +829,11 @@ public class Spark extends LoggableHardware {
    */
   public REVLibError follow(Spark master, boolean invert) {
     REVLibError status;
-    Supplier<REVLibError> parameterApplier = () -> applyParameter(
+    status = applyParameter(
       () -> m_spark.follow(ExternalFollower.kFollowerSpark, master.getID().deviceID, invert),
       () -> m_spark.isFollower(),
       "Set motor master failure!"
     );
-    status = parameterApplier.get();
-    if (status.equals(REVLibError.kOk)) m_parameterChain.add(parameterApplier);
 
     // Increase master output status frame rate
     master.setPeriodicFrameRate(PeriodicFrame.kStatus0, DEFAULT_STATUS_FRAME_PERIOD.divide(4));
@@ -949,9 +936,7 @@ public class Spark extends LoggableHardware {
         break;
     }
 
-    Supplier<REVLibError> parameterApplier = () -> applyParameter(parameterSetter, parameterCheckSupplier, "Set position conversion factor failure!");
-    status = parameterApplier.get();
-    if (status.equals(REVLibError.kOk)) m_parameterChain.add(parameterApplier);
+    status = applyParameter(parameterSetter, parameterCheckSupplier, "Set position conversion factor failure!");
 
     return status;
   }
@@ -1008,9 +993,7 @@ public class Spark extends LoggableHardware {
         break;
     }
 
-    Supplier<REVLibError> parameterApplier = () -> applyParameter(parameterSetter, parameterCheckSupplier, "Set velocity conversion factor failure!");
-    status = parameterApplier.get();
-    if (status.equals(REVLibError.kOk)) m_parameterChain.add(parameterApplier);
+    status = applyParameter(parameterSetter, parameterCheckSupplier, "Set velocity conversion factor failure!");
 
     return status;
   }
@@ -1041,14 +1024,11 @@ public class Spark extends LoggableHardware {
    */
   public REVLibError setP(double value) {
     REVLibError status;
-    Supplier<REVLibError> parameterApplier = () -> applyParameter(
+    status = applyParameter(
       () -> m_spark.getPIDController().setP(value),
       () -> Precision.equals(m_spark.getPIDController().getP(), value, EPSILON),
       "Set kP failure!"
     );
-
-    status = parameterApplier.get();
-    if (status.equals(REVLibError.kOk)) m_parameterChain.add(parameterApplier);
 
     return status;
   }
@@ -1060,14 +1040,11 @@ public class Spark extends LoggableHardware {
    */
   public REVLibError setI(double value) {
     REVLibError status;
-    Supplier<REVLibError> parameterApplier = () -> applyParameter(
+    status = applyParameter(
       () -> m_spark.getPIDController().setI(value),
       () -> Precision.equals(m_spark.getPIDController().getI(), value, EPSILON),
       "Set kI failure!"
     );
-
-    status = parameterApplier.get();
-    if (status.equals(REVLibError.kOk)) m_parameterChain.add(parameterApplier);
 
     return status;
   }
@@ -1079,14 +1056,11 @@ public class Spark extends LoggableHardware {
    */
   public REVLibError setD(double value) {
     REVLibError status;
-    Supplier<REVLibError> parameterApplier = () -> applyParameter(
+    status = applyParameter(
       () -> m_spark.getPIDController().setD(value),
       () -> Precision.equals(m_spark.getPIDController().getD(), value, EPSILON),
       "Set kD failure!"
     );
-
-    status = parameterApplier.get();
-    if (status.equals(REVLibError.kOk)) m_parameterChain.add(parameterApplier);
 
     return status;
   }
@@ -1098,14 +1072,11 @@ public class Spark extends LoggableHardware {
    */
   public REVLibError setF(double value) {
     REVLibError status;
-    Supplier<REVLibError> parameterApplier = () -> applyParameter(
+   status = applyParameter(
       () -> m_spark.getPIDController().setFF(value),
       () -> Precision.equals(m_spark.getPIDController().getFF(), value, EPSILON),
       "Set kF failure!"
     );
-
-    status = parameterApplier.get();
-    if (status.equals(REVLibError.kOk)) m_parameterChain.add(parameterApplier);
 
     return status;
   }
@@ -1119,14 +1090,11 @@ public class Spark extends LoggableHardware {
    */
   public REVLibError setIZone(double value) {
     REVLibError status;
-    Supplier<REVLibError> parameterApplier = () -> applyParameter(
+    status = applyParameter(
       () -> m_spark.getPIDController().setIZone(value),
       () -> Precision.equals(m_spark.getPIDController().getIZone(), value, EPSILON),
       "Set IZone failure!"
     );
-
-    status = parameterApplier.get();
-    if (status.equals(REVLibError.kOk)) m_parameterChain.add(parameterApplier);
 
     return status;
   }
@@ -1188,16 +1156,13 @@ public class Spark extends LoggableHardware {
    */
   public REVLibError resetEncoder(double value) {
     REVLibError status;
-    Supplier<REVLibError> parameterApplier = () -> applyParameter(
+    status = applyParameter(
       () -> getEncoder().setPosition(value),
       () -> Precision.equals(getEncoderPosition(), value, EPSILON),
       "Set encoder failure!"
     );
-    status = parameterApplier.get();
-    if (status.equals(REVLibError.kOk)) {
-      System.out.println(String.join(" ", m_id.name, "Encoder set to", String.valueOf(value), "!"));
-      m_parameterChain.add(parameterApplier);
-    }
+
+    if (status.equals(REVLibError.kOk)) System.out.println(String.join(" ", m_id.name, "Encoder set to", String.valueOf(value), "!"));
 
     return status;
   }
