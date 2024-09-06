@@ -41,7 +41,7 @@ public class TractionControlController {
   private final double MAX_SLIP_RATIO = 0.40;
   private final int SIGMOID_K = 10;
   private final Measure<Velocity<Distance>> INERTIAL_VELOCITY_THRESHOLD = Units.MetersPerSecond.of(0.01);
-  private final Measure<Time> MIN_SLIPPING_TIME = Units.Seconds.of(1.1);
+  private final Measure<Time> MIN_SLIPPING_TIME = Units.Seconds.of(0.9);
 
   private double m_optimalSlipRatio;
   private double m_mass;
@@ -118,19 +118,14 @@ public class TractionControlController {
       & isEnabled()
     );
 
-    // Get desired acceleration, capping at max possible acceleration
-    // double requestedAcceleration = velocityRequest.minus(inertialVelocity).per(Units.Seconds.of(GlobalConstants.ROBOT_LOOP_PERIOD)).in(Units.MetersPerSecondPerSecond);
-    // var desiredAcceleration = Units.MetersPerSecond.of(Math.copySign(
-    //   Math.min(Math.abs(requestedAcceleration), m_maxAcceleration / GlobalConstants.ROBOT_LOOP_HZ),
-    //   requestedAcceleration
-    // )).per(Units.Seconds.of(GlobalConstants.ROBOT_LOOP_PERIOD));
+    // Get desired acceleration
     var desiredAcceleration = velocityRequest.minus(inertialVelocity).per(Units.Seconds.of(GlobalConstants.ROBOT_LOOP_PERIOD));
 
     // Get sigmoid value
     double sigmoid = 1 / (1 + Math.exp(-SIGMOID_K * MathUtil.clamp(2 * (currentSlipRatio - m_optimalSlipRatio) - 1, -1.0, +1.0)));
 
     // Scale CoF based on whether or not robot is currently slipping
-    double effectiveCoF =  m_isSlipping ? m_staticCoF * (1 - sigmoid) + m_dynamicCoF * sigmoid : m_staticCoF;
+    double effectiveCoF = m_isSlipping ? m_staticCoF * (1 - sigmoid) + m_dynamicCoF * sigmoid : m_staticCoF;
 
     // Simplified prediction of future slip ratio based on desired acceleration
     double predictedSlipRatio = Math.abs(
@@ -139,7 +134,7 @@ public class TractionControlController {
           + effectiveCoF * m_mass * GlobalConstants.GRAVITATIONAL_ACCELERATION.in(Units.MetersPerSecondPerSecond))
     ) / m_maxPredictedSlipRatio;
 
-    // Calculate correction based on difference between optimal and weighted slip ratio, which combines the predicted and current slip ratios
+    // Calculate correction based on difference between optimal and predicted slip ratio, which combines the predicted and current slip ratios
     var velocityCorrection = velocityOutput.times((m_optimalSlipRatio - predictedSlipRatio) * m_state.value);
 
     // Update output, clamping to max linear speed

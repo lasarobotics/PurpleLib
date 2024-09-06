@@ -918,13 +918,14 @@ public class Spark extends LoggableHardware {
   /**
    * Set the conversion factor for position of the sensor. Multiplied by the native output units to
    * give you position.
+   * <p>
+   * Passing in {@link FeedbackSensor#ABSOLUTE_ENCODER} or {@link FeedbackSensor#FUSED_ENCODER}
+   * will set the conversion factor for a connected absolute encoder.
    * @param sensor Sensor to set conversion factor for
    * @param factor The conversion factor to multiply the native units by
    * @return {@link REVLibError#kOk} if successful
    */
   public REVLibError setPositionConversionFactor(FeedbackSensor sensor, double factor) {
-    if (sensor.equals(FeedbackSensor.FUSED_ENCODER))
-      throw new IllegalArgumentException("Conversion factors must be set for motor encoder and absolute encoder separately when using fused mode!");
     REVLibError status;
     Supplier<REVLibError> parameterSetter;
     BooleanSupplier parameterCheckSupplier;
@@ -937,6 +938,7 @@ public class Spark extends LoggableHardware {
         parameterSetter = () -> getAnalog().setPositionConversionFactor(factor);
         parameterCheckSupplier = () -> Precision.equals(getAnalog().getPositionConversionFactor(), factor, EPSILON);
         break;
+      case FUSED_ENCODER:
       case ABSOLUTE_ENCODER:
         parameterSetter = () -> getAbsoluteEncoder().setPositionConversionFactor(factor);
         parameterCheckSupplier = () -> Precision.equals(getAbsoluteEncoder().getPositionConversionFactor(), factor, EPSILON);
@@ -975,13 +977,14 @@ public class Spark extends LoggableHardware {
   /**
    * Set the conversion factor for velocity of the sensor. Multiplied by the native output units to
    * give you velocity.
+   * <p>
+   * Passing in {@link FeedbackSensor#ABSOLUTE_ENCODER} or {@link FeedbackSensor#FUSED_ENCODER}
+   * will set the conversion factor for a connected absolute encoder.
    * @param sensor Sensor to set conversion factor for
    * @param factor The conversion factor to multiply the native units by
    * @return {@link REVLibError#kOk} if successful
    */
   public REVLibError setVelocityConversionFactor(FeedbackSensor sensor, double factor) {
-    if (sensor.equals(FeedbackSensor.FUSED_ENCODER))
-      throw new IllegalArgumentException("Conversion factors must be set for motor encoder and absolute encoder separately when using fused mode!");
     REVLibError status;
     Supplier<REVLibError> parameterSetter;
     BooleanSupplier parameterCheckSupplier;
@@ -994,6 +997,7 @@ public class Spark extends LoggableHardware {
         parameterSetter = () -> getAnalog().setVelocityConversionFactor(factor);
         parameterCheckSupplier = () -> Precision.equals(getAnalog().getVelocityConversionFactor(), factor, EPSILON);
         break;
+      case FUSED_ENCODER:
       case ABSOLUTE_ENCODER:
         parameterSetter = () -> getAbsoluteEncoder().setVelocityConversionFactor(factor);
         parameterCheckSupplier = () -> Precision.equals(getAnalog().getVelocityConversionFactor(), factor, EPSILON);
@@ -1158,6 +1162,8 @@ public class Spark extends LoggableHardware {
    * <p>
    * Sets the NEO encoder conversion factor to the absolute encoder conversion factor
    * divided by the specified ratio.
+   * Call {@link Spark#setPositionConversionFactor(FeedbackSensor, double)} and/or {@link Spark#setVelocityConversionFactor(FeedbackSensor, double)}
+   * <i>before</i> this method.
    * <p>
    * {@link Spark#setPositionConversionFactor(FeedbackSensor, double)} and {@link Spark#setVelocityConversionFactor(FeedbackSensor, double)}
    * should be called for the absolute encoder before this.
