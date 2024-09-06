@@ -50,6 +50,8 @@ import edu.wpi.first.units.Voltage;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 
 /** REV Spark */
 public class Spark extends LoggableHardware {
@@ -177,6 +179,10 @@ public class Spark extends LoggableHardware {
   private FeedbackSensor m_feedbackSensor;
   private SparkLimitSwitch.Type m_limitSwitchType = SparkLimitSwitch.Type.kNormallyOpen;
   private RelativeEncoder m_encoder;
+  private Trigger m_forwardLimitSwitchTrigger;
+  private Trigger m_reverseLimitSwitchTrigger;
+  private double m_forwardLimitSwitchResetValue = 1;
+  private double m_reverseLimitSwitchResetValue = 0;
 
   private volatile SparkOutput m_output;
   private volatile SparkInputsAutoLogged m_inputs;
@@ -208,6 +214,9 @@ public class Spark extends LoggableHardware {
     this.m_parameterChain = new LinkedHashSet<>();
     this.m_invertedRunner = () -> {};
     this.m_feedbackSensor = FeedbackSensor.NEO_ENCODER;
+    this.m_forwardLimitSwitchTrigger = new Trigger(() -> getInputs().forwardLimitSwitch);
+    this.m_reverseLimitSwitchTrigger = new Trigger(() -> getInputs().reverseLimitSwitch);
+
 
     // Set CAN timeout
     m_spark.setCANTimeout(CAN_TIMEOUT_MS);
@@ -566,6 +575,7 @@ public class Spark extends LoggableHardware {
       fuseEncoders();
     }
   }
+
 
   /**
    * Handle smooth motion
@@ -1173,6 +1183,46 @@ public class Spark extends LoggableHardware {
    */
   public REVLibError resetEncoder() {
     return resetEncoder(0.0);
+  }
+
+  /**
+   * Sets whether the NEO encoder should be reset when the forward limit switch is hit
+   * The value to set it to can be configured using {@link Spark#setForwardLimitSwitchResetValue(double)}
+   * @param value Whether the encoder should be reset
+   */
+  public void setForwardLimitSwitchShouldReset(boolean value) {
+    m_forwardLimitSwitchTrigger.onTrue(value ?
+      Commands.runOnce(() -> resetEncoder(m_forwardLimitSwitchResetValue)) :
+      Commands.none()
+    );
+  }
+
+  /**
+   * Change what value the encoder should be reset to once the forward limit switch is hit
+   * @param value Desired encoder value
+   */
+  public void setForwardLimitSwitchResetValue(double value) {
+    m_forwardLimitSwitchResetValue = value;
+  }
+
+  /**
+   * Sets whether the NEO encoder should be reset when the reverse limit switch is hit
+   * The value to set it to can be configured using {@link Spark#setReverseLimitSwitchResetValue(double)}
+   * @param value Whether the encoder should be reset
+   */
+  public void setReverseLimitSwitchShouldReset(boolean value) {
+    m_reverseLimitSwitchTrigger.onTrue(value ?
+      Commands.runOnce(() -> resetEncoder(m_reverseLimitSwitchResetValue)) :
+      Commands.none()
+    );
+  }
+
+  /**
+   * Change what value the encoder should be reset to once the reverse limit switch is hit
+   * @param value Desired encoder value
+   */
+  public void setReverseLimitSwitchResetValue(double value) {
+    m_reverseLimitSwitchResetValue = value;
   }
 
   /**
