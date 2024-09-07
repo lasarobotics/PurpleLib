@@ -47,6 +47,8 @@ import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Time;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.Voltage;
+import edu.wpi.first.util.sendable.Sendable;
+import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
@@ -54,7 +56,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 
 /** REV Spark */
-public class Spark extends LoggableHardware {
+public class Spark extends LoggableHardware implements Sendable {
   /** Spark ID */
   public static class ID {
     public final String name;
@@ -673,8 +675,21 @@ public class Spark extends LoggableHardware {
    * Get number of failures that have occured
    * @return number of failures
    */
+  @Override
   public int getErrorCount() {
     return m_errorCount;
+  }
+
+  @Override
+  public void initSendable(SendableBuilder builder) {
+    builder.setSmartDashboardType("PIDController");
+    builder.setActuator(true);
+    builder.setSafeState(() -> stopMotor());
+    builder.addDoubleProperty(m_id.name + "kP", () -> m_spark.getPIDController().getP(), this::setP);
+    builder.addDoubleProperty(m_id.name + "kI", () -> m_spark.getPIDController().getI(), this::setI);
+    builder.addDoubleProperty(m_id.name + "kD", () -> m_spark.getPIDController().getD(), this::setD);
+    builder.addDoubleProperty(m_id.name + "kF", () -> m_spark.getPIDController().getD(), this::setF);
+    builder.addDoubleProperty(m_id.name + "kIzone", () -> m_spark.getPIDController().getIZone(), this::setIZone);
   }
 
   /**
@@ -1101,8 +1116,8 @@ public class Spark extends LoggableHardware {
   public REVLibError setIZone(double value) {
     REVLibError status;
     status = applyParameter(
-      () -> m_spark.getPIDController().setIZone(value),
-      () -> Precision.equals(m_spark.getPIDController().getIZone(), value, EPSILON),
+      () -> m_spark.getPIDController().setIZone(Math.abs(value)),
+      () -> Precision.equals(m_spark.getPIDController().getIZone(), Math.abs(value), EPSILON),
       "Set IZone failure!"
     );
 
@@ -1188,10 +1203,10 @@ public class Spark extends LoggableHardware {
   /**
    * Sets whether the NEO encoder should be reset when the forward limit switch is hit
    * The value to set it to can be configured using {@link Spark#setForwardLimitSwitchResetValue(double)}
-   * @param value Whether the encoder should be reset
+   * @param shouldReset Whether the encoder should be reset
    */
-  public void setForwardLimitSwitchShouldReset(boolean value) {
-    m_forwardLimitSwitchTrigger.onTrue(value ?
+  public void setForwardLimitSwitchShouldReset(boolean shouldReset) {
+    m_forwardLimitSwitchTrigger.onTrue(shouldReset ?
       Commands.runOnce(() -> resetEncoder(m_forwardLimitSwitchResetValue)) :
       Commands.none()
     );
@@ -1208,10 +1223,10 @@ public class Spark extends LoggableHardware {
   /**
    * Sets whether the NEO encoder should be reset when the reverse limit switch is hit
    * The value to set it to can be configured using {@link Spark#setReverseLimitSwitchResetValue(double)}
-   * @param value Whether the encoder should be reset
+   * @param shouldReset Whether the encoder should be reset
    */
-  public void setReverseLimitSwitchShouldReset(boolean value) {
-    m_reverseLimitSwitchTrigger.onTrue(value ?
+  public void setReverseLimitSwitchShouldReset(boolean shouldReset) {
+    m_reverseLimitSwitchTrigger.onTrue(shouldReset ?
       Commands.runOnce(() -> resetEncoder(m_reverseLimitSwitchResetValue)) :
       Commands.none()
     );
