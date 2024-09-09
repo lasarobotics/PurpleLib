@@ -120,7 +120,7 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
   private static final boolean DRIVE_INVERT_MOTOR = false;
 
   // Swerve rotate PID settings
-  private static final PIDConstants DRIVE_ROTATE_PID = new PIDConstants(0.9, 0.0, 0.1, 0.0, 0.0);
+  private static final PIDConstants DRIVE_ROTATE_PID = new PIDConstants(2.1, 0.0, 0.2, 0.0, 0.0);
   private static final double DRIVE_ROTATE_kS = 0.2;
   private static final double DRIVE_ROTATE_kA = 0.01;
   private static final double DRIVE_ROTATE_TOLERANCE = 0.01;
@@ -236,7 +236,7 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
 
     // Initialize PID
     m_driveMotor.initializeSparkPID(m_driveMotorConfig, Spark.FeedbackSensor.NEO_ENCODER);
-    m_rotateMotor.initializeSparkPID(m_rotateMotorConfig, Spark.FeedbackSensor.FUSED_ENCODER);
+    m_rotateMotor.initializeSparkPID(m_rotateMotorConfig, Spark.FeedbackSensor.ABSOLUTE_ENCODER);
 
     // Set gear ratio between motor and rotate encoder
     m_rotateMotor.setMotorToSensorRatio(DRIVE_ROTATE_GEAR_RATIO);
