@@ -541,11 +541,10 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
    * @param realSpeeds Real speeds of robot from IMU
    */
   public void set(SwerveModuleState state, ChassisSpeeds realSpeeds) {
-    var inertialVelocity = Units.MetersPerSecond.of(AdvancedSwerveKinematics.getRealModuleSpeed(m_moduleCoordinate, realSpeeds).speedMetersPerSecond);
     // Apply traction control
     state.speedMetersPerSecond = m_tractionControlController.calculate(
       Units.MetersPerSecond.of(state.speedMetersPerSecond),
-      inertialVelocity,
+      AdvancedSwerveKinematics.getRealModuleVelocity(realSpeeds, m_moduleCoordinate),
       getDriveVelocity()
     ).in(Units.MetersPerSecond);
 

@@ -134,7 +134,7 @@ public class TractionControlController {
           + effectiveCoF * m_mass * GlobalConstants.GRAVITATIONAL_ACCELERATION.in(Units.MetersPerSecondPerSecond))
     ) / m_maxPredictedSlipRatio;
 
-    // Calculate correction based on difference between optimal and predicted slip ratio, which combines the predicted and current slip ratios
+    // Calculate correction based on difference between optimal and predicted slip ratio
     var velocityCorrection = velocityOutput.times((m_optimalSlipRatio - predictedSlipRatio) * m_state.value);
 
     // Update output, clamping to max linear speed

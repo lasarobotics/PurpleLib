@@ -22,6 +22,10 @@ import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N2;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.numbers.N4;
+import edu.wpi.first.units.Distance;
+import edu.wpi.first.units.Measure;
+import edu.wpi.first.units.Units;
+import edu.wpi.first.units.Velocity;
 
 
 /**
@@ -121,24 +125,25 @@ public class AdvancedSwerveKinematics {
     return correctedSpeeds;
   }
 
-  public static SwerveModuleState getRealModuleSpeed(Translation2d moduleLocation, ChassisSpeeds desiredSpeed) {
+  /**
+   * Get inertial velocity for a single module
+   * @param moduleLocation Coordinate of module
+   * @param realSpeeds Real speed of robot as reported by IMU
+   * @return Velocity of module through space
+   */
+  public static Measure<Velocity<Distance>> getRealModuleVelocity(ChassisSpeeds realSpeeds, Translation2d moduleLocation) {
     Matrix<N3, N1> firstOrderInputMatrix = new Matrix<>(N3(),N1());
     Matrix<N2, N3> firstOrderMatrix = new Matrix<>(N2(),N3());
-    Matrix<N2, N2> rotationMatrix = new Matrix<>(N2(),N2());
 
-    firstOrderInputMatrix.set(0, 0, desiredSpeed.vxMetersPerSecond);
-    firstOrderInputMatrix.set(1, 0, desiredSpeed.vyMetersPerSecond);
-    firstOrderInputMatrix.set(2, 0, desiredSpeed.omegaRadiansPerSecond);
+    firstOrderInputMatrix.set(0, 0, realSpeeds.vxMetersPerSecond);
+    firstOrderInputMatrix.set(1, 0, realSpeeds.vyMetersPerSecond);
+    firstOrderInputMatrix.set(2, 0, realSpeeds.omegaRadiansPerSecond);
 
     firstOrderMatrix.set(0, 0, 1);
     firstOrderMatrix.set(1, 1, 1);
 
-    var swerveModuleState = new SwerveModuleState();
-
     // Angle that the module location vector makes with respect to the robot
     Rotation2d moduleAngle = new Rotation2d(Math.atan2(moduleLocation.getY(), moduleLocation.getX()));
-    // Angle that the module location vector makes with respect to the field for field centric if applicable
-    moduleAngle = Rotation2d.fromRadians(moduleAngle.getRadians());
     double moduleX = moduleLocation.getNorm() * Math.cos(moduleAngle.getRadians());
     double moduleY = moduleLocation.getNorm() * Math.sin(moduleAngle.getRadians());
     // -r_y
@@ -148,18 +153,10 @@ public class AdvancedSwerveKinematics {
 
     Matrix<N2, N1> firstOrderOutput = firstOrderMatrix.times(firstOrderInputMatrix);
 
-    double moduleHeading = Math.atan2(firstOrderOutput.get(1, 0), firstOrderOutput.get(0, 0));
-    double moduleSpeed = Math.sqrt(firstOrderOutput.elementPower(2).elementSum());
+    // Calculate velocity
+    var velocity = Units.MetersPerSecond.of(Math.sqrt(firstOrderOutput.elementPower(2).elementSum()));
 
-    rotationMatrix.set(0, 0, +Math.cos(moduleHeading));
-    rotationMatrix.set(0, 1, +Math.sin(moduleHeading));
-    rotationMatrix.set(1, 0, -Math.sin(moduleHeading));
-    rotationMatrix.set(1, 1, +Math.cos(moduleHeading));
-
-    // Set swerve module state
-    swerveModuleState = new SwerveModuleState(moduleSpeed, Rotation2d.fromRadians(moduleHeading));
-
-    return swerveModuleState;
+    return velocity;
   }
 
   /**
