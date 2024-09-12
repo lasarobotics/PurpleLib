@@ -127,8 +127,8 @@ public class AdvancedSwerveKinematics {
 
   /**
    * Get inertial velocity for a single module
-   * @param moduleLocation Coordinate of module
    * @param realSpeeds Real speed of robot as reported by IMU
+   * @param moduleLocation Coordinate of module
    * @return Velocity of module through space
    */
   public static Measure<Velocity<Distance>> getRealModuleVelocity(ChassisSpeeds realSpeeds, Translation2d moduleLocation) {
