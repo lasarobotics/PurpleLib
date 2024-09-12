@@ -4,15 +4,16 @@
 
 package org.lasarobotics.hardware;
 
-public interface Monitorable {
-  static final int DEFAULT_RETRIES = 3;
+public abstract class Monitorable {
+  private static final int DEFAULT_RETRIES = 3;
+  private int m_errorCount = 0;
 
   /**
    * Return true if the component is healthy. Some components may not have this capability, so a
    * default of returning true is used.
    * @return True if the component is connected.
    */
-  public default boolean isHealthy() {
+  public boolean isHealthy() {
     return true;
   }
 
@@ -21,7 +22,7 @@ public interface Monitorable {
    * Method to call to re-initialize component
    * @return True if component re-initialized successfully
    */
-  public default boolean reinit() {
+  public boolean reinit() {
     return true;
   }
 
@@ -31,20 +32,22 @@ public interface Monitorable {
    * Defaults to {@value Monitorable#DEFAULT_RETRIES}
    * @return Number of retries
    */
-  public default int getMaxRetries() {
+  public int getMaxRetries() {
     return DEFAULT_RETRIES;
   }
 
   /**
    * Save number of errors that have occured
    */
-  public default void setErrorCount(int num) {};
+  public void setErrorCount(int num) {
+    m_errorCount = num;
+  };
 
   /**
    * Get number of failures that have occured
    * @return Number of failures
    */
-  public default int getErrorCount() {
-    return 0;
+  public int getErrorCount() {
+    return m_errorCount;
   }
 }
