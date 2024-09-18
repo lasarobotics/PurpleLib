@@ -13,6 +13,7 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 
+import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
 import org.lasarobotics.hardware.PurpleManager;
 import org.lasarobotics.hardware.revrobotics.Spark;
 import org.lasarobotics.hardware.revrobotics.Spark.MotorKind;
@@ -364,6 +365,33 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
   }
 
   /**
+   * Get velocity of module parallel to the desired orientation
+   * @param state Desired swerve module state representing desired speed
+   * @param realSpeeds Real speeds of robot from IMU
+   * @return Velocity of module parallel to desired module orientation
+   */
+  private Measure<Velocity<Distance>> getParallelVelocity(SwerveModuleState state, ChassisSpeeds realSpeeds) {
+    // Get physical velocity of module through space
+    var moduleInertialVelocityState = AdvancedSwerveKinematics.getRealModuleVelocity(realSpeeds, m_moduleCoordinate);
+    // Get vector of physical velocity
+    var moduleInertialVelocityVector = new Vector2D(
+      moduleInertialVelocityState.speedMetersPerSecond * moduleInertialVelocityState.angle.getCos(),
+      moduleInertialVelocityState.speedMetersPerSecond * moduleInertialVelocityState.angle.getSin()
+    );
+    // Get vector of desired velocity
+    var moduleDesiredVelocityVector = new Vector2D(
+      state.speedMetersPerSecond * state.angle.getCos(),
+      state.speedMetersPerSecond * state.angle.getSin()
+    );
+
+    // Calculate portion of inertial velocity that is in direction of desired
+    var parallelModuleVelocity = moduleDesiredVelocityVector.scalarMultiply(moduleInertialVelocityVector.dotProduct(moduleDesiredVelocityVector));
+
+    // Return velocity
+    return Units.MetersPerSecond.of(parallelModuleVelocity.getNorm());
+  }
+
+  /**
    * Call this method periodically
    */
   private void periodic() {
@@ -544,7 +572,7 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
     // Apply traction control
     state.speedMetersPerSecond = m_tractionControlController.calculate(
       Units.MetersPerSecond.of(state.speedMetersPerSecond),
-      AdvancedSwerveKinematics.getRealModuleVelocity(realSpeeds, m_moduleCoordinate),
+      getParallelVelocity(state, realSpeeds),
       getDriveVelocity()
     ).in(Units.MetersPerSecond);
 

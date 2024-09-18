@@ -22,10 +22,7 @@ import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N2;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.numbers.N4;
-import edu.wpi.first.units.Distance;
-import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Units;
-import edu.wpi.first.units.Velocity;
 
 
 /**
@@ -129,9 +126,9 @@ public class AdvancedSwerveKinematics {
    * Get inertial velocity for a single module
    * @param realSpeeds Real speed of robot as reported by IMU
    * @param moduleLocation Coordinate of module
-   * @return Velocity of module through space
+   * @return Module state representing velocity and direction of module through space with respect to the robot
    */
-  public static Measure<Velocity<Distance>> getRealModuleVelocity(ChassisSpeeds realSpeeds, Translation2d moduleLocation) {
+  public static SwerveModuleState getRealModuleVelocity(ChassisSpeeds realSpeeds, Translation2d moduleLocation) {
     Matrix<N3, N1> firstOrderInputMatrix = new Matrix<>(N3(),N1());
     Matrix<N2, N3> firstOrderMatrix = new Matrix<>(N2(),N3());
 
@@ -155,8 +152,9 @@ public class AdvancedSwerveKinematics {
 
     // Calculate velocity
     var velocity = Units.MetersPerSecond.of(Math.sqrt(firstOrderOutput.elementPower(2).elementSum()));
+    var direction = Rotation2d.fromRadians(Math.atan2(firstOrderOutput.get(1, 0), firstOrderOutput.get(0, 0)));
 
-    return velocity;
+    return new SwerveModuleState(velocity, direction);
   }
 
   /**
