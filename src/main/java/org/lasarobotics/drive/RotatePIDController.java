@@ -59,7 +59,7 @@ public class RotatePIDController {
   }
 
   /**
-   * Returns next output of RotatePIDController
+   * Returns next output of rotation PID controller
    * @param currentAngle current yaw angle of robot
    * @param rotateRate current yaw rotate rate of robot
    * @param rotateRequest rotate request [-1.0, +1.0]
@@ -87,6 +87,21 @@ public class RotatePIDController {
     }
 
     return Units.DegreesPerSecond.of(m_pidController.calculate(currentAngle.in(Units.Degrees)));
+  }
+
+  /**
+   * Set setpoint of rotation PID controller
+   * @param angle
+   */
+  public void setSetpoint(Measure<Angle> angle) {
+    m_pidController.setSetpoint(angle.in(Units.Degrees));
+  }
+
+  /**
+   * Reset rotation PID controller
+   */
+  public void reset() {
+    m_pidController.reset();
   }
 
   /**
