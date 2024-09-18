@@ -90,6 +90,15 @@ public class RotatePIDController {
   }
 
   /**
+   * Set the tolerable error
+   * @param positionTolerance Position error that is tolerable
+   * @param velocityTolerance Velocity error that is tolerable
+   */
+  public void setTolerance(Measure<Angle> positionTolerance, Measure<Velocity<Angle>> velocityTolerance) {
+    m_pidController.setTolerance(positionTolerance.in(Units.Degrees), velocityTolerance.in(Units.DegreesPerSecond));
+  }
+
+  /**
    * Set setpoint of rotation PID controller
    * @param angle
    */
