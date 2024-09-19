@@ -34,15 +34,18 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.RobotBase;
+import edu.wpi.first.wpilibj.Timer;
 
 /** PurpleLib Hardware Logging Manager */
 public class PurpleManager {
+  private static double GARBAGE_COLLECTION_SEC = 5.0;
   private static List<LoggableHardware> m_hardware = new ArrayList<>();
   private static List<Monitorable> m_monitored = new ArrayList<>();
   private static List<Runnable> m_callbacks = new ArrayList<>();
   private static List<Runnable> m_simCallbacks = new ArrayList<>();
   private static VisionSystemSim m_visionSim = new VisionSystemSim("PurpleManager");
   private static Supplier<Pose2d> m_poseSupplier = null;
+  private static Timer m_garbageTimer = new Timer();
 
   /**
    * Monitor health of components
@@ -211,10 +214,15 @@ public class PurpleManager {
    * Call this peridically, preferably in the beginning of <code>robotPeriodic()</code> every loop
    */
   public static void update() {
+    // Run garbage collector regularly
+    if (m_garbageTimer.advanceIfElapsed(GARBAGE_COLLECTION_SEC)) System.gc();
+
+    // Monitor health and run periodic logic
     monitorHealth();
     m_hardware.stream().forEach((device) -> device.periodic());
     m_callbacks.stream().forEach(Runnable::run);
 
+    // If not real robot, run simulation logic
     if (RobotBase.isReal()) return;
     m_simCallbacks.stream().forEach(Runnable::run);
   }
