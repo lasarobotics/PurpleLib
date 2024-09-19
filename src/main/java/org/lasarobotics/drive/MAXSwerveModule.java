@@ -386,7 +386,7 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
 
     // Calculate portion of inertial velocity that is in direction of desired
     var parallelModuleVelocity = moduleDesiredVelocityVector.scalarMultiply(
-      moduleInertialVelocityVector.dotProduct(moduleDesiredVelocityVector.normalize())
+      moduleDesiredVelocityVector.getNorm() != 0.0 ? moduleInertialVelocityVector.dotProduct(moduleDesiredVelocityVector.normalize()) : 1.0
     );
 
     // Return velocity
