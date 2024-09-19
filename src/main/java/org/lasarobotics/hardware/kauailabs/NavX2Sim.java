@@ -8,10 +8,11 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.ThreadLocalRandom;
 
-import org.lasarobotics.utils.GlobalConstants;
+import org.lasarobotics.drive.AdvancedSwerveKinematics.ControlCentricity;
 
 import edu.wpi.first.hal.SimDouble;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Measure;
@@ -31,7 +32,7 @@ public class NavX2Sim {
   private final SimDouble m_accelY;
   private final SimDouble m_accelZ;
 
-  private Pose2d m_previousPose;
+  private ChassisSpeeds m_previousSpeeds;
   private Instant m_lastUpdateTime;
 
   public NavX2Sim() {
@@ -44,30 +45,28 @@ public class NavX2Sim {
     this.m_accelY = simNavX2.getDouble("LinearWorldAccelY");
     this.m_accelZ = simNavX2.getDouble("LinearWorldAccelZ");
 
-    this.m_previousPose = new Pose2d();
+    this.m_previousSpeeds = new ChassisSpeeds();
     this.m_lastUpdateTime = Instant.now();
   }
 
-  public void update(Pose2d currentPose) {
+  public void update(Rotation2d orientation, ChassisSpeeds desiredSpeeds, ControlCentricity controlCentricity) {
     var currentTime = Instant.now();
     double randomNoise = ThreadLocalRandom.current().nextDouble(0.9, 1.0);
     double dt = Duration.between(currentTime, m_lastUpdateTime).toMillis() / 1000.0;
 
-    var chassisSpeeds = new ChassisSpeeds(
-      (currentPose.getX() - m_previousPose.getX()) / dt,
-      (currentPose.getY() - m_previousPose.getY()) / dt,
-      currentPose.getRotation().minus(m_previousPose.getRotation()).div(dt).getRadians()
-    );
+    if (controlCentricity.equals(ControlCentricity.FIELD_CENTRIC))
+      desiredSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(desiredSpeeds, orientation);
 
     int yawDriftDirection = ThreadLocalRandom.current().nextDouble(1.0) < 0.5 ? -1 : +1;
-    double angle = m_yaw.get() - Math.toDegrees(chassisSpeeds.omegaRadiansPerSecond * randomNoise) * dt
+    double angle = m_yaw.get() + Math.toDegrees(desiredSpeeds.omegaRadiansPerSecond * randomNoise) * dt
                    + (NAVX2_YAW_DRIFT_RATE.in(Units.DegreesPerSecond) * dt * yawDriftDirection);
     m_yaw.set(angle);
-    m_yawRate.set(Math.toDegrees(chassisSpeeds.omegaRadiansPerSecond));
+    m_yawRate.set(Math.toDegrees(desiredSpeeds.omegaRadiansPerSecond));
 
-    m_accelX.set(chassisSpeeds.vxMetersPerSecond / dt);
-    m_accelY.set(chassisSpeeds.vyMetersPerSecond / dt);
+    m_accelX.set((desiredSpeeds.vxMetersPerSecond - m_previousSpeeds.vxMetersPerSecond) / dt);
+    m_accelY.set((desiredSpeeds.vyMetersPerSecond - m_previousSpeeds.vyMetersPerSecond) / dt);
 
+    m_previousSpeeds = desiredSpeeds;
     m_lastUpdateTime = currentTime;
   }
 }
