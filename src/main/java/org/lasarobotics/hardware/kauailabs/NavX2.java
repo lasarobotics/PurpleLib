@@ -20,6 +20,7 @@ import edu.wpi.first.units.Distance;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.Velocity;
+import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.SPI;
 
 /** NavX2 */
@@ -53,6 +54,7 @@ public class NavX2 extends LoggableHardware {
 
   private AHRS m_navx;
   private SimDouble m_simNavXYaw;
+  private Notifier m_inputThread;
 
   private String m_name;
   private NavX2InputsAutoLogged m_inputs;
@@ -66,8 +68,12 @@ public class NavX2 extends LoggableHardware {
     this.m_name = id.name;
     this.m_navx = new AHRS(SPI.Port.kMXP, (byte)updateRate);
     this.m_inputs = new NavX2InputsAutoLogged();
+    this.m_inputThread = new Notifier(this::updateInputs);
     this.m_simNavXYaw = new SimDouble(SimDeviceDataJNI.getSimValueHandle(SimDeviceDataJNI.getSimDeviceHandle("navX-Sensor[0]"), "Yaw"));
     System.out.println();
+
+    // Start input thread
+    m_inputThread.startPeriodic(1.0 / updateRate);
 
     // Update inputs on init
     periodic();
@@ -187,7 +193,6 @@ public class NavX2 extends LoggableHardware {
    */
   @Override
   protected void periodic() {
-    updateInputs();
     Logger.processInputs(m_name, m_inputs);
   }
 
