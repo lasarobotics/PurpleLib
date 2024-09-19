@@ -17,8 +17,10 @@ import com.ctre.phoenix6.configs.Pigeon2Configuration;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Measure;
+import edu.wpi.first.units.Time;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.Velocity;
+import edu.wpi.first.wpilibj.Notifier;
 
 /** CTRE Pigeon 2.0 */
 public class Pigeon2 extends LoggableHardware {
@@ -60,6 +62,11 @@ public class Pigeon2 extends LoggableHardware {
     public Rotation2d rotation2d = GlobalConstants.ROTATION_ZERO;
   }
 
+  private int DEFAULT_THREAD_PERIOD = 10;
+
+  private Notifier m_inputThread;
+  private Measure<Time> m_inputThreadPeriod = Units.Milliseconds.of(DEFAULT_THREAD_PERIOD);
+
   private com.ctre.phoenix6.hardware.Pigeon2 m_pigeon;
 
   private ID m_id;
@@ -69,6 +76,10 @@ public class Pigeon2 extends LoggableHardware {
     this.m_id = id;
     this.m_pigeon = new com.ctre.phoenix6.hardware.Pigeon2(id.deviceID, id.bus.name);
     this.m_inputs = new Pigeon2InputsAutoLogged();
+    this.m_inputThread = new Notifier(this::updateInputs);
+
+    // Start input thread
+    m_inputThread.startPeriodic(m_inputThreadPeriod.in(Units.Seconds));
 
     // Update inputs on init
     periodic();
@@ -155,7 +166,6 @@ public class Pigeon2 extends LoggableHardware {
    */
   @Override
   protected void periodic() {
-    updateInputs();
     Logger.processInputs(m_id.name, m_inputs);
   }
 
@@ -174,6 +184,18 @@ public class Pigeon2 extends LoggableHardware {
    */
   public ID getID() {
     return m_id;
+  }
+
+  /**
+   * Set input thread period
+   * <p>
+   * Defaults to 10ms
+   * @param period Period between getting sensor updates
+   */
+  public void setPeriod(Measure<Time> period) {
+    m_inputThreadPeriod = period;
+    m_inputThread.stop();
+    m_inputThread.startPeriodic(m_inputThreadPeriod.in(Units.Seconds));
   }
 
   /**
