@@ -29,6 +29,7 @@ import com.revrobotics.CANSparkBase.ControlType;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.Current;
@@ -295,5 +296,27 @@ public class MAXSwerveModuleTest {
     assertTrue(m_rFrontModule.getMaxLinearSpeed().isNear(NEO_MAX_LINEAR_SPEED, DELTA));
     assertTrue(m_lRearModule.getMaxLinearSpeed().isNear(VORTEX_MAX_LINEAR_SPEED, DELTA));
     assertTrue(m_rRearModule.getMaxLinearSpeed().isNear(VORTEX_MAX_LINEAR_SPEED, DELTA));
+  }
+
+  @Test
+  @Order(6)
+  @DisplayName("Test if module limits speed")
+  public void tractionControl() {
+    // Hardcode sensor values
+    SparkInputsAutoLogged sparkInputs = new SparkInputsAutoLogged();
+    when(m_lFrontRotateMotor.getInputs()).thenReturn(sparkInputs);
+    sparkInputs.encoderVelocity = 3.0;
+    when(m_lFrontDriveMotor.getInputs()).thenReturn(sparkInputs);
+
+    // Hardcode other inputs
+    var moduleState = new SwerveModuleState(NEO_MAX_LINEAR_SPEED, Rotation2d.fromDegrees(0.0));
+    var realSpeeds = new ChassisSpeeds(Units.MetersPerSecond.of(3.0), Units.MetersPerSecond.zero(), Units.DegreesPerSecond.zero());
+
+    // Attempt to drive module
+    m_lFrontModule.set(moduleState, realSpeeds);
+
+    // Verify that motors are being driven with expected values
+    verify(m_lFrontDriveMotor).set(AdditionalMatchers.leq(NEO_MAX_LINEAR_SPEED.in(Units.MetersPerSecond)), ArgumentMatchers.eq(ControlType.kVelocity));
+    verify(m_lFrontRotateMotor).set(AdditionalMatchers.eq(-Math.PI / 2, DELTA), ArgumentMatchers.eq(ControlType.kPosition));
   }
 }
