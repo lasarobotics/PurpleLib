@@ -366,7 +366,7 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
 
   /**
    * Get velocity of module parallel to the desired orientation
-   * @param state Desired swerve module state representing desired speed
+   * @param state Desired swerve module state representing desired speed and orientation
    * @param realSpeeds Real speeds of robot from IMU
    * @return Velocity of module parallel to desired module orientation
    */
@@ -386,7 +386,9 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
 
     // Calculate portion of inertial velocity that is in direction of desired
     var parallelModuleVelocity = moduleDesiredVelocityVector.scalarMultiply(
-      moduleDesiredVelocityVector.getNorm() != 0.0 ? moduleInertialVelocityVector.dotProduct(moduleDesiredVelocityVector.normalize()) : 1.0
+      moduleDesiredVelocityVector.getNorm() != 0.0
+        ? moduleInertialVelocityVector.dotProduct(moduleDesiredVelocityVector) / moduleDesiredVelocityVector.getNormSq()
+        : 1.0
     );
 
     // Return velocity
