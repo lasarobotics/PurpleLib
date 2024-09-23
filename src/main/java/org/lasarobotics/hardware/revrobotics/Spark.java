@@ -165,7 +165,6 @@ public class Spark extends LoggableHardware implements Sendable {
   private Notifier m_inputThread;
   private Measure<Time> m_inputThreadPeriod;
 
-  private int m_errorCount;
   private boolean m_isSmoothMotionEnabled;
   private Debouncer m_smoothMotionFinishedDebouncer;
   private TrapezoidProfile.State m_desiredState;
@@ -211,7 +210,6 @@ public class Spark extends LoggableHardware implements Sendable {
     this.m_inputThread = new Notifier(this::updateInputs);
     this.m_inputThreadPeriod = inputThreadPeriod;
     this.m_isSmoothMotionEnabled = false;
-    this.m_errorCount = 0;
     this.m_limitSwitchType = limitSwitchType;
     this.m_parameterChain = new LinkedHashSet<>();
     this.m_invertedRunner = () -> {};
@@ -594,15 +592,6 @@ public class Spark extends LoggableHardware implements Sendable {
     );
 
     m_isSmoothMotionEnabled = !isSmoothMotionFinished();
-
-    if (!m_isSmoothMotionEnabled) {
-      set(
-        m_desiredState.position,
-        ControlType.kPosition,
-        m_feedforwardSupplier.apply(m_desiredState),
-        SparkPIDController.ArbFFUnits.kVoltage
-      );
-    }
   }
 
   /**
@@ -630,19 +619,11 @@ public class Spark extends LoggableHardware implements Sendable {
     synchronized (m_inputs) { return m_inputs; }
   }
 
-  /**
-   * Get if Spark is healthy
-   * <p>
-   * Checks if Spark has NOT reset
-   */
   @Override
   public boolean isHealthy() {
     return !m_spark.getStickyFault(FaultID.kHasReset);
   }
 
-  /**
-   * Method to re-initialize Spark after reset
-   */
   @Override
   public boolean reinit() {
     boolean success = true;
@@ -654,30 +635,9 @@ public class Spark extends LoggableHardware implements Sendable {
     return success;
   }
 
-  /**
-   * Get maximum number of times to try to re-initialize Spark
-   */
   @Override
   public int getMaxRetries() {
     return MAX_ATTEMPTS;
-  }
-
-  /**
-   * Save number of errors that have occurred
-   * @param num Number of errors
-   */
-  @Override
-  public void setErrorCount(int num) {
-    m_errorCount = num;
-  }
-
-  /**
-   * Get number of failures that have occured
-   * @return number of failures
-   */
-  @Override
-  public int getErrorCount() {
-    return m_errorCount;
   }
 
   @Override
