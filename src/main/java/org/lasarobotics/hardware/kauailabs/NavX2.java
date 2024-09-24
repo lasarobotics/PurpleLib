@@ -202,7 +202,7 @@ public class NavX2 extends LoggableHardware {
    */
   @Override
   public NavX2InputsAutoLogged getInputs() {
-    return m_inputs;
+    synchronized (m_inputs) { return m_inputs; }
   }
 
   /**
