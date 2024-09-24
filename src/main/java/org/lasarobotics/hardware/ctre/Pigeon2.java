@@ -175,7 +175,7 @@ public class Pigeon2 extends LoggableHardware {
    */
   @Override
   public Pigeon2InputsAutoLogged getInputs() {
-    return m_inputs;
+    synchronized (m_inputs) { return m_inputs; }
   }
 
   /**
