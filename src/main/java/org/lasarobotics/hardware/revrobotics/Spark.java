@@ -39,6 +39,7 @@ import com.revrobotics.SparkPIDController;
 import com.revrobotics.SparkPIDController.ArbFFUnits;
 import com.revrobotics.SparkRelativeEncoder;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
@@ -587,7 +588,7 @@ public class Spark extends LoggableHardware implements Sendable {
     set(
       m_smoothMotionState.position,
       ControlType.kPosition,
-      m_feedforwardSupplier.apply(m_smoothMotionState),
+      MathUtil.clamp(m_feedforwardSupplier.apply(m_smoothMotionState), -MAX_VOLTAGE, +MAX_VOLTAGE),
       SparkPIDController.ArbFFUnits.kVoltage
     );
 
