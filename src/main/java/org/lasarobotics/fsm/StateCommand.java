@@ -11,18 +11,7 @@ import java.util.function.Supplier;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj2.command.Command;
 
-/**
- * A command composition that runs one of a selection of commands using a selector and a key to
- * command mapping.
- *
- * <p>The rules for command compositions apply: command instances that are passed to it cannot be
- * added to any other composition or scheduled individually, and the composition requires all
- * subsystems its components require.
- *
- * <p>This class is provided by the NewCommands VendorDep
- *
- * @param <K> The type of key used to select the command
- */
+/** StateCommand */
 public class StateCommand extends Command {
   private final Supplier<SystemState> m_selector;
   private final StateMachine m_machine;
@@ -30,10 +19,8 @@ public class StateCommand extends Command {
   private SystemState m_nextState;
 
   /**
-   * Creates a new SelectCommand.
-   *
-   * @param commands the map of commands to choose from
-   * @param selector the selector to determine which command to run
+   * Creates a new StateCommand
+   * @param selector The selector to determine which command to run
    */
   public StateCommand(Supplier<SystemState> selector, StateMachine machine) {
     m_selector = requireNonNullParam(selector, "selector", "StateCommand");
