@@ -43,6 +43,7 @@ public class NavX2 extends LoggableHardware {
    */
   @AutoLog
   public static class NavX2Inputs {
+    public boolean isConnected = false;
     public Measure<Angle> pitchAngle = Units.Radians.of(0.0);
     public Measure<Angle> yawAngle = Units.Radians.of(0.0);
     public Measure<Angle> rollAngle = Units.Radians.of(0.0);
@@ -51,6 +52,8 @@ public class NavX2 extends LoggableHardware {
     public Measure<Velocity<Angle>> yawRate = Units.RadiansPerSecond.of(0.0);
     public Rotation2d rotation2d = GlobalConstants.ROTATION_ZERO;
   }
+
+  private static final int UPDATE_RATE = 200;
 
   private AHRS m_navx;
   private SimDouble m_simNavXYaw;
@@ -64,16 +67,16 @@ public class NavX2 extends LoggableHardware {
    * @param id NavX2 ID
    * @param updateRate Custom update rate (Hz)
    */
-  public NavX2(ID id, int updateRate) {
+  public NavX2(ID id) {
     this.m_name = id.name;
-    this.m_navx = new AHRS(SPI.Port.kMXP, (byte)updateRate);
+    this.m_navx = new AHRS(SPI.Port.kMXP, (byte)UPDATE_RATE);
     this.m_inputs = new NavX2InputsAutoLogged();
     this.m_inputThread = new Notifier(this::updateInputs);
     this.m_simNavXYaw = new SimDouble(SimDeviceDataJNI.getSimValueHandle(SimDeviceDataJNI.getSimDeviceHandle("navX-Sensor[0]"), "Yaw"));
     System.out.println();
 
     // Start input thread
-    m_inputThread.startPeriodic(1.0 / updateRate);
+    m_inputThread.startPeriodic(1.0 / UPDATE_RATE);
 
     // Update inputs on init
     periodic();
@@ -83,109 +86,17 @@ public class NavX2 extends LoggableHardware {
   }
 
   /**
-   * Returns the current pitch value (in degrees, from -180 to 180)
-   * reported by the sensor.  Pitch is a measure of rotation around
-   * the X Axis.
-   * @return The current pitch value in degrees (-180 to 180).
-   */
-  private float getPitch() {
-    return m_navx.getPitch();
-  }
-
-  /**
-   * Returns the total accumulated yaw angle (Z Axis, in degrees)
-   * reported by the sensor.
-   *<p>
-   * NOTE: The angle is continuous, meaning it's range is beyond 360 degrees.
-   * This ensures that algorithms that wouldn't want to see a discontinuity
-   * in the gyro output as it sweeps past 0 on the second time around.
-   *<p>
-   * Note that the returned yaw value will be offset by a user-specified
-   * offset value; this user-specified offset value is set by
-   * invoking the zeroYaw() method.
-   *<p>
-   * @return The current total accumulated yaw angle (Z axis) of the robot
-   * in degrees. This heading is based on integration of the returned rate
-   * from the Z-axis (yaw) gyro.
-   */
-  private double getAngle() {
-    return m_navx.getAngle();
-  }
-
-  /**
-   * Returns the current roll value (in degrees, from -180 to 180)
-   * reported by the sensor.  Roll is a measure of rotation around
-   * the X Axis.
-   * @return The current roll value in degrees (-180 to 180).
-   */
-  private float getRoll() {
-    return m_navx.getRoll();
-  }
-
-  /**
-   * Returns the velocity (in meters/sec) of the X axis [Experimental].
-   *
-   * NOTE:  This feature is experimental.  Velocity measures rely on integration
-   * of acceleration values from MEMS accelerometers which yield "noisy" values.  The
-   * resulting velocities are not known to be very accurate.
-   * @return Current Velocity (in meters/squared).
-   */
-  private float getVelocityX() {
-    return m_navx.getVelocityX();
-  }
-
-  /**
-   * Returns the velocity (in meters/sec) of the Y axis [Experimental].
-   *
-   * NOTE:  This feature is experimental.  Velocity measures rely on integration
-   * of acceleration values from MEMS accelerometers which yield "noisy" values.  The
-   * resulting velocities are not known to be very accurate.
-   * @return Current Velocity (in meters/squared).
-   */
-  private float getVelocityY() {
-    return m_navx.getVelocityY();
-  }
-
-  /**
-   * Return the rate of rotation of the yaw (Z-axis) gyro, in degrees per second.
-   *<p>
-   * The rate is based on the most recent reading of the yaw gyro angle.
-   *<p>
-   * @return The current rate of change in yaw angle (in degrees per second)
-   */
-  private double getRate() {
-    return m_navx.getRate();
-  }
-
-  /**
-   * Return the heading of the robot as a {@link edu.wpi.first.math.geometry.Rotation2d}.
-   *
-   * <p>The angle is continuous, that is it will continue from 360 to 361 degrees. This allows
-   * algorithms that wouldn't want to see a discontinuity in the gyro output as it sweeps past from
-   * 360 to 0 on the second time around.
-   *
-   * <p>The angle is expected to increase as the gyro turns counterclockwise when looked at from the
-   * top. It needs to follow the NWU axis convention.
-   *
-   * <p>This heading is based on integration of the returned rate from the gyro.
-   *
-   * @return the current heading of the robot as a {@link edu.wpi.first.math.geometry.Rotation2d}.
-   */
-  private Rotation2d getRotation2d() {
-    return Rotation2d.fromDegrees(-getAngle());
-  }
-
-  /**
    * Update NavX input readings
    */
   private void updateInputs() {
-    m_inputs.pitchAngle = Units.Degrees.of(getPitch());
-    m_inputs.yawAngle = Units.Degrees.of(getAngle());
-    m_inputs.rollAngle = Units.Degrees.of(getRoll());
-    m_inputs.xVelocity = Units.MetersPerSecond.of(getVelocityX());
-    m_inputs.yVelocity = Units.MetersPerSecond.of(getVelocityY());
-    m_inputs.yawRate = Units.DegreesPerSecond.of(getRate());
-    m_inputs.rotation2d = getRotation2d();
+    m_inputs.isConnected = m_navx.isConnected();
+    m_inputs.pitchAngle = Units.Degrees.of(m_navx.getPitch());
+    m_inputs.yawAngle = Units.Degrees.of(m_navx.getAngle());
+    m_inputs.rollAngle = Units.Degrees.of(m_navx.getRoll());
+    m_inputs.xVelocity = Units.MetersPerSecond.of(m_navx.getVelocityX());
+    m_inputs.yVelocity = Units.MetersPerSecond.of(m_navx.getVelocityY());
+    m_inputs.yawRate = Units.DegreesPerSecond.of(m_navx.getRate());
+    m_inputs.rotation2d = Rotation2d.fromDegrees(m_inputs.yawAngle.negate().in(Units.Radians));
   }
 
   /**

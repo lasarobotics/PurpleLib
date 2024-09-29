@@ -125,6 +125,7 @@ public class Spark extends LoggableHardware implements Sendable {
    */
   @AutoLog
   public static class SparkInputs {
+    public double timestamp = 0.0;
     public double encoderPosition = 0.0;
     public double encoderVelocity = 0.0;
     public double analogPosition = 0.0;
@@ -559,6 +560,7 @@ public class Spark extends LoggableHardware implements Sendable {
   private void updateInputs() {
     synchronized (m_inputs) {
       // Get sensor inputs
+      m_inputs.timestamp = Logger.getRealTimestamp();
       m_inputs.analogPosition = getAnalogPosition();
       m_inputs.analogVelocity = getAnalogVelocity();
       m_inputs.absoluteEncoderPosition = getAbsoluteEncoderPosition();
@@ -595,9 +597,6 @@ public class Spark extends LoggableHardware implements Sendable {
     m_isSmoothMotionEnabled = !isSmoothMotionFinished();
   }
 
-  /**
-   * Call this method periodically
-   */
   @Override
   protected void periodic() {
     Logger.processInputs(m_id.name, m_inputs);
@@ -611,13 +610,24 @@ public class Spark extends LoggableHardware implements Sendable {
     Logger.recordOutput(m_id.name + TEMPERATURE_LOG_ENTRY, m_spark.getMotorTemperature());
   }
 
-  /**
-   * Get latest sensor input data
-   * @return Latest sensor data
-   */
   @Override
   public SparkInputsAutoLogged getInputs() {
     synchronized (m_inputs) { return m_inputs; }
+  }
+
+
+  @Override
+  public SparkInputsAutoLogged getInputs(double timestampMicroseconds) {
+    synchronized (m_inputs) {
+      double deltaSeconds = (m_inputs.timestamp - timestampMicroseconds) / 1e6;
+
+      m_inputs.encoderPosition += (deltaSeconds * (m_inputs.encoderVelocity / 60 / getVelocityConversionFactor(FeedbackSensor.NEO_ENCODER)))
+                                  * getPositionConversionFactor(FeedbackSensor.NEO_ENCODER);
+      m_inputs.absoluteEncoderPosition += (deltaSeconds * (m_inputs.absoluteEncoderVelocity / 60 / getVelocityConversionFactor(FeedbackSensor.ABSOLUTE_ENCODER)))
+                                          * getPositionConversionFactor(FeedbackSensor.ABSOLUTE_ENCODER);
+
+      return m_inputs;
+    }
   }
 
   @Override
