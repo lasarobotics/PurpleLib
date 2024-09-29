@@ -65,7 +65,6 @@ public class NavX2 extends LoggableHardware {
   /**
    * Create a NavX2 object with built-in logging
    * @param id NavX2 ID
-   * @param updateRate Custom update rate (Hz)
    */
   public NavX2(ID id) {
     this.m_name = id.name;
