@@ -38,6 +38,7 @@ public abstract class Monitorable {
 
   /**
    * Save number of errors that have occured
+   * @param num Number of errors
    */
   public void setErrorCount(int num) {
     if (num < 0) num = 0;

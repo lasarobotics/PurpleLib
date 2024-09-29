@@ -45,6 +45,7 @@ public class AprilTagCamera implements AutoCloseable {
   private final Measure<Angle> POSE_ROLL_TOLERANCE = Units.Degrees.of(15.0);
   private final Measure<Distance> MAX_TAG_DISTANCE = Units.Meters.of(5.0);
 
+  /** AprilTagCamera Result */
   public static class Result {
     public final EstimatedRobotPose estimatedRobotPose;
     public final Matrix<N3, N1> standardDeviation;
@@ -55,6 +56,7 @@ public class AprilTagCamera implements AutoCloseable {
     }
   }
 
+  /** Resolution */
   public enum Resolution {
     RES_320_240(320, 240),
     RES_640_480(640, 480),
