@@ -12,6 +12,7 @@ import edu.wpi.first.wpilibj.motorcontrol.Spark;
 
 /** REV Blinkin */
 public class Blinkin {
+  /** Blinkin Patterns */
   public enum BlinkinPattern {
     /*
      * Fixed Palette Pattern
@@ -174,7 +175,7 @@ public class Blinkin {
 
   /**
    * Store team pattern
-   * @param pattern
+   * @param pattern Desired pattern
    */
   public static void setTeamColor(BlinkinPattern pattern) {
     m_teamPattern = pattern;
