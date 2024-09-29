@@ -152,6 +152,9 @@ public class SwervePoseEstimatorService {
       rRearModule.get().getPosition(syncedTimestamp)
     };
 
+    // Get initial swerve positions
+    this.m_previousModulePositions = m_swerveModulePositionSupplier.apply(m_syncedTimestamp);
+
     // Initialise kinematics
     this.m_kinematics = new SwerveDriveKinematics(
       lFrontModule.get().getModuleCoordinate(),
