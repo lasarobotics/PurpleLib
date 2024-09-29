@@ -19,6 +19,15 @@ public abstract class LoggableHardware extends Monitorable implements AutoClosea
   public abstract LoggableInputs getInputs();
 
   /**
+   * Get timesynced sensor input data
+   * @param timestampMicroseconds Timestamp in microseconds for sychronization
+   * @return Timesynced sensor data
+   */
+  public LoggableInputs getInputs(double timestampMicroseconds) {
+    return getInputs();
+  }
+
+  /**
    * Closes the hardware device
    */
   public abstract void close();
