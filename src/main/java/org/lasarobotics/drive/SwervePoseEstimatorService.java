@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.lasarobotics.hardware.PurpleManager;
@@ -59,7 +58,7 @@ public class SwervePoseEstimatorService {
   private Supplier<Rotation2d> m_rotation2dSupplier;
   private Supplier<Measure<Velocity<Angle>>> m_yawRateSupplier;
   private Supplier<Boolean> m_imuConnectedSupplier;
-  private Function<Double, SwerveModulePosition[]> m_swerveModulePositionSupplier;
+  private Supplier<SwerveModulePosition[]> m_swerveModulePositionSupplier;
   private Consumer<Pose2d> m_poseResetMethod;
   private SwerveDriveKinematics m_kinematics;
   private SwerveDrivePoseEstimator m_poseEstimator;
@@ -68,7 +67,7 @@ public class SwervePoseEstimatorService {
   private Instant m_lastVisionUpdateTime;
   private Notifier m_thread;
 
-  private volatile double m_syncedTimestamp;
+  private volatile double m_currentTimestamp;
   private volatile double m_previousTimestamp;
   private volatile List<Pose2d> m_visionEstimatedPoses;
   private volatile List<AprilTag> m_visibleTags;
@@ -127,10 +126,6 @@ public class SwervePoseEstimatorService {
     // Remember how to check if IMU is connected
     this.m_imuConnectedSupplier = imuConnectedSupplier;
 
-    // Get timestamp
-    this.m_syncedTimestamp = Logger.getRealTimestamp();
-    this.m_previousTimestamp = m_syncedTimestamp;
-
     // Get each individual module
     var moduleList = Arrays.asList(modules);
     var lFrontModule = moduleList.stream().filter(module -> module.getModuleLocation().equals(ModuleLocation.LeftFront)).findFirst();
@@ -145,15 +140,15 @@ public class SwervePoseEstimatorService {
     if (rRearModule.isEmpty()) throw new IllegalArgumentException("Right rear module missing!");
 
     // Remember how to get swerve module positions from each module
-    this.m_swerveModulePositionSupplier = (syncedTimestamp) -> new SwerveModulePosition[] {
-      lFrontModule.get().getPosition(syncedTimestamp),
-      rFrontModule.get().getPosition(syncedTimestamp),
-      lRearModule.get().getPosition(syncedTimestamp),
-      rRearModule.get().getPosition(syncedTimestamp)
+    this.m_swerveModulePositionSupplier = () -> new SwerveModulePosition[] {
+      lFrontModule.get().getPosition(),
+      rFrontModule.get().getPosition(),
+      lRearModule.get().getPosition(),
+      rRearModule.get().getPosition()
     };
 
     // Get initial swerve positions
-    this.m_previousModulePositions = m_swerveModulePositionSupplier.apply(m_syncedTimestamp);
+    this.m_previousModulePositions = m_swerveModulePositionSupplier.get();
 
     // Initialise kinematics
     this.m_kinematics = new SwerveDriveKinematics(
@@ -170,7 +165,7 @@ public class SwervePoseEstimatorService {
     this.m_poseEstimator = new SwerveDrivePoseEstimator(
       m_kinematics,
       m_rotation2dSupplier.get(),
-      m_swerveModulePositionSupplier.apply(m_syncedTimestamp),
+      m_swerveModulePositionSupplier.get(),
       new Pose2d(),
       odometryStdDev,
       VISION_STDDEV
@@ -190,14 +185,14 @@ public class SwervePoseEstimatorService {
     // Initialise pose estimator thread
     this.m_thread = new Notifier(() -> {
       // Iterate timestamp
-      m_previousTimestamp = m_syncedTimestamp;
-      m_syncedTimestamp = Logger.getRealTimestamp();
+      m_previousTimestamp = m_currentTimestamp;
+      m_currentTimestamp = Logger.getRealTimestamp();
 
       // Check if IMU is connected
       boolean isIMUConnected = m_imuConnectedSupplier.get();
 
       // Get synchronized swerve module positions
-      var currentModulePositions = m_swerveModulePositionSupplier.apply(m_syncedTimestamp);
+      var currentModulePositions = m_swerveModulePositionSupplier.get();
 
       // Update yaw angle and yaw rate, using module deltas if IMU is not available
       var moduleDeltas = new SwerveModulePosition[4];
@@ -212,11 +207,11 @@ public class SwervePoseEstimatorService {
       m_yawAngle = (isIMUConnected) ? m_rotation2dSupplier.get() :
         m_yawAngle.plus(new Rotation2d(m_kinematics.toTwist2d(moduleDeltas).dtheta));
       var yawRate = (isIMUConnected) ? m_yawRateSupplier.get() :
-        Units.Radians.of(m_yawAngle.minus(previousYawAngle).getRadians()).per(Units.Microseconds.of(m_syncedTimestamp - m_previousTimestamp));
+        Units.Radians.of(m_yawAngle.minus(previousYawAngle).getRadians()).per(Units.Microseconds.of(m_currentTimestamp - m_previousTimestamp));
 
       // If no cameras or yaw rate is too high, just update pose based on odometry and exit
       if (m_cameras.isEmpty() || yawRate.gte(VISION_ANGULAR_VELOCITY_THRESHOLD)) {
-        m_pose.currentPose = m_poseEstimator.updateWithTime(m_syncedTimestamp / 1e6, m_yawAngle, m_swerveModulePositionSupplier.apply(m_syncedTimestamp));
+        m_pose.currentPose = m_poseEstimator.updateWithTime(m_currentTimestamp / 1e6, m_yawAngle, m_swerveModulePositionSupplier.get());
         return;
       }
 
@@ -247,7 +242,7 @@ public class SwervePoseEstimatorService {
         m_lastVisionUpdateTime = Instant.now();
       }
       // Update current pose
-      m_pose.currentPose = m_poseEstimator.updateWithTime(m_syncedTimestamp / 1e6, m_yawAngle, m_swerveModulePositionSupplier.apply(m_syncedTimestamp));
+      m_pose.currentPose = m_poseEstimator.updateWithTime(m_currentTimestamp / 1e6, m_yawAngle, m_swerveModulePositionSupplier.get());
 
       // Clear vision logging variables if its been a while since last update
       if (Duration.between(m_lastVisionUpdateTime, Instant.now()).toMillis() / 1000.0 > GlobalConstants.ROBOT_LOOP_PERIOD) {
@@ -259,10 +254,7 @@ public class SwervePoseEstimatorService {
     m_thread.setName(NAME);
 
     // Remember how to reset pose
-    this.m_poseResetMethod = pose -> {
-      double timestamp = Logger.getRealTimestamp();
-      m_poseEstimator.resetPosition(m_rotation2dSupplier.get(), m_swerveModulePositionSupplier.apply(timestamp), pose);
-    };
+    this.m_poseResetMethod = pose -> m_poseEstimator.resetPosition(m_rotation2dSupplier.get(), m_swerveModulePositionSupplier.get(), pose);
 
     // Register service as pose supplier with PurpleManager for simulation
     PurpleManager.setPoseSupplier(this::getPose);

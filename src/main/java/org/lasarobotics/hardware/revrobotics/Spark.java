@@ -615,21 +615,6 @@ public class Spark extends LoggableHardware implements Sendable {
     synchronized (m_inputs) { return m_inputs; }
   }
 
-
-  @Override
-  public SparkInputsAutoLogged getInputs(double timestampMicroseconds) {
-    synchronized (m_inputs) {
-      double deltaSeconds = (m_inputs.timestamp - timestampMicroseconds) / 1e6;
-
-      m_inputs.encoderPosition += (deltaSeconds * (m_inputs.encoderVelocity / 60 / getVelocityConversionFactor(FeedbackSensor.NEO_ENCODER)))
-                                  * getPositionConversionFactor(FeedbackSensor.NEO_ENCODER);
-      m_inputs.absoluteEncoderPosition += (deltaSeconds * (m_inputs.absoluteEncoderVelocity / 60 / getVelocityConversionFactor(FeedbackSensor.ABSOLUTE_ENCODER)))
-                                          * getPositionConversionFactor(FeedbackSensor.ABSOLUTE_ENCODER);
-
-      return m_inputs;
-    }
-  }
-
   @Override
   public boolean isHealthy() {
     return !m_spark.getStickyFault(FaultID.kHasReset);

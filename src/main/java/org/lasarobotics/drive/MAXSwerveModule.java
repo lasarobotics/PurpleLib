@@ -649,25 +649,6 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
   }
 
   /**
-   * Get timesynced module position
-   * <p>
-   * Must be called periodically in simulation to keep position updated.
-   * Usually this is automatically done by the pose estimator service.
-   * @param timestampMicroseconds Timestamp in microseconds for time synchronization
-   * @return Timesynced module position
-   */
-  public SwerveModulePosition getPosition(double timestampMicroseconds) {
-    if (RobotBase.isSimulation()) return getPosition();
-
-    var driveInputs = m_driveMotor.getInputs(timestampMicroseconds);
-    var rotateInputs = m_rotateMotor.getInputs(timestampMicroseconds);
-    return new SwerveModulePosition(
-      driveInputs.encoderPosition,
-      Rotation2d.fromRadians(rotateInputs.absoluteEncoderPosition).minus(m_location.offset)
-    );
-  }
-
-  /**
    * Get if drive wheel is slipping
    * @return True if wheel is slipping excessively
    */
