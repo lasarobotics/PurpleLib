@@ -95,7 +95,7 @@ public class NavX2 extends LoggableHardware {
     m_inputs.xVelocity = Units.MetersPerSecond.of(m_navx.getVelocityX());
     m_inputs.yVelocity = Units.MetersPerSecond.of(m_navx.getVelocityY());
     m_inputs.yawRate = Units.DegreesPerSecond.of(m_navx.getRate());
-    m_inputs.rotation2d = Rotation2d.fromDegrees(m_inputs.yawAngle.negate().in(Units.Radians));
+    m_inputs.rotation2d = Rotation2d.fromRadians(m_inputs.yawAngle.negate().in(Units.Radians));
   }
 
   /**
