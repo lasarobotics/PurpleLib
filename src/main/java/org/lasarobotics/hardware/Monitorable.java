@@ -9,7 +9,9 @@ public abstract class Monitorable {
   private int m_errorCount = 0;
 
   /**
-   * Return true if the component is healthy. Some components may not have this capability, so a
+   * Return true if the component is healthy.
+   * <p>
+   * Some components may not have this capability, so a
    * default of returning true is used.
    * @return True if the component is connected.
    */
@@ -19,15 +21,30 @@ public abstract class Monitorable {
 
 
   /**
-   * Method to call to re-initialize component
-   * @return True if component re-initialized successfully
+   * Get if component is dead.
+   * Component is declared "dead" when the number of re-initialization attempts
+   * exceeds the value returned by {@link Monitorable#getMaxRetries()}
+   * <p>
+   * HE'S DEAD JIM!
+   * @return True if component is dead
    */
-  public boolean reinit() {
-    return true;
+  public boolean isDead() {
+    return m_errorCount >= getMaxRetries();
   }
 
   /**
-   * Get maximum number of times to retry re-initializing component
+   * Method to call to re-initialize component
+   * <p>
+   * A default of returning false is used to allow for components that only require monitoring
+   * with no attempt to re-initialize
+   * @return True if component re-initialized successfully
+   */
+  public boolean reinit() {
+    return false;
+  }
+
+  /**
+   * Get maximum number of times to try re-initializing component
    * <p>
    * Defaults to {@value Monitorable#DEFAULT_RETRIES}
    * @return Number of retries

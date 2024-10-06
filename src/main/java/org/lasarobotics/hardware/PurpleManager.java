@@ -52,17 +52,21 @@ public class PurpleManager {
    */
   private static void monitorHealth() {
     for (Monitorable component : m_monitored) {
+      // If healthy, reset error count and continue...
       if (component.isHealthy()) {
-        component.setErrorCount(component.getErrorCount() - 1);
+        component.setErrorCount(0);
         continue;
       }
-      if (component.getErrorCount() < component.getMaxRetries()) {
-        boolean hasError = component.reinit();
-        if (!hasError) {
-          component.setErrorCount(0);
-          continue;
-        } else component.setErrorCount(component.getErrorCount() + 1);
+      // If dead, stop monitoring...
+      if (component.isDead()) {
+        m_monitored.remove(component);
+        continue;
       }
+      // Try to reinit
+      // If success, reset error count, else increment error count
+      boolean success = component.reinit();
+      if (success) component.setErrorCount(0);
+      else component.setErrorCount(component.getErrorCount() + 1);
     }
   }
 
@@ -71,7 +75,10 @@ public class PurpleManager {
    * <p>
    * Call this at the beginning of <code>robotInit()</code>.
    * <p>
-   * To enable replay, set the environment variable <code>ROBOT_REPLAY=1</code>, otherwise simply unset this variable.
+   * To enable replay, set the environment variable <code>ROBOT_REPLAY=1</code>,
+   * and <code>AKIT_LOG_PATH=path_to_log_file</code>, otherwise simply unset these variables.
+   * <p>
+   * Power distribution board must have default CAN ID (0 for CTRE, 1 for REV)
    * @param robot Robot object
    * @param fieldLayout AprilTag field layout
    * @param logPath Path for log file
@@ -104,7 +111,7 @@ public class PurpleManager {
 
       // Battery Tracking
       if (batteryTrackingEnabled) {
-        BatteryTracker batteryTracker = new BatteryTracker(BatteryTracker.initializeHardware());
+        var batteryTracker = new BatteryTracker(BatteryTracker.initializeHardware());
         Logger.recordMetadata("BatteryName", batteryTracker.scanBattery());
         if (batteryTracker.isBatteryReused())
           DriverStation.reportError(batteryTracker.scanBattery() + " is being reused!", false);
@@ -112,7 +119,7 @@ public class PurpleManager {
       }
     } else {
       // Else just publish to NetworkTables for simulation or replay log file if var is set
-      String replay = System.getenv(GlobalConstants.REPLAY_ENVIRONMENT_VAR);
+      var replay = System.getenv(GlobalConstants.REPLAY_ENVIRONMENT_VAR);
       if (replay == null || replay.isBlank()) Logger.addDataReceiver(new NT4Publisher());
       else {
         // Run as fast as possible

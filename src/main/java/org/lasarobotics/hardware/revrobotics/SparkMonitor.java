@@ -14,13 +14,13 @@ import com.revrobotics.SparkHelpers;
 
 /** This is a basic monitor class separate from the HealthMonitor setup. */
 public class SparkMonitor {
-  private static SparkMonitor m_instance = new SparkMonitor();
-  private static HashMap<Spark, Short> m_sparks = new HashMap<>();
-  private static int m_runCount = 0;
+  private static SparkMonitor s_instance = new SparkMonitor();
+  private static HashMap<Spark, Short> s_sparks = new HashMap<>();
+  private static int s_runCount = 0;
 
   /** Creates a new SparkMonitor. */
   private SparkMonitor() {
-    PurpleManager.addCallback(this::periodic);
+    PurpleManager.addCallback(() -> s_instance.periodic());
   }
 
   /**
@@ -28,7 +28,7 @@ public class SparkMonitor {
    * @return Instance of Spark monitor
    */
   public static SparkMonitor getInstance() {
-    return m_instance;
+    return s_instance;
   }
 
   /**
@@ -37,8 +37,8 @@ public class SparkMonitor {
    * @return True if added successfully
    */
   public boolean add(Spark spark) {
-    if (m_sparks.containsKey(spark)) return false;
-    m_sparks.put(spark, (short) 0);
+    if (s_sparks.containsKey(spark)) return false;
+    s_sparks.put(spark, (short) 0);
     return true;
   }
 
@@ -48,19 +48,19 @@ public class SparkMonitor {
    * @return True if removed successfully
    */
   public boolean remove(Spark spark) {
-    if (m_sparks.containsKey(spark)) {
-      m_sparks.remove(spark);
+    if (s_sparks.containsKey(spark)) {
+      s_sparks.remove(spark);
       return true;
     } else return false;
   }
 
   public void periodic() {
     // Run at 1 second
-    if (m_runCount++ < GlobalConstants.ROBOT_LOOP_HZ) return;
+    if (s_runCount++ < GlobalConstants.ROBOT_LOOP_HZ) return;
 
-    m_runCount = 0;
+    s_runCount = 0;
 
-    m_sparks.forEach((sparkMax, prevFault) -> {
+    s_sparks.forEach((sparkMax, prevFault) -> {
       short faults = sparkMax.getStickyFaults();
       if (faults != prevFault.shortValue()) {
         Logger.tag("Spark Monitor")
@@ -69,7 +69,7 @@ public class SparkMonitor {
                 sparkMax.getID().name,
                 SparkHelpers.faultWordToString(faults));
       }
-      m_sparks.put(sparkMax, faults);
+      s_sparks.put(sparkMax, faults);
     });
   }
 }

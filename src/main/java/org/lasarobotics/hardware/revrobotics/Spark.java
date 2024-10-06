@@ -332,6 +332,7 @@ public class Spark extends LoggableHardware implements Sendable {
    * Attempt to apply parameter and check if specified parameter is set correctly
    * @param parameterSetter Method to set desired parameter
    * @param parameterCheckSupplier Method to check for parameter in question
+   * @param errorMessage Message to show in case of failure
    * @return {@link REVLibError#kOk} if successful
    */
   private REVLibError applyParameter(Supplier<REVLibError> parameterSetter, BooleanSupplier parameterCheckSupplier, String errorMessage) {
