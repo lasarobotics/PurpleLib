@@ -40,8 +40,12 @@ public class TractionControlController {
   private final double MIN_SLIP_RATIO = 0.01;
   private final double MAX_SLIP_RATIO = 0.40;
   private final int SIGMOID_K = 10;
+  private final double FORCE_ACCELERATION_MULTIPLIER = 0.5;
   private final Measure<Velocity<Distance>> INERTIAL_VELOCITY_THRESHOLD = Units.MetersPerSecond.of(0.01);
   private final Measure<Time> MIN_SLIPPING_TIME = Units.Seconds.of(0.9);
+  private final Measure<Velocity<Distance>> VELOCITY_REQUEST_THRESHOLD = Units.MetersPerSecond.of(0.05);
+  private final Measure<Velocity<Distance>> WHEEL_SPEED_THRESHOLD = Units.MetersPerSecond.of(0.05);
+  private final Measure<Time> FORCE_ACCELERATE_TIME = Units.Seconds.of(0.1);
 
   private double m_optimalSlipRatio;
   private double m_mass;
@@ -52,6 +56,7 @@ public class TractionControlController {
   private double m_maxPredictedSlipRatio;
   private boolean m_isSlipping;
   private Debouncer m_slippingDebouncer;
+  private Debouncer m_forceAccelerationDebouncer;
   private State m_state;
 
   /**
@@ -91,6 +96,7 @@ public class TractionControlController {
     this.m_isSlipping = false;
     this.m_slippingDebouncer = new Debouncer(MIN_SLIPPING_TIME.in(Units.Seconds), DebounceType.kRising);
     this.m_state = State.ENABLED;
+    this.m_forceAccelerationDebouncer = new Debouncer(FORCE_ACCELERATE_TIME.in(Units.Seconds), DebounceType.kRising);
   }
 
   /**
@@ -104,6 +110,11 @@ public class TractionControlController {
                                                Measure<Velocity<Distance>> inertialVelocity,
                                                Measure<Velocity<Distance>> wheelSpeed) {
     var velocityOutput = velocityRequest;
+
+    // See if user has been trying to accelerate for a while...
+    boolean forceAcceleration = m_forceAccelerationDebouncer.calculate(
+      velocityRequest.gte(VELOCITY_REQUEST_THRESHOLD) && wheelSpeed.lte(WHEEL_SPEED_THRESHOLD)
+    );
 
     // Get current slip ratio, and check if slipping
     inertialVelocity = Units.MetersPerSecond.of(Math.abs(inertialVelocity.in(Units.MetersPerSecond)));
@@ -136,6 +147,9 @@ public class TractionControlController {
 
     // Calculate correction based on difference between optimal and predicted slip ratio
     var velocityCorrection = velocityOutput.times((m_optimalSlipRatio - predictedSlipRatio) * m_state.value);
+
+    // Reduce velocity correction if trying to force acceleration
+    if (forceAcceleration) velocityCorrection = velocityCorrection.times(FORCE_ACCELERATION_MULTIPLIER);
 
     // Update output, clamping to max linear speed
     velocityOutput = Units.MetersPerSecond.of(MathUtil.clamp(
