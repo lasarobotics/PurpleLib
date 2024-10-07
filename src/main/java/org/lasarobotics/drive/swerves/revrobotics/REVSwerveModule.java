@@ -2,7 +2,7 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the MIT license file in the root directory of this project.
 
-package org.lasarobotics.drive;
+package org.lasarobotics.drive.swerves.revrobotics;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -13,16 +13,16 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 
-import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
+import org.lasarobotics.drive.DriveWheel;
+import org.lasarobotics.drive.TractionControlController;
+import org.lasarobotics.drive.swerves.ModuleLocation;
+import org.lasarobotics.drive.swerves.SwerveModule;
 import org.lasarobotics.hardware.PurpleManager;
 import org.lasarobotics.hardware.revrobotics.Spark;
 import org.lasarobotics.hardware.revrobotics.Spark.MotorKind;
 import org.lasarobotics.hardware.revrobotics.SparkPIDConfig;
-import org.lasarobotics.hardware.revrobotics.SparkSim;
-import org.lasarobotics.utils.FFConstants;
 import org.lasarobotics.utils.GlobalConstants;
 import org.lasarobotics.utils.PIDConstants;
-import org.lasarobotics.utils.SimDynamics;
 import org.littletonrobotics.junction.Logger;
 
 import com.revrobotics.CANSparkBase.ControlType;
@@ -32,9 +32,9 @@ import com.revrobotics.CANSparkLowLevel.PeriodicFrame;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Current;
 import edu.wpi.first.units.Dimensionless;
 import edu.wpi.first.units.Distance;
@@ -43,17 +43,13 @@ import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Time;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.Velocity;
-import edu.wpi.first.util.sendable.Sendable;
-import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.RobotController;
-import edu.wpi.first.wpilibj.simulation.BatterySim;
-import edu.wpi.first.wpilibj.simulation.RoboRioSim;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 
 /** REV MAXSwerve module */
-public class MAXSwerveModule implements Sendable, AutoCloseable {
+public class REVSwerveModule extends SwerveModule implements AutoCloseable {
   /**
    * MAXSwerve module hardware
    */
@@ -70,33 +66,14 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
   /**
    * MAXSwerve gear ratio
    */
-  public enum GearRatio {
-    /** 5.50:1 */
-    L1(5.50),
-    /** 5.08:1 */
-    L2(5.08),
-    /** 4.71:1 */
-    L3(4.71),
-    /** 4.50:1 */
-    L4(4.50),
-    /** 4.29:1 */
-    L5(4.29),
-    /** 4.00:1 */
-    L6(4.00),
-    /** 3.75:1 */
-    L7(3.75),
-    /** 3.56:1 */
-    L8(3.56);
-
-    public final double value;
-    private GearRatio(double value) {
-      this.value = value;
-    }
+  public interface GearRatio {
+    public double getValue();
   }
 
   public static final Measure<Time> DEFAULT_PERIOD = Units.Milliseconds.of(10.0);
 
   private final double EPSILON = 5e-3;
+  private final double DRIVE_FF_SCALAR = 1.5;
   private final Measure<Current> DRIVE_MOTOR_CURRENT_LIMIT;
   private final Measure<Current> ROTATE_MOTOR_CURRENT_LIMIT = Units.Amps.of(18.0);
   private final Rotation2d LOCK_POSITION = Rotation2d.fromRadians(Math.PI / 4);
@@ -112,33 +89,23 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
   private final int COSINE_CORRECTION;
 
   // Swerve velocity PID settings
-  private static final double DRIVE_VELOCITY_kP = 0.6;
-  private static final double DRIVE_VELOCITY_kD = 0.003;
-  private static final double DRIVE_VELOCITY_kS = 0.2;
-  private static final double DRIVE_VELOCITY_kA = 0.5;
+  private static final double DRIVE_VELOCITY_kP = 0.18;
+  private static final double DRIVE_VELOCITY_kD = 0.001;
   private static final double DRIVE_VELOCITY_TOLERANCE = 0.01;
   private static final boolean DRIVE_VELOCITY_SENSOR_PHASE = false;
   private static final boolean DRIVE_INVERT_MOTOR = false;
 
   // Swerve rotate PID settings
   private static final PIDConstants DRIVE_ROTATE_PID = new PIDConstants(2.1, 0.0, 0.2, 0.0, 0.0);
-  private static final double DRIVE_ROTATE_kS = 0.2;
-  private static final double DRIVE_ROTATE_kA = 0.01;
   private static final double DRIVE_ROTATE_TOLERANCE = 0.01;
   private static final double DRIVE_ROTATE_LOWER_LIMIT = 0.0;
   private static final double DRIVE_ROTATE_UPPER_LIMIT = 0.0;
   private static final boolean DRIVE_ROTATE_SOFT_LIMITS = false;
   private static final boolean DRIVE_ROTATE_SENSOR_PHASE = true;
   private static final boolean DRIVE_ROTATE_INVERT_MOTOR = false;
-  private static final double DRIVE_ROTATE_GEAR_RATIO = 9424.0 / 203.0;
 
   private Spark m_driveMotor;
   private Spark m_rotateMotor;
-  private SparkSim m_driveMotorSim;
-  private SparkSim m_rotateMotorSim;
-  private SwerveModuleSim m_moduleSim;
-  private SparkPIDConfig m_driveMotorConfig;
-  private SparkPIDConfig m_rotateMotorConfig;
   private Translation2d m_moduleCoordinate;
   private ModuleLocation m_location;
   private Rotation2d m_previousRotatePosition;
@@ -149,6 +116,7 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
   private GearRatio m_driveGearRatio;
   private double m_driveConversionFactor;
   private double m_rotateConversionFactor;
+  private double m_radius;
   private double m_autoLockTime;
   private boolean m_autoLock;
   private double m_runningOdometer;
@@ -170,7 +138,7 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
    * @param autoLockTime Time before automatically rotating module to locked position (10 seconds max)
    * @param driveMotorCurrentLimit Desired current limit for the drive motor
    */
-  public MAXSwerveModule(Hardware swerveHardware, ModuleLocation location, GearRatio driveGearRatio, DriveWheel driveWheel,
+  public REVSwerveModule(Hardware swerveHardware, ModuleLocation location, GearRatio driveGearRatio, DriveWheel driveWheel,
                          Measure<Dimensionless> slipRatio, Measure<Mass> mass,
                          Measure<Distance> wheelbase, Measure<Distance> trackWidth,
                          Measure<Time> autoLockTime, Measure<Current> driveMotorCurrentLimit) {
@@ -179,7 +147,7 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
       : GlobalConstants.NEO_ENCODER_TICKS_PER_ROTATION;
     DRIVE_MOTOR_CURRENT_LIMIT = driveMotorCurrentLimit;
     DRIVE_TICKS_PER_METER =
-      (encoderTicksPerRotation * driveGearRatio.value)
+      (encoderTicksPerRotation * driveGearRatio.getValue())
       * (1 / (driveWheel.diameter.in(Units.Meters) * Math.PI));
     DRIVE_METERS_PER_TICK = 1 / DRIVE_TICKS_PER_METER;
     DRIVE_METERS_PER_ROTATION = DRIVE_METERS_PER_TICK * encoderTicksPerRotation;
@@ -200,7 +168,7 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
     this.m_runningOdometer = 0.0;
 
     // Set drive encoder conversion factor
-    m_driveConversionFactor = driveWheel.diameter.in(Units.Meters) * Math.PI / m_driveGearRatio.value;
+    m_driveConversionFactor = driveWheel.diameter.in(Units.Meters) * Math.PI / m_driveGearRatio.getValue();
     m_driveMotor.setPositionConversionFactor(Spark.FeedbackSensor.NEO_ENCODER, m_driveConversionFactor);
     m_driveMotor.setVelocityConversionFactor(Spark.FeedbackSensor.NEO_ENCODER, m_driveConversionFactor / 60);
 
@@ -213,19 +181,19 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
     m_rotateMotor.enablePIDWrapping(0.0, m_rotateConversionFactor);
 
     // Create PID configs
-    m_driveMotorConfig = new SparkPIDConfig(
+    SparkPIDConfig driveMotorConfig = new SparkPIDConfig(
       new PIDConstants(
         DRIVE_VELOCITY_kP,
         0.0,
         DRIVE_VELOCITY_kD,
-        1 / ((m_driveMotor.getKind().getMaxRPM() / 60) * m_driveConversionFactor),
+        (1 / ((m_driveMotor.getKind().getMaxRPM() / 60) * m_driveConversionFactor)) * DRIVE_FF_SCALAR,
         0.0
       ),
       DRIVE_VELOCITY_SENSOR_PHASE,
       DRIVE_INVERT_MOTOR,
       DRIVE_VELOCITY_TOLERANCE
     );
-    m_rotateMotorConfig = new SparkPIDConfig(
+    SparkPIDConfig rotateMotorConfig = new SparkPIDConfig(
       DRIVE_ROTATE_PID,
       DRIVE_ROTATE_SENSOR_PHASE,
       DRIVE_ROTATE_INVERT_MOTOR,
@@ -236,8 +204,8 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
     );
 
     // Initialize PID
-    m_driveMotor.initializeSparkPID(m_driveMotorConfig, Spark.FeedbackSensor.NEO_ENCODER);
-    m_rotateMotor.initializeSparkPID(m_rotateMotorConfig, Spark.FeedbackSensor.ABSOLUTE_ENCODER);
+    m_driveMotor.initializeSparkPID(driveMotorConfig, Spark.FeedbackSensor.NEO_ENCODER);
+    m_rotateMotor.initializeSparkPID(rotateMotorConfig, Spark.FeedbackSensor.ABSOLUTE_ENCODER);
 
     // Set drive motor to coast
     m_driveMotor.setIdleMode(IdleMode.kCoast);
@@ -279,26 +247,17 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
 
     // Add callbacks to PurpleManager
     PurpleManager.addCallback(() -> periodic());
-    PurpleManager.addCallbackSim(() -> simulationPeriodic());
 
     // Setup disabled triggers
     RobotModeTriggers.disabled().onTrue(Commands.runOnce(() -> disabledInit()).ignoringDisable(true));
     RobotModeTriggers.disabled().onFalse(Commands.runOnce(() -> disabledExit()).ignoringDisable(true));
 
+    // Get distance from center of robot
+    m_radius = m_moduleCoordinate.getNorm();
+
     // Make sure settings are burned to flash
     m_driveMotor.burnFlash();
     m_rotateMotor.burnFlash();
-
-    // Setup sim
-    double rotate_kV = 1 / ((m_rotateMotor.getKind().getMaxRPM() / 60) * (m_rotateConversionFactor / DRIVE_ROTATE_GEAR_RATIO)) * 10;
-    m_moduleSim = new SwerveModuleSim(
-      m_driveMotor.getKind().motor.withReduction(m_driveGearRatio.value),
-      new FFConstants(DRIVE_VELOCITY_kS, 0.0, m_driveMotorConfig.getF() * 10, DRIVE_VELOCITY_kA),
-      m_rotateMotor.getKind().motor.withReduction(DRIVE_ROTATE_GEAR_RATIO),
-      new FFConstants(DRIVE_ROTATE_kS, 0.0, rotate_kV * 500, DRIVE_ROTATE_kA * 500)
-    );
-    m_driveMotorSim = new SparkSim(m_driveMotor, SimDynamics.fromSim(m_moduleSim.getDriveSim()));
-    m_rotateMotorSim = new SparkSim(m_rotateMotor, SimDynamics.fromSim(m_moduleSim.getRotateSim()));
 
     // Read odometer file if exists
     m_odometerOutputPath = (m_driveMotor.getID().name + "-odometer.txt").replace('/', '-');
@@ -365,34 +324,13 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
   }
 
   /**
-   * Get velocity of module parallel to the desired orientation
-   * @param state Desired swerve module state representing desired speed and orientation
-   * @param realSpeeds Real speeds of robot from IMU
-   * @return Velocity of module parallel to desired module orientation
+   * Get real speed of module
+   * @param inertialVelocity Inertial velocity of robot (m/s)
+   * @param rotateRate Rotate rate of robot (degrees/s)
+   * @return Speed of module (m/s)
    */
-  private Measure<Velocity<Distance>> getParallelVelocity(SwerveModuleState state, ChassisSpeeds realSpeeds) {
-    // Get physical velocity of module through space
-    var moduleInertialVelocityState = AdvancedSwerveKinematics.getRealModuleVelocity(realSpeeds, m_moduleCoordinate);
-    // Get vector of physical velocity
-    var moduleInertialVelocityVector = new Vector2D(
-      moduleInertialVelocityState.speedMetersPerSecond * moduleInertialVelocityState.angle.getCos(),
-      moduleInertialVelocityState.speedMetersPerSecond * moduleInertialVelocityState.angle.getSin()
-    );
-    // Get vector of desired velocity
-    var moduleDesiredVelocityVector = new Vector2D(
-      state.speedMetersPerSecond * state.angle.getCos(),
-      state.speedMetersPerSecond * state.angle.getSin()
-    );
-
-    // Calculate portion of inertial velocity that is in direction of desired
-    var parallelModuleVelocity = moduleDesiredVelocityVector.scalarMultiply(
-      moduleDesiredVelocityVector.getNorm() != 0.0
-        ? moduleInertialVelocityVector.dotProduct(moduleDesiredVelocityVector) / moduleDesiredVelocityVector.getNormSq()
-        : 1.0
-    );
-
-    // Return velocity
-    return Units.MetersPerSecond.of(parallelModuleVelocity.getNorm());
+  private Measure<Velocity<Distance>> calculateRealSpeed(double inertialVelocity, double rotateRate) {
+    return Units.MetersPerSecond.of(inertialVelocity + Math.toRadians(rotateRate) * m_radius);
   }
 
   /**
@@ -402,114 +340,6 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
     Logger.recordOutput(m_driveMotor.getID().name + IS_SLIPPING_LOG_ENTRY, isSlipping());
     Logger.recordOutput(m_driveMotor.getID().name + ODOMETER_LOG_ENTRY, m_runningOdometer);
   }
-
- /**
-   * Call this method periodically in simulation
-   */
-  private void simulationPeriodic() {
-    var vbus = Units.Volts.of(RobotController.getBatteryVoltage());
-    m_driveMotorSim.enable();
-    m_rotateMotorSim.enable();
-
-    m_driveMotorSim.update(Units.Value.of(m_moduleSim.getDriveMotorVelocity().in(Units.RPM)), vbus);
-    m_rotateMotorSim.update(Units.Value.of(m_moduleSim.getRotateMotorVelocity().in(Units.RPM)), vbus);
-
-    m_moduleSim.update(
-      m_driveMotorSim.getAppliedOutput() * vbus.in(Units.Volts),
-      m_rotateMotorSim.getAppliedOutput() * vbus.in(Units.Volts)
-    );
-
-    RoboRioSim.setVInVoltage(
-        BatterySim.calculateDefaultBatteryLoadedVoltage(m_moduleSim.getTotalCurrentDraw().in(Units.Amps)));
-
-    m_driveMotorSim.setMotorCurrent(m_moduleSim.getDriveMotorCurrentDraw());
-    m_rotateMotorSim.setMotorCurrent(m_moduleSim.getRotateMotorCurrentDraw());
-  }
-
-  /**
-   * Allow for adding MAXSwerveModule as a sendable object for dashboard interactivity
-   * @param builder
-   */
-  @Override
-  public void initSendable(SendableBuilder builder) {
-    builder.setSafeState(this::lock);
-    // Control drive velocity
-    builder.addDoubleProperty(
-      "Velocity",
-      () -> m_desiredState.speedMetersPerSecond,
-      (value) -> set(new SwerveModuleState(Units.MetersPerSecond.of(value), m_desiredState.angle))
-    );
-    // Control rotation
-    builder.addDoubleProperty(
-      "Orientation",
-      () -> m_desiredState.angle.getRadians(),
-      (value) -> set(new SwerveModuleState(m_desiredState.speedMetersPerSecond, Rotation2d.fromRadians(value)))
-    );
-    // Configure drive kP
-    builder.addDoubleProperty(
-      "Drive kP",
-      () -> m_driveMotorConfig.getP(),
-      (value) -> {
-        m_driveMotorConfig.setP(value);
-        m_driveMotor.setP(value);
-      }
-    );
-    // Configure drive kI
-    builder.addDoubleProperty(
-      "Drive kI",
-      () -> m_driveMotorConfig.getI(),
-      (value) -> {
-        m_driveMotorConfig.setI(value);
-        m_driveMotor.setI(value);
-      }
-    );
-    // Configure drive kD
-    builder.addDoubleProperty(
-      "Drive kD",
-      () -> m_driveMotorConfig.getD(),
-      (value) -> {
-        m_driveMotorConfig.setD(value);
-        m_driveMotor.setD(value);
-      }
-    );
-    // Configure drive kF
-    builder.addDoubleProperty(
-      "Drive kF",
-      () -> m_driveMotorConfig.getF(),
-      (value) -> {
-        m_driveMotorConfig.setF(value);
-        m_driveMotor.setF(value);
-      }
-    );
-    // Configure rotate kP
-    builder.addDoubleProperty(
-      "Rotate kP",
-      () -> m_rotateMotorConfig.getP(),
-      (value) -> {
-        m_rotateMotorConfig.setP(value);
-        m_rotateMotor.setP(value);
-      }
-    );
-    // Configure rotate kI
-    builder.addDoubleProperty(
-      "Rotate kI",
-      () -> m_rotateMotorConfig.getI(),
-      (value) -> {
-        m_rotateMotorConfig.setI(value);
-        m_rotateMotor.setI(value);
-      }
-    );
-    // Configure rotate kD
-    builder.addDoubleProperty(
-      "Rotate kD",
-      () -> m_rotateMotorConfig.getD(),
-      (value) -> {
-        m_rotateMotorConfig.setD(value);
-        m_rotateMotor.setD(value);
-      }
-    );
-  }
-
 
   /**
    * Call method during initialization of disabled mode to set drive motor to brake mode and log odometry
@@ -569,14 +399,15 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
 
   /**
    * Set swerve module direction and speed, automatically applying traction control
-   * @param state Desired swerve module state representing desired speed
-   * @param realSpeeds Real speeds of robot from IMU
+   * @param state Desired swerve module state
+   * @param inertialVelocity Current inertial velocity
+   * @param rotateRate Current robot rotate rate
    */
-  public void set(SwerveModuleState state, ChassisSpeeds realSpeeds) {
+  public void set(SwerveModuleState state, Measure<Velocity<Distance>> inertialVelocity, Measure<Velocity<Angle>> rotateRate) {
     // Apply traction control
     state.speedMetersPerSecond = m_tractionControlController.calculate(
       Units.MetersPerSecond.of(state.speedMetersPerSecond),
-      getParallelVelocity(state, realSpeeds),
+      calculateRealSpeed(inertialVelocity.in(Units.MetersPerSecond), rotateRate.in(Units.DegreesPerSecond)),
       getDriveVelocity()
     ).in(Units.MetersPerSecond);
 
@@ -594,11 +425,12 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
 
   /**
    * Set swerve module direction and speed, automatically applying traction control
-   * @param states Array of states for all swerve modules representing desired speed
-   * @param realSpeeds Real speeds of robot from IMU
+   * @param states Array of states for all swerve modules
+   * @param inertialVelocity Current inertial velocity
+   * @param rotateRate Current rotate rate
    */
-  public void set(SwerveModuleState[] states, ChassisSpeeds realSpeeds) {
-    set(states[m_location.index], realSpeeds);
+  public void set(SwerveModuleState[] states, Measure<Velocity<Distance>> inertialVelocity, Measure<Velocity<Angle>> rotateRate) {
+    set(states[m_location.index], inertialVelocity, rotateRate);
   }
 
   /**
@@ -792,4 +624,5 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
     m_driveMotor.close();
     m_rotateMotor.close();
   }
+
 }
