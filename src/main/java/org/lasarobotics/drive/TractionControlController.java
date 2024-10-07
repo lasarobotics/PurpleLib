@@ -40,7 +40,7 @@ public class TractionControlController {
   private final double MIN_SLIP_RATIO = 0.01;
   private final double MAX_SLIP_RATIO = 0.40;
   private final int SIGMOID_K = 10;
-  private final double FORCE_ACCELERATION_MULTIPLIER = 0.5;
+  private final double FORCE_ACCELERATION_MULTIPLIER = 0.7;
   private final Measure<Velocity<Distance>> INERTIAL_VELOCITY_THRESHOLD = Units.MetersPerSecond.of(0.01);
   private final Measure<Time> MIN_SLIPPING_TIME = Units.Seconds.of(0.9);
   private final Measure<Velocity<Distance>> VELOCITY_REQUEST_THRESHOLD = Units.MetersPerSecond.of(0.05);
