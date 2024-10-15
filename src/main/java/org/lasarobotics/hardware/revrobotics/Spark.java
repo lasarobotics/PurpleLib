@@ -42,10 +42,12 @@ import com.revrobotics.SparkRelativeEncoder;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Current;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Time;
 import edu.wpi.first.units.Units;
+import edu.wpi.first.units.Velocity;
 import edu.wpi.first.units.Voltage;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
@@ -1466,15 +1468,66 @@ public class Spark extends LoggableHardware implements Sendable {
    * @param limit The desired current limit
    */
   public REVLibError setSmartCurrentLimit(Measure<Current> limit) {
-    REVLibError status;
-    status = applyParameter(
-      () -> m_spark.setSmartCurrentLimit((int)limit.in(Units.Amps)),
-      () -> SparkHelpers.getSmartCurrentLimit(m_spark) == (int)limit.in(Units.Amps),
-      "Set current limit failure!"
-    );
-    return status;
+    return setSmartCurrentLimit(limit, Units.Amps.zero(), Units.RPM.of(20000));
   }
 
+    /**
+   * Sets the current limit in Amps.
+   *
+   * <p>The motor controller will reduce the controller voltage output to avoid surpassing this
+   * limit. This limit is enabled by default and used for brushless only. This limit is highly
+   * recommended when using the NEO brushless motor.
+   *
+   * <p>The NEO Brushless Motor has a low internal resistance, which can mean large current spikes
+   * that could be enough to cause damage to the motor and controller. This current limit provides a
+   * smarter strategy to deal with high current draws and keep the motor and controller operating in
+   * a safe region.
+   *
+   * <p>The controller can also limit the current based on the RPM of the motor in a linear fashion
+   * to help with controllability in closed loop control. For a response that is linear the entire
+   * RPM range leave limit RPM at 0.
+   *
+   * @param stallLimit The current limit in Amps at 0 RPM.
+   * @param freeLimit The current limit at free speed (5700RPM for NEO).
+   * @param limitRPM RPM less than this value will be set to the stallLimit, RPM values greater than
+   *     limitRPM will scale linearly to freeLimit
+   * @return {@link REVLibError#kOk} if successful
+   */
+  public REVLibError setSmartCurrentLimit(Measure<Current> stallLimit, Measure<Current> freeLimit, Measure<Velocity<Angle>> limitRPM) {
+    return applyParameter(
+      () -> m_spark.setSmartCurrentLimit((int)stallLimit.in(Units.Amps), (int)freeLimit.in(Units.Amps), (int)limitRPM.in(Units.RPM)),
+      () -> Units.Amp.of(SparkHelpers.getSmartCurrentFreeLimit(m_spark)).isEquivalent(freeLimit) &&
+        Units.Amp.of(SparkHelpers.getSmartCurrentStallLimit(m_spark)).isEquivalent(stallLimit) &&
+        Units.RPM.of(SparkHelpers.getSmartCurrentLimitRPM(m_spark)).isEquivalent(limitRPM),
+      "Current limits not set!" 
+    );
+  }
+
+   /**
+   * Sets the current limit in Amps.
+   *
+   * <p>The motor controller will reduce the controller voltage output to avoid surpassing this
+   * limit. This limit is enabled by default and used for brushless only. This limit is highly
+   * recommended when using the NEO brushless motor.
+   *
+   * <p>The NEO Brushless Motor has a low internal resistance, which can mean large current spikes
+   * that could be enough to cause damage to the motor and controller. This current limit provides a
+   * smarter strategy to deal with high current draws and keep the motor and controller operating in
+   * a safe region.
+   *
+   * <p>The controller can also limit the current based on the RPM of the motor in a linear fashion
+   * to help with controllability in closed loop control. For a response that is linear the entire
+   * RPM range leave limit RPM at 0.
+   *
+   * @param stallLimit The current limit in Amps at 0 RPM.
+   * @param freeLimit The current limit at free speed (5700RPM for NEO).
+   * @return {@link REVLibError#kOk} if successful
+   */
+  public REVLibError setSmartCurrentLimit(Measure<Current> stallLimit, Measure<Current> freeLimit) {
+    return setSmartCurrentLimit(stallLimit, freeLimit, Units.RPM.of(20000));
+  }
+
+  
   /**
    * Set the rate of transmission for periodic frames from the SPARK
    *
