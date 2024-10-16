@@ -42,7 +42,7 @@ public class TractionControlController {
   private final int SIGMOID_K = 10;
   private final double FORCE_ACCELERATION_MULTIPLIER = 0.7;
   private final Measure<Velocity<Distance>> INERTIAL_VELOCITY_THRESHOLD = Units.MetersPerSecond.of(0.01);
-  private final Measure<Time> MIN_SLIPPING_TIME = Units.Seconds.of(0.9);
+  private final Measure<Time> MIN_SLIPPING_TIME = Units.Seconds.of(0.5);
   private final Measure<Velocity<Distance>> VELOCITY_REQUEST_THRESHOLD = Units.MetersPerSecond.of(0.05);
   private final Measure<Velocity<Distance>> WHEEL_SPEED_THRESHOLD = Units.MetersPerSecond.of(0.05);
   private final Measure<Time> FORCE_ACCELERATE_TIME = Units.Seconds.of(0.1);
@@ -102,7 +102,7 @@ public class TractionControlController {
   /**
    * Returns the next output of the traction control controller
    * @param velocityRequest Velocity request
-   * @param inertialVelocity Current inertial velocity
+   * @param inertialVelocity Current inertial velocity (Negative values indicate inertial velocity is in opposite direction to request)
    * @param wheelSpeed Linear wheel speed
    * @return Optimal motor speed output
    */
@@ -110,14 +110,17 @@ public class TractionControlController {
                                                Measure<Velocity<Distance>> inertialVelocity,
                                                Measure<Velocity<Distance>> wheelSpeed) {
     var velocityOutput = velocityRequest;
+    boolean oppositeDirection = inertialVelocity.lt(Units.MetersPerSecond.zero());
 
     // See if user has been trying to accelerate for a while...
     boolean forceAcceleration = m_forceAccelerationDebouncer.calculate(
       velocityRequest.gte(VELOCITY_REQUEST_THRESHOLD) && wheelSpeed.lte(WHEEL_SPEED_THRESHOLD)
     );
 
-    // Get current slip ratio, and check if slipping
+    // Make inertial velocity positive
     inertialVelocity = Units.MetersPerSecond.of(Math.abs(inertialVelocity.in(Units.MetersPerSecond)));
+
+    // Get current slip ratio, and check if slipping
     double currentSlipRatio = Math.abs(
       inertialVelocity.lte(INERTIAL_VELOCITY_THRESHOLD)
         ? wheelSpeed.in(Units.MetersPerSecond) / m_maxLinearSpeed
@@ -130,7 +133,8 @@ public class TractionControlController {
     );
 
     // Get desired acceleration
-    var desiredAcceleration = velocityRequest.minus(inertialVelocity).per(Units.Seconds.of(GlobalConstants.ROBOT_LOOP_PERIOD));
+    var desiredAcceleration = velocityRequest.minus(inertialVelocity.times(oppositeDirection ? -1 : +1))
+      .per(Units.Seconds.of(GlobalConstants.ROBOT_LOOP_PERIOD));
 
     // Get sigmoid value
     double sigmoid = 1 / (1 + Math.exp(-SIGMOID_K * MathUtil.clamp(2 * (currentSlipRatio - m_optimalSlipRatio) - 1, -1.0, +1.0)));

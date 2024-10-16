@@ -384,15 +384,26 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
       state.speedMetersPerSecond * state.angle.getSin()
     );
 
+    // Get angle between vectors
+    var vectorAngle = Units.Radians.of(Math.acos(
+      moduleDesiredVelocityVector.dotProduct(moduleInertialVelocityVector) / (moduleDesiredVelocityVector.getNorm() * moduleInertialVelocityVector.getNorm())
+    ));
+
     // Calculate portion of inertial velocity that is in direction of desired
-    var parallelModuleVelocity = moduleDesiredVelocityVector.scalarMultiply(
+    var parallelModuleVelocityVector = moduleDesiredVelocityVector.scalarMultiply(
       moduleDesiredVelocityVector.getNorm() != 0.0
         ? moduleInertialVelocityVector.dotProduct(moduleDesiredVelocityVector) / moduleDesiredVelocityVector.getNormSq()
         : 1.0
     );
 
+    // Get velocity
+    var parallelModuleVelocity = Units.MetersPerSecond.of(parallelModuleVelocityVector.getNorm());
+
+    // If requested state is generally in the opposite direction of inertial, negate the velocity to be reported
+    if (vectorAngle.gt(Units.Radians.of(Math.PI / 2))) parallelModuleVelocity = parallelModuleVelocity.negate();
+
     // Return velocity
-    return Units.MetersPerSecond.of(parallelModuleVelocity.getNorm());
+    return parallelModuleVelocity;
   }
 
   /**

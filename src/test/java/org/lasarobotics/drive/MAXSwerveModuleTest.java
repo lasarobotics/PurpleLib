@@ -310,7 +310,7 @@ public class MAXSwerveModuleTest {
 
     // Hardcode other inputs
     var moduleState = new SwerveModuleState(NEO_MAX_LINEAR_SPEED, Rotation2d.fromDegrees(0.0));
-    var realSpeeds = new ChassisSpeeds(Units.MetersPerSecond.of(3.0), Units.MetersPerSecond.zero(), Units.DegreesPerSecond.zero());
+    var realSpeeds = new ChassisSpeeds(Units.MetersPerSecond.of(-0.1), Units.MetersPerSecond.of(-3.0), Units.DegreesPerSecond.zero());
 
     // Attempt to drive module
     m_lFrontModule.set(moduleState, realSpeeds);
