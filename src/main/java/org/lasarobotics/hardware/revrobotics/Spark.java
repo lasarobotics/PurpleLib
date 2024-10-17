@@ -1527,6 +1527,62 @@ public class Spark extends LoggableHardware implements Sendable {
     return setSmartCurrentLimit(stallLimit, freeLimit, Units.RPM.of(20000));
   }
 
+   /**
+   * Sets the secondary current limit in Amps.
+   *
+   * <p>The motor controller will disable the output of the controller briefly if the current limit
+   * is exceeded to reduce the current. This limit is a simplified 'on/off' controller. This limit
+   * is enabled by default but is set higher than the default Smart Current Limit.
+   *
+   * <p>The time the controller is off after the current limit is reached is determined by the
+   * parameter limitCycles, which is the number of PWM cycles (20kHz). The recommended value is the
+   * default of 0 which is the minimum time and is part of a PWM cycle from when the over current is
+   * detected. This allows the controller to regulate the current close to the limit value.
+   *
+   * <p>The total time is set by the equation <code>
+   * t = (50us - t0) + 50us * limitCycles
+   * t = total off time after over current
+   * t0 = time from the start of the PWM cycle until over current is detected
+   * </code>
+   *
+   * @param limit The current limit in Amps.
+   * @return {@link REVLibError#kOk} if successful
+   */
+  public REVLibError setSecondaryCurrentLimit(Measure<Current> limit) {
+    return setSecondaryCurrentLimit(limit, 0);
+  }
+
+  /**
+   * Sets the secondary current limit in Amps.
+   *
+   * <p>The motor controller will disable the output of the controller briefly if the current limit
+   * is exceeded to reduce the current. This limit is a simplified 'on/off' controller. This limit
+   * is enabled by default but is set higher than the default Smart Current Limit.
+   *
+   * <p>The time the controller is off after the current limit is reached is determined by the
+   * parameter limitCycles, which is the number of PWM cycles (20kHz). The recommended value is the
+   * default of 0 which is the minimum time and is part of a PWM cycle from when the over current is
+   * detected. This allows the controller to regulate the current close to the limit value.
+   *
+   * <p>The total time is set by the equation <code>
+   * t = (50us - t0) + 50us * limitCycles
+   * t = total off time after over current
+   * t0 = time from the start of the PWM cycle until over current is detected
+   * </code>
+   *
+   * @param limit The current limit in Amps.
+   * @param chopCycles The number of additional PWM cycles to turn the driver off after overcurrent
+   *     is detected.
+   * @return {@link REVLibError#kOk} if successful
+   */
+  public REVLibError setSecondaryCurrentLimit(Measure<Current> limit, int chopCycles) {
+    return applyParameter(
+      () -> m_spark.setSecondaryCurrentLimit((double)limit.in(Units.Amps), chopCycles),
+      () -> Units.Amp.of(SparkHelpers.getSecondaryCurrentLimit(m_spark)).isEquivalent(limit) &&
+        SparkHelpers.getSecondaryCurrentLimitCycles(m_spark) == chopCycles,
+      "Secondary current limits not set!" 
+    );
+  }
   
   /**
    * Set the rate of transmission for periodic frames from the SPARK

@@ -35,6 +35,24 @@ public class SparkHelpers {
     return CANSparkMaxJNI.c_SparkMax_GetSmartCurrentLimitRPM(spark.sparkMaxHandle);
   }
 
+  /**
+   * Get the secondary limit cycles of Spark, which is also the number of chop cycles
+   * @param spark Spark to check
+   * @return Current limit that is currently set
+   */
+  public static int getSecondaryCurrentLimitCycles(CANSparkBase spark) {
+    return CANSparkMaxJNI.c_SparkMax_GetSecondaryCurrentLimitCycles(spark.sparkMaxHandle);
+  }
+
+  /**
+   * Get the secondary current limit of Spark
+   * @param spark Spark to check
+   * @return Current limit that is currently set
+   */
+  public static float getSecondaryCurrentLimit(CANSparkBase spark) {
+    return CANSparkMaxJNI.c_SparkMax_GetSecondaryCurrentLimit(spark.sparkMaxHandle);
+  }
+
   /** Enable center aligned mode for the duty cycle sensor. */
   public static REVLibError enableCenterAlignedMode(CANSparkBase spark) {
     return REVLibError.fromInt(
