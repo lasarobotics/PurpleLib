@@ -44,9 +44,9 @@ public class NavX2 extends LoggableHardware {
   @AutoLog
   public static class NavX2Inputs {
     public boolean isConnected = false;
+    public Measure<Angle> rollAngle = Units.Radians.of(0.0);
     public Measure<Angle> pitchAngle = Units.Radians.of(0.0);
     public Measure<Angle> yawAngle = Units.Radians.of(0.0);
-    public Measure<Angle> rollAngle = Units.Radians.of(0.0);
     public Measure<Velocity<Distance>> xVelocity = Units.MetersPerSecond.of(0.0);
     public Measure<Velocity<Distance>> yVelocity = Units.MetersPerSecond.of(0.0);
     public Measure<Velocity<Angle>> yawRate = Units.RadiansPerSecond.of(0.0);
@@ -62,6 +62,8 @@ public class NavX2 extends LoggableHardware {
   private String m_name;
   private NavX2InputsAutoLogged m_inputs;
 
+  private boolean m_swapXYAxes;
+
   /**
    * Create a NavX2 object with built-in logging
    * @param id NavX2 ID
@@ -71,17 +73,58 @@ public class NavX2 extends LoggableHardware {
     this.m_navx = new AHRS(SPI.Port.kMXP, (byte)UPDATE_RATE);
     this.m_inputs = new NavX2InputsAutoLogged();
     this.m_inputThread = new Notifier(this::updateInputs);
+    this.m_swapXYAxes = false;
     this.m_simNavXYaw = new SimDouble(SimDeviceDataJNI.getSimValueHandle(SimDeviceDataJNI.getSimDeviceHandle("navX-Sensor[0]"), "Yaw"));
     System.out.println();
+
+    // Update inputs on init
+    updateInputs();
 
     // Start input thread
     m_inputThread.startPeriodic(1.0 / UPDATE_RATE);
 
-    // Update inputs on init
-    periodic();
-
     // Register device with manager
     PurpleManager.add(this);
+  }
+
+  /**
+   * Get roll angle
+   * @return Roll angle measurement
+   */
+  private Measure<Angle> getRoll() {
+    return Units.Degrees.of(!m_swapXYAxes ? m_navx.getRoll() : m_navx.getPitch());
+  }
+
+  /**
+   * Get pitch angle
+   * @return Pitch angle measurement
+   */
+  private Measure<Angle> getPitch() {
+    return Units.Degrees.of(!m_swapXYAxes ? m_navx.getPitch() : m_navx.getRoll());
+  }
+
+  /**
+   * Get yaw angle
+   * @return Yaw angle measurement
+   */
+  private Measure<Angle> getYaw() {
+    return Units.Degrees.of(m_navx.getAngle());
+  }
+
+  /**
+   * Get X velocity
+   * @return X axis velocity
+   */
+  private Measure<Velocity<Distance>> getVelocityX() {
+    return Units.MetersPerSecond.of(!m_swapXYAxes ? m_navx.getVelocityX() : m_navx.getVelocityY());
+  }
+
+  /**
+   * Get Y velocity
+   * @return Y axis velocity
+   */
+  private Measure<Velocity<Distance>> getVelocityY() {
+    return Units.MetersPerSecond.of(!m_swapXYAxes ? m_navx.getVelocityY() : m_navx.getVelocityX());
   }
 
   /**
@@ -89,11 +132,11 @@ public class NavX2 extends LoggableHardware {
    */
   private void updateInputs() {
     m_inputs.isConnected = m_navx.isConnected();
-    m_inputs.pitchAngle = Units.Degrees.of(m_navx.getPitch());
-    m_inputs.yawAngle = Units.Degrees.of(m_navx.getAngle());
-    m_inputs.rollAngle = Units.Degrees.of(m_navx.getRoll());
-    m_inputs.xVelocity = Units.MetersPerSecond.of(m_navx.getVelocityX());
-    m_inputs.yVelocity = Units.MetersPerSecond.of(m_navx.getVelocityY());
+    m_inputs.rollAngle = getRoll();
+    m_inputs.pitchAngle = getPitch();
+    m_inputs.yawAngle = getYaw();
+    m_inputs.xVelocity = getVelocityX();
+    m_inputs.yVelocity = getVelocityY();
     m_inputs.yawRate = Units.DegreesPerSecond.of(m_navx.getRate());
     m_inputs.rotation2d = Rotation2d.fromRadians(m_inputs.yawAngle.negate().in(Units.Radians));
   }
@@ -130,6 +173,17 @@ public class NavX2 extends LoggableHardware {
    */
   public boolean isCalibrating() {
     return m_navx.isCalibrating();
+  }
+
+  /**
+   * Whether or not to swap X and Y axes on NavX2 when returning values.
+   * This swaps X/Y velocities, and roll/pitch angle.
+   * <p>
+   * Defaults to false
+   * @param swap True to swap X and Y axes
+   */
+  public void swapXYAxes(boolean swap) {
+    m_swapXYAxes = swap;
   }
 
   /**
