@@ -73,4 +73,4 @@ Usage examples can be found [here](https://github.com/lasarobotics/PurpleLibExam
 An example swerve project is [here](https://github.com/lasarobotics/PurpleSwerve)
 
 ## Documentation
-Javadocs available [here](https://jitpack.io/com/github/lasarobotics/PurpleLib/latest/javadoc/)
+Javadocs available [here](https://jitpack.io/com/github/lasarobotics/PurpleLib/master-SNAPSHOT/javadoc/)
