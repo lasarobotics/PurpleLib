@@ -45,12 +45,16 @@ public class NavX2 extends LoggableHardware {
   @AutoLog
   public static class NavX2Inputs {
     public boolean isConnected = false;
-    public MutableMeasure<Angle> rollAngle = Units.Radians.of(0.0).mutableCopy();
-    public MutableMeasure<Angle> pitchAngle = Units.Radians.of(0.0).mutableCopy();
-    public MutableMeasure<Angle> yawAngle = Units.Radians.of(0.0).mutableCopy();
-    public MutableMeasure<Velocity<Distance>> xVelocity = Units.MetersPerSecond.of(0.0).mutableCopy();
-    public MutableMeasure<Velocity<Distance>> yVelocity = Units.MetersPerSecond.of(0.0).mutableCopy();
-    public MutableMeasure<Velocity<Angle>> yawRate = Units.RadiansPerSecond.of(0.0).mutableCopy();
+    public MutableMeasure<Angle> rollAngle = Units.Radians.zero().mutableCopy();
+    public MutableMeasure<Angle> pitchAngle = Units.Radians.zero().mutableCopy();
+    public MutableMeasure<Angle> yawAngle = Units.Radians.zero().mutableCopy();
+    public MutableMeasure<Velocity<Velocity<Distance>>> xAcceleration = Units.MetersPerSecondPerSecond.zero().mutableCopy();
+    public MutableMeasure<Velocity<Velocity<Distance>>> yAcceleration = Units.MetersPerSecondPerSecond.zero().mutableCopy();
+    public MutableMeasure<Velocity<Velocity<Distance>>> zAcceleration = Units.MetersPerSecondPerSecond.zero().mutableCopy();
+    public MutableMeasure<Velocity<Distance>> xVelocity = Units.MetersPerSecond.zero().mutableCopy();
+    public MutableMeasure<Velocity<Distance>> yVelocity = Units.MetersPerSecond.zero().mutableCopy();
+    public MutableMeasure<Velocity<Distance>> zVelocity = Units.MetersPerSecond.zero().mutableCopy();
+    public MutableMeasure<Velocity<Angle>> yawRate = Units.RadiansPerSecond.zero().mutableCopy();
     public Rotation2d rotation2d = GlobalConstants.ROTATION_ZERO;
   }
 
@@ -117,6 +121,32 @@ public class NavX2 extends LoggableHardware {
   }
 
   /**
+   * Get X acceleration
+   * @return X axis acceleration
+   */
+  private Measure<Velocity<Velocity<Distance>>> getAccelerationX() {
+    var value = Units.MetersPerSecondPerSecond.of(!m_swapXYAxes ? m_navx.getWorldLinearAccelX() : m_navx.getWorldLinearAccelX());
+    return m_invertXYAxes ? value.negate() : value;
+  }
+
+  /**
+   * Get Y acceleration
+   * @return Y axis acceleration
+   */
+  private Measure<Velocity<Velocity<Distance>>> getAccelerationY() {
+    var value = Units.MetersPerSecondPerSecond.of(!m_swapXYAxes ? m_navx.getWorldLinearAccelY() : m_navx.getWorldLinearAccelY());
+    return m_invertXYAxes ? value.negate() : value;
+  }
+
+  /**
+   * Get Z acceleration
+   * @return Z axis acceleration
+   */
+  private Measure<Velocity<Velocity<Distance>>> getAccelerationZ() {
+    return Units.MetersPerSecondPerSecond.of(m_navx.getWorldLinearAccelZ());
+  }
+
+  /**
    * Get X velocity
    * @return X axis velocity
    */
@@ -135,6 +165,14 @@ public class NavX2 extends LoggableHardware {
   }
 
   /**
+   * Get Z velocity
+   * @return Z axis velocity
+   */
+  private Measure<Velocity<Distance>> getVelocityZ() {
+    return Units.MetersPerSecond.of(m_navx.getVelocityZ());
+  }
+
+  /**
    * Update NavX input readings
    */
   private void updateInputs() {
@@ -142,8 +180,12 @@ public class NavX2 extends LoggableHardware {
     m_inputs.rollAngle.mut_replace(getRoll());
     m_inputs.pitchAngle.mut_replace(getPitch());
     m_inputs.yawAngle.mut_replace(getYaw());
+    m_inputs.xAcceleration.mut_replace(getAccelerationX());
+    m_inputs.yAcceleration.mut_replace(getAccelerationY());
+    m_inputs.zAcceleration.mut_replace(getAccelerationZ());
     m_inputs.xVelocity.mut_replace(getVelocityX());
     m_inputs.yVelocity.mut_replace(getVelocityY());
+    m_inputs.zVelocity.mut_replace(getVelocityZ());
     m_inputs.yawRate.mut_replace(Units.DegreesPerSecond.of(m_navx.getRate()));
     m_inputs.rotation2d = Rotation2d.fromRadians(m_inputs.yawAngle.negate().in(Units.Radians));
   }
