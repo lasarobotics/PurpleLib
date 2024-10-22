@@ -18,6 +18,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Distance;
 import edu.wpi.first.units.Measure;
+import edu.wpi.first.units.MutableMeasure;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.Velocity;
 import edu.wpi.first.wpilibj.Notifier;
@@ -44,12 +45,12 @@ public class NavX2 extends LoggableHardware {
   @AutoLog
   public static class NavX2Inputs {
     public boolean isConnected = false;
-    public Measure<Angle> rollAngle = Units.Radians.of(0.0);
-    public Measure<Angle> pitchAngle = Units.Radians.of(0.0);
-    public Measure<Angle> yawAngle = Units.Radians.of(0.0);
-    public Measure<Velocity<Distance>> xVelocity = Units.MetersPerSecond.of(0.0);
-    public Measure<Velocity<Distance>> yVelocity = Units.MetersPerSecond.of(0.0);
-    public Measure<Velocity<Angle>> yawRate = Units.RadiansPerSecond.of(0.0);
+    public MutableMeasure<Angle> rollAngle = Units.Radians.of(0.0).mutableCopy();
+    public MutableMeasure<Angle> pitchAngle = Units.Radians.of(0.0).mutableCopy();
+    public MutableMeasure<Angle> yawAngle = Units.Radians.of(0.0).mutableCopy();
+    public MutableMeasure<Velocity<Distance>> xVelocity = Units.MetersPerSecond.of(0.0).mutableCopy();
+    public MutableMeasure<Velocity<Distance>> yVelocity = Units.MetersPerSecond.of(0.0).mutableCopy();
+    public MutableMeasure<Velocity<Angle>> yawRate = Units.RadiansPerSecond.of(0.0).mutableCopy();
     public Rotation2d rotation2d = GlobalConstants.ROTATION_ZERO;
   }
 
@@ -63,6 +64,7 @@ public class NavX2 extends LoggableHardware {
   private NavX2InputsAutoLogged m_inputs;
 
   private boolean m_swapXYAxes;
+  private boolean m_invertXYAxes;
 
   /**
    * Create a NavX2 object with built-in logging
@@ -74,6 +76,7 @@ public class NavX2 extends LoggableHardware {
     this.m_inputs = new NavX2InputsAutoLogged();
     this.m_inputThread = new Notifier(this::updateInputs);
     this.m_swapXYAxes = false;
+    this.m_invertXYAxes = false;
     this.m_simNavXYaw = new SimDouble(SimDeviceDataJNI.getSimValueHandle(SimDeviceDataJNI.getSimDeviceHandle("navX-Sensor[0]"), "Yaw"));
     System.out.println();
 
@@ -92,7 +95,8 @@ public class NavX2 extends LoggableHardware {
    * @return Roll angle measurement
    */
   private Measure<Angle> getRoll() {
-    return Units.Degrees.of(!m_swapXYAxes ? m_navx.getRoll() : m_navx.getPitch());
+    var value = Units.Degrees.of(!m_swapXYAxes ? m_navx.getRoll() : m_navx.getPitch());
+    return m_invertXYAxes ? value.negate() : value;
   }
 
   /**
@@ -100,7 +104,8 @@ public class NavX2 extends LoggableHardware {
    * @return Pitch angle measurement
    */
   private Measure<Angle> getPitch() {
-    return Units.Degrees.of(!m_swapXYAxes ? m_navx.getPitch() : m_navx.getRoll());
+    var value = Units.Degrees.of(!m_swapXYAxes ? m_navx.getPitch() : m_navx.getRoll());
+    return m_invertXYAxes ? value.negate() : value;
   }
 
   /**
@@ -116,7 +121,8 @@ public class NavX2 extends LoggableHardware {
    * @return X axis velocity
    */
   private Measure<Velocity<Distance>> getVelocityX() {
-    return Units.MetersPerSecond.of(!m_swapXYAxes ? m_navx.getVelocityX() : m_navx.getVelocityY());
+    var value = Units.MetersPerSecond.of(!m_swapXYAxes ? m_navx.getVelocityX() : m_navx.getVelocityY());
+    return m_invertXYAxes ? value.negate() : value;
   }
 
   /**
@@ -124,7 +130,8 @@ public class NavX2 extends LoggableHardware {
    * @return Y axis velocity
    */
   private Measure<Velocity<Distance>> getVelocityY() {
-    return Units.MetersPerSecond.of(!m_swapXYAxes ? m_navx.getVelocityY() : m_navx.getVelocityX());
+    var value = Units.MetersPerSecond.of(!m_swapXYAxes ? m_navx.getVelocityY() : m_navx.getVelocityX());
+    return m_invertXYAxes ? value.negate() : value;
   }
 
   /**
@@ -132,12 +139,12 @@ public class NavX2 extends LoggableHardware {
    */
   private void updateInputs() {
     m_inputs.isConnected = m_navx.isConnected();
-    m_inputs.rollAngle = getRoll();
-    m_inputs.pitchAngle = getPitch();
-    m_inputs.yawAngle = getYaw();
-    m_inputs.xVelocity = getVelocityX();
-    m_inputs.yVelocity = getVelocityY();
-    m_inputs.yawRate = Units.DegreesPerSecond.of(m_navx.getRate());
+    m_inputs.rollAngle.mut_replace(getRoll());
+    m_inputs.pitchAngle.mut_replace(getPitch());
+    m_inputs.yawAngle.mut_replace(getYaw());
+    m_inputs.xVelocity.mut_replace(getVelocityX());
+    m_inputs.yVelocity.mut_replace(getVelocityY());
+    m_inputs.yawRate.mut_replace(Units.DegreesPerSecond.of(m_navx.getRate()));
     m_inputs.rotation2d = Rotation2d.fromRadians(m_inputs.yawAngle.negate().in(Units.Radians));
   }
 
@@ -184,6 +191,17 @@ public class NavX2 extends LoggableHardware {
    */
   public void swapXYAxes(boolean swap) {
     m_swapXYAxes = swap;
+  }
+
+  /**
+   * Whether or not to invert X and Y axes on NavX2 when returning values.
+   * This inverts the X/Y velocities, and roll/pitch angle.
+   * <p>
+   * Defaults to false
+   * @param invert True to invert X and Y axes
+   */
+  public void invertXYAxes(boolean invert) {
+    m_invertXYAxes = invert;
   }
 
   /**
