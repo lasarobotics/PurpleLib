@@ -112,8 +112,8 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
   private final int COSINE_CORRECTION;
 
   // Swerve velocity PID settings
-  private static final double DRIVE_VELOCITY_kP = 0.6;
-  private static final double DRIVE_VELOCITY_kD = 0.003;
+  private static final double DRIVE_VELOCITY_kP = 0.4;
+  private static final double DRIVE_VELOCITY_kD = 0.002;
   private static final double DRIVE_VELOCITY_kS = 0.2;
   private static final double DRIVE_VELOCITY_kA = 0.5;
   private static final double DRIVE_VELOCITY_TOLERANCE = 0.01;
