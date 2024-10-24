@@ -1,3 +1,7 @@
+// Copyright (c) LASA Robotics and other contributors
+// Open Source Software; you can modify and/or share it under the terms of
+// the MIT license file in the root directory of this project.
+
 package org.lasarobotics.fsm;
 
 import org.lasarobotics.hardware.Monitorable;
@@ -23,7 +27,7 @@ public abstract class StateMachine extends Monitorable implements Subsystem, Sen
     name = name.substring(name.lastIndexOf('.') + 1);
     SendableRegistry.addLW(this, name, name);
     CommandScheduler.getInstance().registerSubsystem(this);
-    CommandScheduler.getInstance().setDefaultCommand(this, new StateCommand(this::getState, this).repeatedly());
+    CommandScheduler.getInstance().setDefaultCommand(this, new StateCommand(this).repeatedly());
     PurpleManager.add(this);
   }
 
