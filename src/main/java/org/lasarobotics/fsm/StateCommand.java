@@ -9,18 +9,22 @@ import static edu.wpi.first.util.ErrorMessages.requireNonNullParam;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj2.command.Command;
 
-/** StateCommand */
+/**
+ * A command composition that runs one of a selection of states
+ * according to the state machine's current state
+ */
 public class StateCommand extends Command {
   private final StateMachine m_machine;
   private SystemState m_selectedState;
   private SystemState m_nextState;
 
   /**
-   * Creates a new StateCommand
-   * @param machine State machine that this state command is to be associated with
+   * Creates a new StateCommand.
+   * @param machine State machine this command is associated with
    */
   public StateCommand(StateMachine machine) {
     m_machine = requireNonNullParam(machine, "machine", "StateCommand");
+
     addRequirements(machine);
   }
 
