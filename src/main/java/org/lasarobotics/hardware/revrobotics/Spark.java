@@ -43,10 +43,12 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Current;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Time;
 import edu.wpi.first.units.Units;
+import edu.wpi.first.units.Velocity;
 import edu.wpi.first.units.Voltage;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
@@ -154,7 +156,8 @@ public class Spark extends LoggableHardware implements Sendable {
   private static final String ARB_FF_LOG_ENTRY = "/ArbitraryFF";
   private static final String ARB_FF_UNITS_LOG_ENTRY = "/ArbitraryFFUnits";
   private static final String IDLE_MODE_LOG_ENTRY = "/IdleMode";
-  private static final String CURRENT_LOG_ENTRY = "/Current";
+  private static final String INPUT_CURRENT_LOG_ENTRY = "/InputCurrent";
+  private static final String OUTPUT_CURRENT_LOG_ENTRY = "/OutputCurrent";
   private static final String TEMPERATURE_LOG_ENTRY = "/Temperature";
   private static final String MOTION_LOG_ENTRY = "/SmoothMotion";
   private static final Measure<Time> DEFAULT_STATUS_FRAME_PERIOD = Units.Milliseconds.of(20.0);
@@ -604,7 +607,8 @@ public class Spark extends LoggableHardware implements Sendable {
 
     handleSmoothMotion();
 
-    Logger.recordOutput(m_id.name + CURRENT_LOG_ENTRY, getOutputCurrent());
+    Logger.recordOutput(m_id.name + INPUT_CURRENT_LOG_ENTRY, getInputCurrent());
+    Logger.recordOutput(m_id.name + OUTPUT_CURRENT_LOG_ENTRY, getOutputCurrent());
     Logger.recordOutput(m_id.name + MOTION_LOG_ENTRY, m_isSmoothMotionEnabled);
 
     if (getMotorType() == MotorType.kBrushed) return;
@@ -1423,13 +1427,120 @@ public class Spark extends LoggableHardware implements Sendable {
    * @param limit The desired current limit
    */
   public REVLibError setSmartCurrentLimit(Measure<Current> limit) {
-    REVLibError status;
-    status = applyParameter(
-      () -> m_spark.setSmartCurrentLimit((int)limit.in(Units.Amps)),
-      () -> SparkHelpers.getSmartCurrentLimit(m_spark) == (int)limit.in(Units.Amps),
-      "Set current limit failure!"
+    return setSmartCurrentLimit(limit, Units.Amps.zero(), Units.RPM.of(20000));
+  }
+
+    /**
+   * Sets the current limit in Amps.
+   *
+   * <p>The motor controller will reduce the controller voltage output to avoid surpassing this
+   * limit. This limit is enabled by default and used for brushless only. This limit is highly
+   * recommended when using the NEO brushless motor.
+   *
+   * <p>The NEO Brushless Motor has a low internal resistance, which can mean large current spikes
+   * that could be enough to cause damage to the motor and controller. This current limit provides a
+   * smarter strategy to deal with high current draws and keep the motor and controller operating in
+   * a safe region.
+   *
+   * <p>The controller can also limit the current based on the RPM of the motor in a linear fashion
+   * to help with controllability in closed loop control. For a response that is linear the entire
+   * RPM range leave limit RPM at 0.
+   *
+   * @param stallLimit The current limit in Amps at 0 RPM.
+   * @param freeLimit The current limit at free speed (5700RPM for NEO).
+   * @param limitRPM RPM less than this value will be set to the stallLimit, RPM values greater than
+   *     limitRPM will scale linearly to freeLimit
+   * @return {@link REVLibError#kOk} if successful
+   */
+  public REVLibError setSmartCurrentLimit(Measure<Current> stallLimit, Measure<Current> freeLimit, Measure<Velocity<Angle>> limitRPM) {
+    return applyParameter(
+      () -> m_spark.setSmartCurrentLimit((int)stallLimit.in(Units.Amps), (int)freeLimit.in(Units.Amps), (int)limitRPM.in(Units.RPM)),
+      () -> Units.Amp.of(SparkHelpers.getSmartCurrentFreeLimit(m_spark)).isEquivalent(freeLimit) &&
+        Units.Amp.of(SparkHelpers.getSmartCurrentStallLimit(m_spark)).isEquivalent(stallLimit) &&
+        Units.RPM.of(SparkHelpers.getSmartCurrentLimitRPM(m_spark)).isEquivalent(limitRPM),
+      "Current limits not set!"
     );
-    return status;
+  }
+
+   /**
+   * Sets the current limit in Amps.
+   *
+   * <p>The motor controller will reduce the controller voltage output to avoid surpassing this
+   * limit. This limit is enabled by default and used for brushless only. This limit is highly
+   * recommended when using the NEO brushless motor.
+   *
+   * <p>The NEO Brushless Motor has a low internal resistance, which can mean large current spikes
+   * that could be enough to cause damage to the motor and controller. This current limit provides a
+   * smarter strategy to deal with high current draws and keep the motor and controller operating in
+   * a safe region.
+   *
+   * <p>The controller can also limit the current based on the RPM of the motor in a linear fashion
+   * to help with controllability in closed loop control. For a response that is linear the entire
+   * RPM range leave limit RPM at 0.
+   *
+   * @param stallLimit The current limit in Amps at 0 RPM.
+   * @param freeLimit The current limit at free speed (5700RPM for NEO).
+   * @return {@link REVLibError#kOk} if successful
+   */
+  public REVLibError setSmartCurrentLimit(Measure<Current> stallLimit, Measure<Current> freeLimit) {
+    return setSmartCurrentLimit(stallLimit, freeLimit, Units.RPM.of(20000));
+  }
+
+   /**
+   * Sets the secondary current limit in Amps.
+   *
+   * <p>The motor controller will disable the output of the controller briefly if the current limit
+   * is exceeded to reduce the current. This limit is a simplified 'on/off' controller. This limit
+   * is enabled by default but is set higher than the default Smart Current Limit.
+   *
+   * <p>The time the controller is off after the current limit is reached is determined by the
+   * parameter limitCycles, which is the number of PWM cycles (20kHz). The recommended value is the
+   * default of 0 which is the minimum time and is part of a PWM cycle from when the over current is
+   * detected. This allows the controller to regulate the current close to the limit value.
+   *
+   * <p>The total time is set by the equation <code>
+   * t = (50us - t0) + 50us * limitCycles
+   * t = total off time after over current
+   * t0 = time from the start of the PWM cycle until over current is detected
+   * </code>
+   *
+   * @param limit The current limit in Amps.
+   * @return {@link REVLibError#kOk} if successful
+   */
+  public REVLibError setSecondaryCurrentLimit(Measure<Current> limit) {
+    return setSecondaryCurrentLimit(limit, 0);
+  }
+
+  /**
+   * Sets the secondary current limit in Amps.
+   *
+   * <p>The motor controller will disable the output of the controller briefly if the current limit
+   * is exceeded to reduce the current. This limit is a simplified 'on/off' controller. This limit
+   * is enabled by default but is set higher than the default Smart Current Limit.
+   *
+   * <p>The time the controller is off after the current limit is reached is determined by the
+   * parameter limitCycles, which is the number of PWM cycles (20kHz). The recommended value is the
+   * default of 0 which is the minimum time and is part of a PWM cycle from when the over current is
+   * detected. This allows the controller to regulate the current close to the limit value.
+   *
+   * <p>The total time is set by the equation <code>
+   * t = (50us - t0) + 50us * limitCycles
+   * t = total off time after over current
+   * t0 = time from the start of the PWM cycle until over current is detected
+   * </code>
+   *
+   * @param limit The current limit in Amps.
+   * @param chopCycles The number of additional PWM cycles to turn the driver off after overcurrent
+   *     is detected.
+   * @return {@link REVLibError#kOk} if successful
+   */
+  public REVLibError setSecondaryCurrentLimit(Measure<Current> limit, int chopCycles) {
+    return applyParameter(
+      () -> m_spark.setSecondaryCurrentLimit((double)limit.in(Units.Amps), chopCycles),
+      () -> Units.Amp.of(SparkHelpers.getSecondaryCurrentLimit(m_spark)).isEquivalent(limit) &&
+        SparkHelpers.getSecondaryCurrentLimitCycles(m_spark) == chopCycles,
+      "Secondary current limits not set!"
+    );
   }
 
   /**
@@ -1480,6 +1591,14 @@ public class Spark extends LoggableHardware implements Sendable {
    */
   public REVLibError setClosedLoopRampRate(Measure<Time> rampTime) {
     return m_spark.setClosedLoopRampRate(rampTime.in(Units.Seconds));
+  }
+
+  /**
+   * Spark approximate input current
+   * @return
+   */
+  public Measure<Current> getInputCurrent() {
+    return getOutputCurrent().times(m_spark.getAppliedOutput());
   }
 
   /**

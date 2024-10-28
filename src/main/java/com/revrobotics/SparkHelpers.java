@@ -9,12 +9,48 @@ import com.revrobotics.jni.CANSparkMaxJNI;
 /** Spark helpers */
 public class SparkHelpers {
   /**
-   * Get current limit of Spark
+   * Get current stall limit of Spark
    * @param spark Spark to check
    * @return Current limit that is currently set
    */
-  public static int getSmartCurrentLimit(CANSparkBase spark) {
+  public static int getSmartCurrentStallLimit(CANSparkBase spark) {
     return CANSparkMaxJNI.c_SparkMax_GetSmartCurrentStallLimit(spark.sparkMaxHandle);
+  }
+
+  /**
+   * Get current free limit of Spark
+   * @param spark Spark to check
+   * @return Current limit that is currently set
+   */
+  public static int getSmartCurrentFreeLimit(CANSparkBase spark) {
+    return CANSparkMaxJNI.c_SparkMax_GetSmartCurrentFreeLimit(spark.sparkMaxHandle);
+  }
+
+  /**
+   * Get current limit RPM of Spark
+   * @param spark Spark to check
+   * @return Current limit that is currently set
+   */
+  public static int getSmartCurrentLimitRPM(CANSparkBase spark) {
+    return CANSparkMaxJNI.c_SparkMax_GetSmartCurrentLimitRPM(spark.sparkMaxHandle);
+  }
+
+  /**
+   * Get the secondary limit cycles of Spark, which is also the number of chop cycles
+   * @param spark Spark to check
+   * @return Current limit that is currently set
+   */
+  public static int getSecondaryCurrentLimitCycles(CANSparkBase spark) {
+    return CANSparkMaxJNI.c_SparkMax_GetSecondaryCurrentLimitCycles(spark.sparkMaxHandle);
+  }
+
+  /**
+   * Get the secondary current limit of Spark
+   * @param spark Spark to check
+   * @return Current limit that is currently set
+   */
+  public static float getSecondaryCurrentLimit(CANSparkBase spark) {
+    return CANSparkMaxJNI.c_SparkMax_GetSecondaryCurrentLimit(spark.sparkMaxHandle);
   }
 
   /** Enable center aligned mode for the duty cycle sensor. */
