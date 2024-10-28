@@ -16,6 +16,7 @@ import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Time;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.Velocity;
+import edu.wpi.first.wpilibj.Timer;
 
 /** Traction control controller */
 public class TractionControlController {
@@ -42,10 +43,13 @@ public class TractionControlController {
   private final int SIGMOID_K = 10;
   private final double FORCE_ACCELERATION_MULTIPLIER = 0.7;
   private final Measure<Velocity<Distance>> INERTIAL_VELOCITY_THRESHOLD = Units.MetersPerSecond.of(0.01);
+  private final Measure<Velocity<Distance>> VELOCITY_DIFFERENCE_THRESHOLD = Units.MetersPerSecond.of(1.0);
   private final Measure<Time> MIN_SLIPPING_TIME = Units.Seconds.of(0.5);
   private final Measure<Velocity<Distance>> VELOCITY_REQUEST_THRESHOLD = Units.MetersPerSecond.of(0.05);
   private final Measure<Velocity<Distance>> WHEEL_SPEED_THRESHOLD = Units.MetersPerSecond.of(0.05);
-  private final Measure<Time> FORCE_ACCELERATE_TIME = Units.Seconds.of(0.1);
+  private final Measure<Time> STATIC_FORCE_ACCELERATE_TRIGGER_TIME = Units.Seconds.of(0.1);
+  private final Measure<Time> DYNAMIC_FORCE_ACCELERATE_TRIGGER_TIME = Units.Seconds.of(0.2);
+  private final Measure<Time> FORCE_ACCELERATE_TIME = Units.Seconds.of(2.0);
 
   private double m_optimalSlipRatio;
   private double m_mass;
@@ -56,8 +60,10 @@ public class TractionControlController {
   private double m_maxPredictedSlipRatio;
   private boolean m_isSlipping;
   private Debouncer m_slippingDebouncer;
-  private Debouncer m_forceAccelerationDebouncer;
+  private Debouncer m_staticForceAccelerationDebouncer;
+  private Debouncer m_dynamicForceAccelerationDebouncer;
   private State m_state;
+  private Timer m_forceAccelerateTimer;
 
   /**
    * Create an instance of TractionControlController
@@ -96,7 +102,12 @@ public class TractionControlController {
     this.m_isSlipping = false;
     this.m_slippingDebouncer = new Debouncer(MIN_SLIPPING_TIME.in(Units.Seconds), DebounceType.kRising);
     this.m_state = State.ENABLED;
-    this.m_forceAccelerationDebouncer = new Debouncer(FORCE_ACCELERATE_TIME.in(Units.Seconds), DebounceType.kRising);
+    this.m_staticForceAccelerationDebouncer = new Debouncer(STATIC_FORCE_ACCELERATE_TRIGGER_TIME.in(Units.Seconds), DebounceType.kRising);
+    this.m_dynamicForceAccelerationDebouncer = new Debouncer(DYNAMIC_FORCE_ACCELERATE_TRIGGER_TIME.in(Units.Seconds), DebounceType.kRising);
+    this.m_forceAccelerateTimer = new Timer();
+
+    m_forceAccelerateTimer.reset();
+    m_forceAccelerateTimer.start();
   }
 
   /**
@@ -112,13 +123,22 @@ public class TractionControlController {
     var velocityOutput = velocityRequest;
     boolean oppositeDirection = inertialVelocity.lt(Units.MetersPerSecond.zero());
 
-    // See if user has been trying to accelerate for a while...
-    boolean forceAcceleration = m_forceAccelerationDebouncer.calculate(
-      velocityRequest.gte(VELOCITY_REQUEST_THRESHOLD) && wheelSpeed.lte(WHEEL_SPEED_THRESHOLD)
-    );
-
-    // Make inertial velocity positive
+    // Make wheel speed and inertial velocity positive
+    wheelSpeed = Units.MetersPerSecond.of(Math.abs(wheelSpeed.in(Units.MetersPerSecond)));
     inertialVelocity = Units.MetersPerSecond.of(Math.abs(inertialVelocity.in(Units.MetersPerSecond)));
+
+    // See if user has been trying to accelerate for a while...
+    boolean slowWheel = wheelSpeed.minus(Units.MetersPerSecond.of(Math.abs(velocityRequest.in(Units.MetersPerSecond))))
+      .gt(VELOCITY_DIFFERENCE_THRESHOLD);
+    if (slowWheel) {
+      m_forceAccelerateTimer.reset();
+      m_forceAccelerateTimer.start();
+    } else m_forceAccelerateTimer.stop();
+    boolean forceAcceleration = m_staticForceAccelerationDebouncer.calculate(
+      velocityRequest.gte(VELOCITY_REQUEST_THRESHOLD) && wheelSpeed.lte(WHEEL_SPEED_THRESHOLD)
+    ) || m_dynamicForceAccelerationDebouncer.calculate(
+      slowWheel && !m_forceAccelerateTimer.advanceIfElapsed(FORCE_ACCELERATE_TIME.in(Units.Seconds)) && !oppositeDirection
+    );
 
     // Get current slip ratio, and check if slipping
     double currentSlipRatio = Math.abs(
