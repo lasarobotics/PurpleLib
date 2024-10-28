@@ -154,7 +154,8 @@ public class Spark extends LoggableHardware implements Sendable {
   private static final String ARB_FF_LOG_ENTRY = "/ArbitraryFF";
   private static final String ARB_FF_UNITS_LOG_ENTRY = "/ArbitraryFFUnits";
   private static final String IDLE_MODE_LOG_ENTRY = "/IdleMode";
-  private static final String CURRENT_LOG_ENTRY = "/Current";
+  private static final String INPUT_CURRENT_LOG_ENTRY = "/InputCurrent";
+  private static final String OUTPUT_CURRENT_LOG_ENTRY = "/OutputCurrent";
   private static final String TEMPERATURE_LOG_ENTRY = "/Temperature";
   private static final String MOTION_LOG_ENTRY = "/SmoothMotion";
   private static final Measure<Time> DEFAULT_STATUS_FRAME_PERIOD = Units.Milliseconds.of(20.0);
@@ -616,7 +617,8 @@ public class Spark extends LoggableHardware implements Sendable {
 
     handleSmoothMotion();
 
-    Logger.recordOutput(m_id.name + CURRENT_LOG_ENTRY, getOutputCurrent());
+    Logger.recordOutput(m_id.name + INPUT_CURRENT_LOG_ENTRY, getInputCurrent());
+    Logger.recordOutput(m_id.name + OUTPUT_CURRENT_LOG_ENTRY, getOutputCurrent());
     Logger.recordOutput(m_id.name + MOTION_LOG_ENTRY, m_isSmoothMotionEnabled);
 
     if (getMotorType() == MotorType.kBrushed) return;
@@ -1499,7 +1501,7 @@ public class Spark extends LoggableHardware implements Sendable {
       () -> Units.Amp.of(SparkHelpers.getSmartCurrentFreeLimit(m_spark)).isEquivalent(freeLimit) &&
         Units.Amp.of(SparkHelpers.getSmartCurrentStallLimit(m_spark)).isEquivalent(stallLimit) &&
         Units.RPM.of(SparkHelpers.getSmartCurrentLimitRPM(m_spark)).isEquivalent(limitRPM),
-      "Current limits not set!" 
+      "Current limits not set!"
     );
   }
 
@@ -1580,10 +1582,10 @@ public class Spark extends LoggableHardware implements Sendable {
       () -> m_spark.setSecondaryCurrentLimit((double)limit.in(Units.Amps), chopCycles),
       () -> Units.Amp.of(SparkHelpers.getSecondaryCurrentLimit(m_spark)).isEquivalent(limit) &&
         SparkHelpers.getSecondaryCurrentLimitCycles(m_spark) == chopCycles,
-      "Secondary current limits not set!" 
+      "Secondary current limits not set!"
     );
   }
-  
+
   /**
    * Set the rate of transmission for periodic frames from the SPARK
    *
@@ -1632,6 +1634,14 @@ public class Spark extends LoggableHardware implements Sendable {
    */
   public REVLibError setClosedLoopRampRate(Measure<Time> rampTime) {
     return m_spark.setClosedLoopRampRate(rampTime.in(Units.Seconds));
+  }
+
+  /**
+   * Spark approximate input current
+   * @return
+   */
+  public Measure<Current> getInputCurrent() {
+    return getOutputCurrent().times(m_spark.getAppliedOutput());
   }
 
   /**
