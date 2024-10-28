@@ -129,12 +129,13 @@ public class TractionControlController {
     inertialVelocity = Units.MetersPerSecond.of(Math.abs(inertialVelocity.in(Units.MetersPerSecond)));
 
     // See if user has been trying to accelerate for a while...
-    boolean slowWheel = wheelSpeed.minus(Units.MetersPerSecond.of(Math.abs(velocityRequest.in(Units.MetersPerSecond))))
+    boolean slowWheel = Units.MetersPerSecond.of(Math.abs(velocityRequest.in(Units.MetersPerSecond))).minus(wheelSpeed)
       .gt(VELOCITY_DIFFERENCE_THRESHOLD);
-    if (slowWheel) {
+    if (slowWheel) m_forceAccelerateTimer.start();
+    else {
       m_forceAccelerateTimer.reset();
-      m_forceAccelerateTimer.start();
-    } else m_forceAccelerateTimer.stop();
+      m_forceAccelerateTimer.stop();
+    }
     boolean forceAcceleration = m_staticForceAccelerationDebouncer.calculate(
       velocityRequest.gte(VELOCITY_REQUEST_THRESHOLD) && wheelSpeed.lte(WHEEL_SPEED_THRESHOLD)
     ) || m_dynamicForceAccelerationDebouncer.calculate(
