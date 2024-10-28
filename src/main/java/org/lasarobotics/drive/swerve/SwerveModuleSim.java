@@ -1,4 +1,4 @@
-package org.lasarobotics.drive;
+package org.lasarobotics.drive.swerve;
 
 import org.lasarobotics.utils.FFConstants;
 import org.lasarobotics.utils.GlobalConstants;

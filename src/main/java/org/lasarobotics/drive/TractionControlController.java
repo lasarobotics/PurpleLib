@@ -4,6 +4,7 @@
 
 package org.lasarobotics.drive;
 
+import org.lasarobotics.drive.swerve.DriveWheel;
 import org.lasarobotics.utils.GlobalConstants;
 
 import edu.wpi.first.math.MathUtil;

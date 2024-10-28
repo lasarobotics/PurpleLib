@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import org.lasarobotics.drive.swerve.MAXSwerveModule;
+import org.lasarobotics.drive.swerve.ModuleLocation;
 import org.lasarobotics.hardware.PurpleManager;
 import org.lasarobotics.hardware.ctre.Pigeon2;
 import org.lasarobotics.hardware.kauailabs.NavX2;

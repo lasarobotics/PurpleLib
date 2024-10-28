@@ -8,7 +8,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.ThreadLocalRandom;
 
-import org.lasarobotics.drive.AdvancedSwerveKinematics.ControlCentricity;
+import org.lasarobotics.drive.swerve.AdvancedSwerveKinematics.ControlCentricity;
 
 import edu.wpi.first.hal.SimDouble;
 import edu.wpi.first.math.geometry.Pose2d;

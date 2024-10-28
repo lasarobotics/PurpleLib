@@ -2,7 +2,7 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the MIT license file in the root directory of this project.
 
-package org.lasarobotics.drive;
+package org.lasarobotics.drive.swerve;
 
 import static edu.wpi.first.math.Nat.N1;
 import static edu.wpi.first.math.Nat.N2;
