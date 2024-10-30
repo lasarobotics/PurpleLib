@@ -8,7 +8,6 @@ import org.lasarobotics.hardware.LoggableHardware;
 import org.lasarobotics.hardware.PurpleManager;
 import org.littletonrobotics.junction.AutoLog;
 import org.littletonrobotics.junction.Logger;
-import org.littletonrobotics.junction.inputs.LoggableInputs;
 
 import com.reduxrobotics.frames.Frame;
 
@@ -132,7 +131,7 @@ public class Canandgyro extends LoggableHardware {
   }
 
   @Override
-  public LoggableInputs getInputs() {
+  public CanandgyroInputsAutoLogged getInputs() {
     synchronized (m_inputs) { return m_inputs; }
   }
 
