@@ -17,6 +17,7 @@ import org.lasarobotics.drive.swerve.ModuleLocation;
 import org.lasarobotics.hardware.PurpleManager;
 import org.lasarobotics.hardware.ctre.Pigeon2;
 import org.lasarobotics.hardware.kauailabs.NavX2;
+import org.lasarobotics.hardware.reduxrobotics.Canandgyro;
 import org.lasarobotics.utils.GlobalConstants;
 import org.lasarobotics.vision.AprilTagCamera;
 import org.littletonrobotics.junction.AutoLog;
@@ -105,6 +106,24 @@ public class SwervePoseEstimatorService {
    * @param modules MAXSwerve modules
    */
   public SwervePoseEstimatorService(Matrix<N3,N1> odometryStdDev, Pigeon2 imu, MAXSwerveModule... modules) {
+    this(
+      odometryStdDev,
+      () -> imu.getInputs().rotation2d,
+      () -> imu.getInputs().yawRate,
+      () -> true,
+      modules
+    );
+  }
+
+  /**
+   * Create Swerve Pose Estimator Service
+   * <p>
+   * This service runs in the background and keeps track of where the robot is on the field
+   * @param odometryStdDev Standard deviation of wheel odometry measurements
+   * @param imu Redux Robotics Canandgyro
+   * @param modules MAXSwerve modules
+   */
+  public SwervePoseEstimatorService(Matrix<N3,N1> odometryStdDev, Canandgyro imu, MAXSwerveModule... modules) {
     this(
       odometryStdDev,
       () -> imu.getInputs().rotation2d,
