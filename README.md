@@ -49,6 +49,7 @@ Add the following dependencies to your project:
 * URCL - https://raw.githubusercontent.com/Mechanical-Advantage/URCL/maven/URCL.json
 * NavX - https://dev.studica.com/releases/2024/NavX.json
 * REVLib - https://software-metadata.revrobotics.com/REVLib-2024.json
+* ReduxLib - https://frcsdk.reduxrobotics.com/ReduxLib_2024.json
 * CTRE Phoenix5 - https://maven.ctr-electronics.com/release/com/ctre/phoenix/Phoenix5-frc2024-latest.json
 * CTRE Phoenix6 - https://maven.ctr-electronics.com/release/com/ctre/phoenix6/latest/Phoenix6-frc2024-latest.json
 * PhotonLib - https://maven.photonvision.org/repository/internal/org/photonvision/photonlib-json/1.0/photonlib-json-1.0.json
