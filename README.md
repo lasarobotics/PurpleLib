@@ -24,6 +24,8 @@ Note: CTRE will not be as well supported as REV products as our team primarily l
     * TalonSRX
   * Kauai Labs
     * NavX2 (MXP port only)
+  * Redux Robotics
+    * Canandgyro
   * Generic
     * Analog sensor
     * Compressor
