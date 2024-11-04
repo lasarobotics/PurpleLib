@@ -44,7 +44,8 @@ Note: CTRE will not be as well supported as REV products as our team primarily l
 
 
 ## Installing
-Add the following dependencies to your project:
+
+### Required dependencies
 * AdvantageKit - https://github.com/Mechanical-Advantage/AdvantageKit/blob/main/docs/INSTALLATION.md
 * URCL - https://raw.githubusercontent.com/Mechanical-Advantage/URCL/maven/URCL.json
 * NavX - https://dev.studica.com/releases/2024/NavX.json
@@ -54,7 +55,8 @@ Add the following dependencies to your project:
 * CTRE Phoenix6 - https://maven.ctr-electronics.com/release/com/ctre/phoenix6/latest/Phoenix6-frc2024-latest.json
 * PhotonLib - https://maven.photonvision.org/repository/internal/org/photonvision/photonlib-json/1.0/photonlib-json-1.0.json
 
-Add the following to `build.gradle` where VERSION is the release version, e.g. 2023.0.0
+### Online installation
+Add the following to your project `build.gradle` where VERSION is the release version, e.g. 2023.0.0
 ```
 repositories {
   maven { url "https://jitpack.io" }
@@ -64,6 +66,18 @@ dependencies {
   implementation 'com.github.lasarobotics:PurpleLib:VERSION'
 }
 ```
+
+### Offline installation
+When PurpleLib is build, files are placed in the `build/libs` directory.
+Create a link to this directory, or copy it to your robot project.
+
+Add the following to your project `build.gradle`
+```
+dependencies {
+  implementation files('libs/PurpleLib.jar')
+}
+```
+Change the file path as needed.
 
 ## Releasing
 Create a release in GitHub. JitPack does the rest.
