@@ -15,6 +15,7 @@ import com.kauailabs.navx.frc.AHRS;
 import edu.wpi.first.hal.SimDouble;
 import edu.wpi.first.hal.simulation.SimDeviceDataJNI;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Distance;
 import edu.wpi.first.units.Measure;
@@ -69,6 +70,7 @@ public class NavX2 extends LoggableHardware {
 
   private boolean m_swapXYAxes;
   private boolean m_invertXYAxes;
+  private boolean m_fieldCentricVelocities;
 
   /**
    * Create a NavX2 object with built-in logging
@@ -81,6 +83,7 @@ public class NavX2 extends LoggableHardware {
     this.m_inputThread = new Notifier(this::updateInputs);
     this.m_swapXYAxes = false;
     this.m_invertXYAxes = false;
+    this.m_fieldCentricVelocities = false;
     this.m_simNavXYaw = new SimDouble(SimDeviceDataJNI.getSimValueHandle(SimDeviceDataJNI.getSimDeviceHandle("navX-Sensor[0]"), "Yaw"));
     System.out.println();
 
@@ -118,6 +121,14 @@ public class NavX2 extends LoggableHardware {
    */
   private Measure<Angle> getYaw() {
     return Units.Degrees.of(m_navx.getAngle());
+  }
+
+  /**
+   * Get yaw rate
+   * @return Yaw angle rate
+   */
+  private Measure<Velocity<Angle>> getYawRate() {
+    return Units.DegreesPerSecond.of(m_navx.getRate());
   }
 
   /**
@@ -176,6 +187,14 @@ public class NavX2 extends LoggableHardware {
    * Update NavX input readings
    */
   private void updateInputs() {
+    var chassisSpeeds = m_fieldCentricVelocities
+      ? new ChassisSpeeds(getVelocityX(), getVelocityY(), getYawRate())
+      : ChassisSpeeds.fromFieldRelativeSpeeds(
+        getVelocityX(),
+        getVelocityY(),
+        getYawRate(),
+        Rotation2d.fromRadians(getYaw().in(Units.Radians))
+      );
     m_inputs.isConnected = m_navx.isConnected();
     m_inputs.rollAngle.mut_replace(getRoll());
     m_inputs.pitchAngle.mut_replace(getPitch());
@@ -183,10 +202,10 @@ public class NavX2 extends LoggableHardware {
     m_inputs.xAcceleration.mut_replace(getAccelerationX());
     m_inputs.yAcceleration.mut_replace(getAccelerationY());
     m_inputs.zAcceleration.mut_replace(getAccelerationZ());
-    m_inputs.xVelocity.mut_replace(getVelocityX());
-    m_inputs.yVelocity.mut_replace(getVelocityY());
+    m_inputs.xVelocity.mut_replace(Units.MetersPerSecond.of(chassisSpeeds.vxMetersPerSecond));
+    m_inputs.yVelocity.mut_replace(Units.MetersPerSecond.of(chassisSpeeds.vyMetersPerSecond));
     m_inputs.zVelocity.mut_replace(getVelocityZ());
-    m_inputs.yawRate.mut_replace(Units.DegreesPerSecond.of(m_navx.getRate()));
+    m_inputs.yawRate.mut_replace(Units.RadiansPerSecond.of(chassisSpeeds.omegaRadiansPerSecond));
     m_inputs.rotation2d = Rotation2d.fromRadians(m_inputs.yawAngle.negate().in(Units.Radians));
   }
 
@@ -244,6 +263,16 @@ public class NavX2 extends LoggableHardware {
    */
   public void invertXYAxes(boolean invert) {
     m_invertXYAxes = invert;
+  }
+
+  /**
+   * Whether or not to make velocity readings field centric.
+   * <p>
+   * Defaults to false, so velocity readings are robot centric.
+   * @param fieldCentric
+   */
+  public void fieldCentricVelocities(boolean fieldCentric) {
+    m_fieldCentricVelocities = fieldCentric;
   }
 
   /**
