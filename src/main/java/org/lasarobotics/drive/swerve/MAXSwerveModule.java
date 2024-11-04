@@ -99,7 +99,7 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
 
   private final double EPSILON = 5e-3;
   private final Measure<Current> DRIVE_MOTOR_CURRENT_LIMIT;
-  private final Measure<Current> ROTATE_MOTOR_CURRENT_LIMIT = Units.Amps.of(18.0);
+  private final Measure<Current> ROTATE_MOTOR_CURRENT_LIMIT = Units.Amps.of(20.0);
   private final Rotation2d LOCK_POSITION = Rotation2d.fromRadians(Math.PI / 4);
 
   private static final String IS_SLIPPING_LOG_ENTRY = "/IsSlipping";
