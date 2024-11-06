@@ -190,11 +190,11 @@ public class NavX2 extends LoggableHardware {
     var chassisSpeeds = m_fieldCentricVelocities
       ? new ChassisSpeeds(getVelocityX(), getVelocityY(), getYawRate())
       : ChassisSpeeds.fromFieldRelativeSpeeds(
-        getVelocityX(),
-        getVelocityY(),
-        getYawRate(),
-        Rotation2d.fromRadians(getYaw().in(Units.Radians))
-      );
+          getVelocityX(),
+          getVelocityY(),
+          getYawRate(),
+          Rotation2d.fromRadians(getYaw().in(Units.Radians))
+        );
     m_inputs.isConnected = m_navx.isConnected();
     m_inputs.rollAngle.mut_replace(getRoll());
     m_inputs.pitchAngle.mut_replace(getPitch());
@@ -269,6 +269,7 @@ public class NavX2 extends LoggableHardware {
    * Whether or not to make velocity readings field centric.
    * <p>
    * Defaults to false, so velocity readings are robot centric.
+   * Acceleration readings remain field centric regardless of this setting.
    * @param fieldCentric
    */
   public void fieldCentricVelocities(boolean fieldCentric) {
