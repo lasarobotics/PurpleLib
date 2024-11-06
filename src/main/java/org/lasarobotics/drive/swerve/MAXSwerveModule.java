@@ -104,6 +104,7 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
 
   private static final String IS_SLIPPING_LOG_ENTRY = "/IsSlipping";
   private static final String ODOMETER_LOG_ENTRY = "/Odometer";
+  private static final String ROTATE_ERROR_LOG_ENTRY = "/RotateError";
   private static final double DRIVETRAIN_EFFICIENCY = 0.90;
   private static final double MAX_AUTO_LOCK_TIME = 10.0;
   private final double DRIVE_TICKS_PER_METER;
@@ -413,6 +414,7 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
   private void periodic() {
     Logger.recordOutput(m_driveMotor.getID().name + IS_SLIPPING_LOG_ENTRY, isSlipping());
     Logger.recordOutput(m_driveMotor.getID().name + ODOMETER_LOG_ENTRY, m_runningOdometer);
+    Logger.recordOutput(m_rotateMotor.getID().name + ROTATE_ERROR_LOG_ENTRY, m_desiredState.angle.minus(Rotation2d.fromRadians(m_rotateMotor.getInputs().absoluteEncoderPosition)));
   }
 
  /**
