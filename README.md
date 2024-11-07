@@ -24,6 +24,9 @@ Note: CTRE will not be as well supported as REV products as our team primarily l
     * TalonSRX
   * Kauai Labs
     * NavX2 (MXP port only)
+      * X/Y axis swapping
+      * X/Y axis inversion
+      * Field centric and robot centric velocity readings
   * Redux Robotics
     * Canandgyro
   * Generic
@@ -70,12 +73,13 @@ dependencies {
 ```
 
 ### Offline installation
-When PurpleLib is build, files are placed in the `build/libs` directory.
+When PurpleLib is built, files are placed in the `build/libs` directory.
 Create a link to this directory, or copy it to your robot project.
 
 Add the following to your project `build.gradle`
 ```
 dependencies {
+  implementation 'org.apache.commons:commons-math3:3.+'
   implementation files('libs/PurpleLib.jar')
 }
 ```
