@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.lasarobotics.drive.swerve.DriveWheel;
 import org.lasarobotics.drive.swerve.MAXSwerveModule;
-import org.lasarobotics.drive.swerve.ModuleLocation;
+import org.lasarobotics.drive.swerve.SwerveModuleLocation;
 import org.lasarobotics.drive.swerve.MAXSwerveModule.GearRatio;
 import org.lasarobotics.hardware.revrobotics.Spark;
 import org.lasarobotics.hardware.revrobotics.Spark.MotorKind;
@@ -125,7 +125,7 @@ public class MAXSwerveModuleTest {
     // Create hardware objects using mock devices
     m_lFrontModule = new MAXSwerveModule(
       new MAXSwerveModule.Hardware(m_lFrontDriveMotor, m_lFrontRotateMotor),
-      ModuleLocation.LeftFront,
+      SwerveModuleLocation.LeftFront,
       GEAR_RATIO,
       DRIVE_WHEEL,
       SLIP_RATIO,
@@ -137,7 +137,7 @@ public class MAXSwerveModuleTest {
     );
     m_rFrontModule = new MAXSwerveModule(
       new MAXSwerveModule.Hardware(m_rFrontDriveMotor, m_rFrontRotateMotor),
-      ModuleLocation.RightFront,
+      SwerveModuleLocation.RightFront,
       GEAR_RATIO,
       DRIVE_WHEEL,
       SLIP_RATIO,
@@ -149,7 +149,7 @@ public class MAXSwerveModuleTest {
     );
     m_lRearModule = new MAXSwerveModule(
      new MAXSwerveModule.Hardware(m_lRearDriveMotor, m_lRearRotateMotor),
-      ModuleLocation.LeftRear,
+      SwerveModuleLocation.LeftRear,
       GEAR_RATIO,
       DRIVE_WHEEL,
       SLIP_RATIO,
@@ -161,7 +161,7 @@ public class MAXSwerveModuleTest {
     );
     m_rRearModule = new MAXSwerveModule(
       new MAXSwerveModule.Hardware(m_rRearDriveMotor, m_rRearRotateMotor),
-      ModuleLocation.RightRear,
+      SwerveModuleLocation.RightRear,
       GEAR_RATIO,
       DRIVE_WHEEL,
       SLIP_RATIO,
@@ -200,13 +200,13 @@ public class MAXSwerveModuleTest {
     SparkInputsAutoLogged lRearSparkInputs = new SparkInputsAutoLogged();
     SparkInputsAutoLogged rRearSparkInputs = new SparkInputsAutoLogged();
 
-    lFrontSparkInputs.absoluteEncoderPosition = GlobalConstants.ROTATION_PI.minus(ModuleLocation.LeftFront.offset).getRadians();
+    lFrontSparkInputs.absoluteEncoderPosition = GlobalConstants.ROTATION_PI.minus(SwerveModuleLocation.LeftFront.getREVOffset()).getRadians();
     when(m_lFrontRotateMotor.getInputs()).thenReturn(lFrontSparkInputs);
-    rFrontSparkInputs.absoluteEncoderPosition = GlobalConstants.ROTATION_PI.minus(ModuleLocation.RightFront.offset).getRadians();
+    rFrontSparkInputs.absoluteEncoderPosition = GlobalConstants.ROTATION_PI.minus(SwerveModuleLocation.RightFront.getREVOffset()).getRadians();
     when(m_rFrontRotateMotor.getInputs()).thenReturn(rFrontSparkInputs);
-    lRearSparkInputs.absoluteEncoderPosition = GlobalConstants.ROTATION_PI.minus(ModuleLocation.LeftRear.offset).getRadians();
+    lRearSparkInputs.absoluteEncoderPosition = GlobalConstants.ROTATION_PI.minus(SwerveModuleLocation.LeftRear.getREVOffset()).getRadians();
     when(m_lRearRotateMotor.getInputs()).thenReturn(lRearSparkInputs);
-    rRearSparkInputs.absoluteEncoderPosition = GlobalConstants.ROTATION_PI.minus(ModuleLocation.RightRear.offset).getRadians();
+    rRearSparkInputs.absoluteEncoderPosition = GlobalConstants.ROTATION_PI.minus(SwerveModuleLocation.RightRear.getREVOffset()).getRadians();
     when(m_rRearRotateMotor.getInputs()).thenReturn(rRearSparkInputs);
 
     // Try to set module state
@@ -266,7 +266,7 @@ public class MAXSwerveModuleTest {
     // Hardcode sensor values
     SparkInputsAutoLogged defaultInputs = new SparkInputsAutoLogged();
     SparkInputsAutoLogged lFrontRotateMotorInputs = new SparkInputsAutoLogged();
-    lFrontRotateMotorInputs.absoluteEncoderPosition = ModuleLocation.LeftFront.offset.getRadians();
+    lFrontRotateMotorInputs.absoluteEncoderPosition = SwerveModuleLocation.LeftFront.getREVOffset().getRadians();
     when(m_lFrontDriveMotor.getInputs()).thenReturn(defaultInputs);
     when(m_lFrontRotateMotor.getInputs()).thenReturn(lFrontRotateMotorInputs);
     when(m_rFrontDriveMotor.getInputs()).thenReturn(defaultInputs);

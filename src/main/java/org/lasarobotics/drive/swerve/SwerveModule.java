@@ -11,19 +11,14 @@ import edu.wpi.first.units.Distance;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Velocity;
 
-public abstract class SwerveModule {
-
-  protected abstract void periodic();
-
-  protected abstract void simulationPeriodic();
-
+public interface SwerveModule {
   public abstract void set(SwerveModuleState state);
 
   public abstract SwerveModuleState getState();
 
   public abstract SwerveModulePosition getPosition();
 
-  public abstract ModuleLocation getModuleLocation();
+  public abstract SwerveModuleLocation getModuleLocation();
 
   public abstract Translation2d getModuleCoordinate();
 

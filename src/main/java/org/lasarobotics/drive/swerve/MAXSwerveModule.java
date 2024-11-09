@@ -54,7 +54,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 
 /** REV MAXSwerve module */
-public class MAXSwerveModule implements Sendable, AutoCloseable {
+public class MAXSwerveModule implements SwerveModule, Sendable, AutoCloseable {
   /**
    * MAXSwerve module hardware
    */
@@ -142,7 +142,7 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
   private SparkPIDConfig m_driveMotorConfig;
   private SparkPIDConfig m_rotateMotorConfig;
   private Translation2d m_moduleCoordinate;
-  private ModuleLocation m_location;
+  private SwerveModuleLocation m_location;
   private Rotation2d m_previousRotatePosition;
 
   private volatile double m_simDrivePosition;
@@ -172,7 +172,7 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
    * @param autoLockTime Time before automatically rotating module to locked position (10 seconds max)
    * @param driveMotorCurrentLimit Desired current limit for the drive motor
    */
-  public MAXSwerveModule(Hardware swerveHardware, ModuleLocation location, GearRatio driveGearRatio, DriveWheel driveWheel,
+  public MAXSwerveModule(Hardware swerveHardware, SwerveModuleLocation location, GearRatio driveGearRatio, DriveWheel driveWheel,
                          Measure<Dimensionless> slipRatio, Measure<Mass> mass,
                          Measure<Distance> wheelbase, Measure<Distance> trackWidth,
                          Measure<Time> autoLockTime, Measure<Current> driveMotorCurrentLimit) {
@@ -348,7 +348,7 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
     // Apply chassis angular offset to the requested state.
     var desiredState = new SwerveModuleState(
       requestedState.speedMetersPerSecond,
-      requestedState.angle.plus(m_location.offset)
+      requestedState.angle.plus(m_location.getREVOffset())
     );
 
     // Get current module angle
@@ -557,9 +557,9 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
       state.speedMetersPerSecond = 0.0;
       // Time's up, lock now...
       if (Duration.between(m_autoLockTimer, Instant.now()).toMillis() > m_autoLockTime)
-        state.angle = LOCK_POSITION.minus(m_location.offset);
+        state.angle = LOCK_POSITION.minus(m_location.getREVOffset());
       // Waiting to lock...
-      else state.angle = m_previousRotatePosition.minus(m_location.offset);
+      else state.angle = m_previousRotatePosition.minus(m_location.getREVOffset());
     } else {
       // Not locking this loop, restart timer...
       m_autoLockTimer = Instant.now();
@@ -603,7 +603,7 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
    * @param states Array of states for all swerve modules
    */
   public void set(SwerveModuleState[] states) {
-    set(states[m_location.index]);
+    set(states[m_location.ordinal()]);
   }
 
   /**
@@ -612,7 +612,7 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
    * @param realSpeeds Real speeds of robot from IMU
    */
   public void set(SwerveModuleState[] states, ChassisSpeeds realSpeeds) {
-    set(states[m_location.index], realSpeeds);
+    set(states[m_location.ordinal()], realSpeeds);
   }
 
   /**
@@ -630,7 +630,7 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
   public SwerveModuleState getState() {
     return new SwerveModuleState(
       getDriveVelocity(),
-      Rotation2d.fromRadians(m_rotateMotor.getInputs().absoluteEncoderPosition).minus(m_location.offset)
+      Rotation2d.fromRadians(m_rotateMotor.getInputs().absoluteEncoderPosition).minus(m_location.getREVOffset())
     );
   }
 
@@ -645,7 +645,7 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
     if (RobotBase.isReal()) {
       return new SwerveModulePosition(
         m_driveMotor.getInputs().encoderPosition,
-        Rotation2d.fromRadians(m_rotateMotor.getInputs().absoluteEncoderPosition).minus(m_location.offset)
+        Rotation2d.fromRadians(m_rotateMotor.getInputs().absoluteEncoderPosition).minus(m_location.getREVOffset())
       );
     }
 
@@ -656,7 +656,7 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
         m_rotateMotor.getInputs().absoluteEncoderPosition = m_desiredState.angle.getRadians();
         return new SwerveModulePosition(
           m_driveMotor.getInputs().encoderPosition,
-          Rotation2d.fromRadians(m_rotateMotor.getInputs().absoluteEncoderPosition).minus(m_location.offset)
+          Rotation2d.fromRadians(m_rotateMotor.getInputs().absoluteEncoderPosition).minus(m_location.getREVOffset())
         );
       }
     }
@@ -682,14 +682,14 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
    * Lock swerve module
    */
   public void lock() {
-    set(new SwerveModuleState(0.0, LOCK_POSITION.minus(m_location.offset)));
+    set(new SwerveModuleState(0.0, LOCK_POSITION.minus(m_location.getREVOffset())));
   }
 
   /**
    * Reset swerve module to 0 degrees
    */
   public void reset() {
-    set(new SwerveModuleState(0.0, m_location.offset));
+    set(new SwerveModuleState(0.0, m_location.getREVOffset()));
   }
 
   /**
@@ -737,7 +737,7 @@ public class MAXSwerveModule implements Sendable, AutoCloseable {
    * Get location of module on robot chassis
    * @return Location of module
    */
-  public ModuleLocation getModuleLocation() {
+  public SwerveModuleLocation getModuleLocation() {
     return m_location;
   }
 

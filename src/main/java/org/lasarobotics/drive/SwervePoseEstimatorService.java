@@ -12,8 +12,8 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import org.lasarobotics.drive.swerve.MAXSwerveModule;
-import org.lasarobotics.drive.swerve.ModuleLocation;
+import org.lasarobotics.drive.swerve.SwerveModule;
+import org.lasarobotics.drive.swerve.SwerveModuleLocation;
 import org.lasarobotics.hardware.PurpleManager;
 import org.lasarobotics.hardware.ctre.Pigeon2;
 import org.lasarobotics.hardware.kauailabs.NavX2;
@@ -85,14 +85,14 @@ public class SwervePoseEstimatorService {
    * This service runs in the background and keeps track of where the robot is on the field
    * @param odometryStdDev Standard deviation of wheel odometry measurements
    * @param imu NavX2 MXP IMU
-   * @param modules MAXSwerve modules
+   * @param modules Swerve modules
    */
-  public SwervePoseEstimatorService(Matrix<N3,N1> odometryStdDev, NavX2 imu, MAXSwerveModule... modules) {
+  public SwervePoseEstimatorService(Matrix<N3,N1> odometryStdDev, NavX2 imu, SwerveModule... modules) {
     this(
       odometryStdDev,
       () -> imu.getInputs().rotation2d,
       () -> imu.getInputs().yawRate,
-      () -> true,
+      () -> imu.getInputs().isConnected,
       modules
     );
   }
@@ -103,9 +103,9 @@ public class SwervePoseEstimatorService {
    * This service runs in the background and keeps track of where the robot is on the field
    * @param odometryStdDev Standard deviation of wheel odometry measurements
    * @param imu CTRE Pigeon 2.0 IMU
-   * @param modules MAXSwerve modules
+   * @param modules Swerve modules
    */
-  public SwervePoseEstimatorService(Matrix<N3,N1> odometryStdDev, Pigeon2 imu, MAXSwerveModule... modules) {
+  public SwervePoseEstimatorService(Matrix<N3,N1> odometryStdDev, Pigeon2 imu, SwerveModule... modules) {
     this(
       odometryStdDev,
       () -> imu.getInputs().rotation2d,
@@ -120,10 +120,10 @@ public class SwervePoseEstimatorService {
    * <p>
    * This service runs in the background and keeps track of where the robot is on the field
    * @param odometryStdDev Standard deviation of wheel odometry measurements
-   * @param imu Redux Robotics Canandgyro
-   * @param modules MAXSwerve modules
+   * @param imu Redux Canandgyro IMU
+   * @param modules Swerve modules
    */
-  public SwervePoseEstimatorService(Matrix<N3,N1> odometryStdDev, Canandgyro imu, MAXSwerveModule... modules) {
+  public SwervePoseEstimatorService(Matrix<N3,N1> odometryStdDev, Canandgyro imu, SwerveModule... modules) {
     this(
       odometryStdDev,
       () -> imu.getInputs().rotation2d,
@@ -137,7 +137,7 @@ public class SwervePoseEstimatorService {
                                      Supplier<Rotation2d> rotation2dSupplier,
                                      Supplier<Measure<Velocity<Angle>>> yawRateSupplier,
                                      Supplier<Boolean> imuConnectedSupplier,
-                                     MAXSwerveModule... modules) {
+                                     SwerveModule... modules) {
     if (modules.length != 4) throw new IllegalArgumentException("Four (4) modules must be used!");
     this.m_running = false;
     // Remember how to get rotation2d from IMU
@@ -149,10 +149,10 @@ public class SwervePoseEstimatorService {
 
     // Get each individual module
     var moduleList = Arrays.asList(modules);
-    var lFrontModule = moduleList.stream().filter(module -> module.getModuleLocation().equals(ModuleLocation.LeftFront)).findFirst();
-    var rFrontModule = moduleList.stream().filter(module -> module.getModuleLocation().equals(ModuleLocation.RightFront)).findFirst();
-    var lRearModule = moduleList.stream().filter(module -> module.getModuleLocation().equals(ModuleLocation.LeftRear)).findFirst();
-    var rRearModule = moduleList.stream().filter(module -> module.getModuleLocation().equals(ModuleLocation.RightRear)).findFirst();
+    var lFrontModule = moduleList.stream().filter(module -> module.getModuleLocation().equals(SwerveModuleLocation.LeftFront)).findFirst();
+    var rFrontModule = moduleList.stream().filter(module -> module.getModuleLocation().equals(SwerveModuleLocation.RightFront)).findFirst();
+    var lRearModule = moduleList.stream().filter(module -> module.getModuleLocation().equals(SwerveModuleLocation.LeftRear)).findFirst();
+    var rRearModule = moduleList.stream().filter(module -> module.getModuleLocation().equals(SwerveModuleLocation.RightRear)).findFirst();
 
     // Make sure each module is available
     if (lFrontModule.isEmpty()) throw new IllegalArgumentException("Left front module missing!");
