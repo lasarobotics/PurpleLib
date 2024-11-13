@@ -85,6 +85,7 @@ public class PurpleManager {
    * @param projectName Project name
    * @param gitSHA Git SHA
    * @param buildDate Build date string
+   * @param signalLoggingEnabled True to enable signal logging (Recommended to only enable this temporarily while characterizing mechanisms)
    * @param batteryTrackingEnabled True to enable battery tracking
    */
   @SuppressWarnings("resource")
@@ -94,6 +95,7 @@ public class PurpleManager {
                                 String projectName,
                                 String gitSHA,
                                 String buildDate,
+                                boolean signalLoggingEnabled,
                                 boolean batteryTrackingEnabled) {
     // AdvantageKit Logging
     Logger.recordMetadata("ProjectName", projectName);
