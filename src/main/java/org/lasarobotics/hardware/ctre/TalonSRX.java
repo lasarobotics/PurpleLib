@@ -14,6 +14,7 @@ import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
 import com.ctre.phoenix.motorcontrol.LimitSwitchNormal;
 import com.ctre.phoenix.motorcontrol.LimitSwitchSource;
+import com.ctre.phoenix.motorcontrol.NeutralMode;
 
 /** TalonSRX */
 public class TalonSRX extends LoggableHardware {
@@ -275,6 +276,14 @@ public class TalonSRX extends LoggableHardware {
    */
   public void enableCurrentLimit(boolean enable) {
     m_talon.enableCurrentLimit(enable);
+  }
+
+  /**
+   * Sets the idle mode setting for the TalonSRX
+   * @param mode Idle mode (coast or brake)
+   */
+  public void setIdleMode(NeutralMode mode) {
+    m_talon.setNeutralMode(mode);
   }
 
   /**

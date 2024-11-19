@@ -10,6 +10,7 @@ import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.inputs.LoggableInputs;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix.motorcontrol.NeutralMode;
 
 /** VictorSPX */
 public class VictorSPX extends LoggableHardware {
@@ -131,6 +132,14 @@ public class VictorSPX extends LoggableHardware {
    */
   public void setVoltage(double outputVolts) {
     m_victor.setVoltage(outputVolts);
+  }
+
+  /**
+   * Sets the idle mode setting for the VictorSPX
+   * @param mode Idle mode (coast or brake)
+   */
+  public void setIdleMode(NeutralMode mode) {
+    m_victor.setNeutralMode(mode);
   }
 
   /**
