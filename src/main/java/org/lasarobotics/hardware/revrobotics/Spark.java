@@ -14,9 +14,6 @@ import org.littletonrobotics.junction.AutoLog;
 import org.littletonrobotics.junction.Logger;
 
 import com.revrobotics.REVLibError;
-import com.revrobotics.RelativeEncoder;
-import com.revrobotics.spark.SparkAbsoluteEncoder;
-import com.revrobotics.spark.SparkAnalogSensor;
 import com.revrobotics.spark.SparkBase;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkBase.Faults;
@@ -27,14 +24,13 @@ import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkClosedLoopController.ArbFFUnits;
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkHelpers;
-import com.revrobotics.spark.SparkLimitSwitch;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkSim;
 import com.revrobotics.spark.config.LimitSwitchConfig;
 import com.revrobotics.spark.config.SparkBaseConfig;
-import com.revrobotics.spark.config.SparkBaseConfigAccessor;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
+import com.revrobotics.spark.config.SparkBaseConfigAccessor;
 import com.revrobotics.spark.config.SparkFlexConfig;
 import com.revrobotics.spark.config.SparkFlexConfigAccessor;
 import com.revrobotics.spark.config.SparkMaxConfig;
@@ -285,20 +281,12 @@ public class Spark extends LoggableHardware {
   }
 
   /**
-   * Returns an object for interfacing with the built-in encoder
-   * @return
-   */
-  private RelativeEncoder getEncoder() {
-    return getEncoder();
-  }
-
-  /**
    * Get the position of the motor encoder. This returns the native units of 'rotations' by default, and can
    * be changed by a scale factor using setPositionConversionFactor().
    * @return Number of rotations of the motor
    */
   private double getEncoderPosition() {
-    return getEncoder().getPosition();
+    return (RobotBase.isReal()) ? m_spark.getEncoder().getPosition() : m_sparkSim.getPosition();
   }
 
   /**
@@ -307,15 +295,7 @@ public class Spark extends LoggableHardware {
    * @return Number the RPM of the motor
    */
   private double getEncoderVelocity() {
-    return getEncoder().getVelocity();
-  }
-
-  /**
-   * Returns an object for interfacing with a connected analog sensor.
-   * @return An object for interfacing with a connected analog sensor
-   */
-  private SparkAnalogSensor getAnalog() {
-    return m_spark.getAnalog();
+    return (RobotBase.isReal()) ? m_spark.getEncoder().getVelocity() : m_sparkSim.getVelocity();
   }
 
   /**
@@ -324,7 +304,7 @@ public class Spark extends LoggableHardware {
    * @return Volts on the sensor
    */
   private double getAnalogPosition() {
-    return getAnalog().getPosition();
+    return (RobotBase.isReal()) ? m_spark.getAnalog().getPosition() : m_sparkSim.getAnalogSensorSim().getPosition();
   }
 
   /**
@@ -333,15 +313,7 @@ public class Spark extends LoggableHardware {
    * @return Volts per second on the sensor
    */
   private double getAnalogVelocity() {
-    return getAnalog().getVelocity();
-  }
-
-  /**
-   * Returns an object for interfacing with a connected absolute encoder.
-   * @return An object for interfacing with a connected absolute encoder
-   */
-  private SparkAbsoluteEncoder getAbsoluteEncoder() {
-    return m_spark.getAbsoluteEncoder();
+    return (RobotBase.isReal()) ? m_spark.getAnalog().getVelocity() : m_sparkSim.getAnalogSensorSim().getVelocity();
   }
 
   /**
@@ -350,7 +322,7 @@ public class Spark extends LoggableHardware {
    * @return Number of rotations of the motor
    */
   private double getAbsoluteEncoderPosition() {
-    return getAbsoluteEncoder().getPosition();
+    return (RobotBase.isReal()) ? m_spark.getAbsoluteEncoder().getPosition() : m_sparkSim.getAbsoluteEncoderSim().getPosition();
   }
 
   /**
@@ -359,33 +331,23 @@ public class Spark extends LoggableHardware {
    * @return Number the RPM of the motor
    */
   private double getAbsoluteEncoderVelocity() {
-    return getAbsoluteEncoder().getVelocity();
+    return (RobotBase.isReal()) ? m_spark.getAbsoluteEncoder().getVelocity() : m_sparkSim.getAbsoluteEncoderSim().getVelocity();
   }
 
   /**
-   * Returns an object for interfacing with the forward limit switch connected to the appropriate
-   * pins on the data port.
-   *
-   * <p>This call will disable support for the alternate encoder.
-   *
-   * @param switchType Whether the limit switch is normally open or normally closed.
-   * @return An object for interfacing with the forward limit switch.
+   * Get if forward limit switch is activated
+   * @return True if activated
    */
-  private SparkLimitSwitch getForwardLimitSwitch() {
-    return m_spark.getForwardLimitSwitch();
+  private boolean getForwardLimitSwitch() {
+    return (RobotBase.isReal()) ? m_spark.getForwardLimitSwitch().isPressed() : m_sparkSim.getForwardLimitSwitchSim().getPressed();
   }
 
   /**
-   * Returns an object for interfacing with the reverse limit switch connected to the appropriate
-   * pins on the data port.
-   *
-   * <p>This call will disable support for the alternate encoder.
-   *
-   * @param switchType Whether the limit switch is normally open or normally closed.
-   * @return An object for interfacing with the reverse limit switch.
+   * Get if reverse limit switch is activated
+   * @return True if activated
    */
-  private SparkLimitSwitch getReverseLimitSwitch() {
-    return m_spark.getReverseLimitSwitch();
+  private boolean getReverseLimitSwitch() {
+    return (RobotBase.isReal()) ? m_spark.getReverseLimitSwitch().isPressed() : m_sparkSim.getReverseLimitSwitchSim().getPressed();
   }
 
   /**
@@ -399,8 +361,8 @@ public class Spark extends LoggableHardware {
       m_inputs.analogVelocity = getAnalogVelocity();
       m_inputs.absoluteEncoderPosition = getAbsoluteEncoderPosition();
       m_inputs.absoluteEncoderVelocity = getAbsoluteEncoderVelocity();
-      m_inputs.forwardLimitSwitch = getForwardLimitSwitch().isPressed();
-      m_inputs.reverseLimitSwitch = getReverseLimitSwitch().isPressed();
+      m_inputs.forwardLimitSwitch = getForwardLimitSwitch();
+      m_inputs.reverseLimitSwitch = getReverseLimitSwitch();
 
       // Get motor encoder
       if (!getMotorType().equals(MotorType.kBrushed)) {
@@ -576,7 +538,7 @@ public class Spark extends LoggableHardware {
    */
   public REVLibError resetEncoder(double value) {
     REVLibError status;
-    status = applyConfig(() -> getEncoder().setPosition(value));
+    status = applyConfig(() -> m_spark.getEncoder().setPosition(value));
 
     if (status.equals(REVLibError.kOk)) System.out.println(String.join(" ", m_id.name, "Encoder set to", String.valueOf(value), "!"));
 
