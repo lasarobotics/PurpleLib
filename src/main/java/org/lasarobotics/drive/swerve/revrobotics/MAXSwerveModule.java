@@ -7,6 +7,7 @@ package org.lasarobotics.drive.swerve.revrobotics;
 import org.lasarobotics.drive.swerve.DriveWheel;
 import org.lasarobotics.drive.swerve.SwerveGearRatio;
 import org.lasarobotics.drive.swerve.SwerveModule;
+import org.lasarobotics.hardware.revrobotics.Spark;
 import org.lasarobotics.utils.FFConstants;
 import org.lasarobotics.utils.PIDConstants;
 
@@ -84,6 +85,9 @@ public class MAXSwerveModule {
                                        Dimensionless slipRatio, Mass mass,
                                        Distance wheelbase, Distance trackWidth,
                                        Time autoLockTime, Current driveMotorCurrentLimit) {
+    if (!swerveHardware.rotateMotor.getKind().equals(Spark.MotorKind.NEO_550))
+      throw new IllegalArgumentException("MAXSwerve rotate motor MUST be a NEO 550!");
+
     double driveConversionFactor = driveWheel.diameter.in(Units.Meters) * Math.PI / gearRatio.getDriveRatio();
     double drive_kF = 1 / ((swerveHardware.driveMotor.getKind().getMaxRPM() * REVSwerveModule.DRIVETRAIN_EFFICIENCY / 60) * driveConversionFactor);
 

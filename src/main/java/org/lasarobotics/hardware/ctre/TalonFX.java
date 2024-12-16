@@ -76,9 +76,12 @@ import com.ctre.phoenix6.controls.compound.Diff_VelocityVoltage_Velocity;
 import com.ctre.phoenix6.controls.compound.Diff_VoltageOut_Position;
 import com.ctre.phoenix6.controls.compound.Diff_VoltageOut_Velocity;
 
-import edu.wpi.first.units.Measure;
-import edu.wpi.first.units.Time;
 import edu.wpi.first.units.Units;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.MutAngle;
+import edu.wpi.first.units.measure.MutAngularVelocity;
+import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.Notifier;
 
 
@@ -108,8 +111,8 @@ public class TalonFX extends LoggableHardware {
    */
   @AutoLog
   public static class TalonFXInputs {
-    public double selectedSensorPosition = 0.0;
-    public double selectedSensorVelocity = 0.0;
+    public MutAngle selectedSensorPosition = Units.Radians.zero().mutableCopy();
+    public MutAngularVelocity selectedSensorVelocity = Units.RadiansPerSecond.zero().mutableCopy();
   }
 
   private static final String VALUE1_LOG_ENTRY = "/OutputValue1";
@@ -122,7 +125,7 @@ public class TalonFX extends LoggableHardware {
 
   private ID m_id;
   private Notifier m_inputThread;
-  private Measure<Time> m_inputThreadPeriod;
+  private Time m_inputThreadPeriod;
   private volatile TalonFXInputsAutoLogged m_inputs;
 
 
@@ -130,7 +133,7 @@ public class TalonFX extends LoggableHardware {
    * Create a TalonFX object with built-in logging
    * @param id TalonFX ID
    */
-  public TalonFX(TalonFX.ID id, Measure<Time> inputThreadPeriod) {
+  public TalonFX(TalonFX.ID id, Time inputThreadPeriod) {
     this.m_id = id;
     this.m_talon = new com.ctre.phoenix6.hardware.TalonFX(id.deviceID);
     this.m_inputs = new TalonFXInputsAutoLogged();
@@ -168,7 +171,7 @@ public class TalonFX extends LoggableHardware {
    *
    * @return Position of selected sensor (in raw sensor units).
    */
-  private double getSelectedSensorPosition() {
+  private Angle getSelectedSensorPosition() {
     return m_talon.getPosition().getValue();
   }
 
@@ -178,7 +181,7 @@ public class TalonFX extends LoggableHardware {
    * @return selected sensor (in raw sensor units) per 100ms.
    * See Phoenix-Documentation for how to interpret.
    */
-  private double getSelectedSensorVelocity() {
+  private AngularVelocity getSelectedSensorVelocity() {
     return m_talon.getVelocity().getValue();
   }
 
@@ -187,8 +190,8 @@ public class TalonFX extends LoggableHardware {
    */
   private void updateInputs() {
     synchronized (m_inputs) {
-      m_inputs.selectedSensorPosition = getSelectedSensorPosition();
-      m_inputs.selectedSensorVelocity = getSelectedSensorVelocity();
+      m_inputs.selectedSensorPosition.mut_replace(getSelectedSensorPosition());
+      m_inputs.selectedSensorVelocity.mut_replace(getSelectedSensorVelocity());
     }
   }
 

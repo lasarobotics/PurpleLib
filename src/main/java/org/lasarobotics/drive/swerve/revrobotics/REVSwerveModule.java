@@ -153,6 +153,7 @@ public class REVSwerveModule implements SwerveModule, Sendable, AutoCloseable {
 
     this.m_driveMotor = swerveHardware.driveMotor;
     this.m_rotateMotor = swerveHardware.rotateMotor;
+    this.m_moduleSim = new SwerveModuleSim(m_driveMotor.getKind().motor, driveFF, m_rotateMotor.getKind().motor, rotateFF);
     this.m_vendor = vendor;
     this.m_location = location;
     this.m_gearRatio = gearRatio;
