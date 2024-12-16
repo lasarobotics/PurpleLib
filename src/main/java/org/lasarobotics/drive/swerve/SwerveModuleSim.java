@@ -5,11 +5,9 @@ import org.lasarobotics.utils.GlobalConstants;
 
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
-import edu.wpi.first.units.Angle;
-import edu.wpi.first.units.Current;
-import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Units;
-import edu.wpi.first.units.Velocity;
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.wpilibj.simulation.FlywheelSim;
 
 public class SwerveModuleSim {
@@ -63,7 +61,7 @@ public class SwerveModuleSim {
    * Get drive motor velocity
    * @return Drive motor velocity
    */
-  public Measure<Velocity<Angle>> getDriveMotorVelocity() {
+  public AngularVelocity getDriveMotorVelocity() {
     return Units.RPM.of(m_driveSim.getAngularVelocityRPM());
   }
 
@@ -71,7 +69,7 @@ public class SwerveModuleSim {
    * Get rotate motor velocity
    * @return Rotate motor velocity
    */
-  public Measure<Velocity<Angle>> getRotateMotorVelocity() {
+  public AngularVelocity getRotateMotorVelocity() {
     return Units.RPM.of(m_rotateSim.getAngularVelocityRPM());
   }
 
@@ -79,7 +77,7 @@ public class SwerveModuleSim {
    * Get drive motor current draw
    * @return Drive motor current draw
    */
-  public Measure<Current> getDriveMotorCurrentDraw() {
+  public Current getDriveMotorCurrentDraw() {
     return Units.Amps.of(m_driveSim.getCurrentDrawAmps());
   }
 
@@ -87,7 +85,7 @@ public class SwerveModuleSim {
    * Get rotate motor current draw
    * @return Rotate motor current draw
    */
-  public Measure<Current> getRotateMotorCurrentDraw() {
+  public Current getRotateMotorCurrentDraw() {
     return Units.Amps.of(m_rotateSim.getCurrentDrawAmps());
   }
 
@@ -95,7 +93,7 @@ public class SwerveModuleSim {
    * Get total current draw for swerve module
    * @return Total current draw
    */
-  public Measure<Current> getTotalCurrentDraw() {
+  public Current getTotalCurrentDraw() {
     return Units.Amps.of(m_driveSim.getCurrentDrawAmps() + m_rotateSim.getCurrentDrawAmps());
   }
 }

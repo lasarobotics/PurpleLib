@@ -15,13 +15,12 @@ import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.geometry.Quaternion;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.numbers.N3;
-import edu.wpi.first.units.Angle;
-import edu.wpi.first.units.Distance;
-import edu.wpi.first.units.Measure;
-import edu.wpi.first.units.MutableMeasure;
-import edu.wpi.first.units.Time;
 import edu.wpi.first.units.Units;
-import edu.wpi.first.units.Velocity;
+import edu.wpi.first.units.measure.MutAngle;
+import edu.wpi.first.units.measure.MutAngularVelocity;
+import edu.wpi.first.units.measure.MutLinearAcceleration;
+import edu.wpi.first.units.measure.MutLinearVelocity;
+import edu.wpi.first.units.measure.Time;
 
 public class Canandgyro extends LoggableHardware {
   /** Cananggyro ID */
@@ -45,22 +44,22 @@ public class Canandgyro extends LoggableHardware {
    */
   @AutoLog
   public static class CanandgyroInputs {
-    public MutableMeasure<Angle> pitchAngle = Units.Rotations.zero().mutableCopy();
-    public MutableMeasure<Angle> rollAngle = Units.Rotations.zero().mutableCopy();
-    public MutableMeasure<Angle> yawAngle = Units.Rotations.zero().mutableCopy();
-    public MutableMeasure<Velocity<Velocity<Distance>>> xAcceleration = Units.Gs.zero().mutableCopy();
-    public MutableMeasure<Velocity<Velocity<Distance>>> yAcceleration = Units.Gs.zero().mutableCopy();
-    public MutableMeasure<Velocity<Velocity<Distance>>> zAcceleration = Units.Gs.zero().mutableCopy();
-    public MutableMeasure<Velocity<Distance>> xVelocity = Units.MetersPerSecond.zero().mutableCopy();
-    public MutableMeasure<Velocity<Distance>> yVelocity = Units.MetersPerSecond.zero().mutableCopy();
-    public MutableMeasure<Velocity<Distance>> zVelocity = Units.MetersPerSecond.zero().mutableCopy();
-    public MutableMeasure<Velocity<Angle>> pitchRate = Units.RotationsPerSecond.zero().mutableCopy();
-    public MutableMeasure<Velocity<Angle>> rollRate = Units.RotationsPerSecond.zero().mutableCopy();
-    public MutableMeasure<Velocity<Angle>> yawRate = Units.RotationsPerSecond.zero().mutableCopy();
+    public MutAngle pitchAngle = Units.Rotations.zero().mutableCopy();
+    public MutAngle rollAngle = Units.Rotations.zero().mutableCopy();
+    public MutAngle yawAngle = Units.Rotations.zero().mutableCopy();
+    public MutLinearAcceleration xAcceleration = Units.Gs.zero().mutableCopy();
+    public MutLinearAcceleration yAcceleration = Units.Gs.zero().mutableCopy();
+    public MutLinearAcceleration zAcceleration = Units.Gs.zero().mutableCopy();
+    public MutLinearVelocity xVelocity = Units.MetersPerSecond.zero().mutableCopy();
+    public MutLinearVelocity yVelocity = Units.MetersPerSecond.zero().mutableCopy();
+    public MutLinearVelocity zVelocity = Units.MetersPerSecond.zero().mutableCopy();
+    public MutAngularVelocity pitchRate = Units.RotationsPerSecond.zero().mutableCopy();
+    public MutAngularVelocity rollRate = Units.RotationsPerSecond.zero().mutableCopy();
+    public MutAngularVelocity yawRate = Units.RotationsPerSecond.zero().mutableCopy();
     public Rotation2d rotation2d = new Rotation2d();
   }
 
-  private static final Measure<Time> INITIAL_FRAME_WAIT_TIME = Units.Seconds.of(5.0);
+  private static final Time INITIAL_FRAME_WAIT_TIME = Units.Seconds.of(5.0);
 
   private com.reduxrobotics.sensors.canandgyro.Canandgyro m_gyro;
 

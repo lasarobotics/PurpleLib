@@ -13,7 +13,6 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import org.lasarobotics.drive.swerve.SwerveModule;
-import org.lasarobotics.drive.swerve.SwerveModuleLocation;
 import org.lasarobotics.hardware.PurpleManager;
 import org.lasarobotics.hardware.ctre.Pigeon2;
 import org.lasarobotics.hardware.kauailabs.NavX2;
@@ -34,11 +33,9 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
-import edu.wpi.first.units.Angle;
-import edu.wpi.first.units.Measure;
-import edu.wpi.first.units.Time;
 import edu.wpi.first.units.Units;
-import edu.wpi.first.units.Velocity;
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotBase;
 
@@ -51,22 +48,22 @@ public class SwervePoseEstimatorService {
   }
 
   private static final Matrix<N3,N1> VISION_STDDEV = VecBuilder.fill(1.0, 1.0, Math.toRadians(3.0));
-  private static final Measure<Time> DEFAULT_THREAD_PERIOD = Units.Milliseconds.of(10.0);
-  private static final Measure<Velocity<Angle>> VISION_ANGULAR_VELOCITY_THRESHOLD = Units.DegreesPerSecond.of(720.0);
+  private static final Time DEFAULT_THREAD_PERIOD = Units.Milliseconds.of(10.0);
+  private static final AngularVelocity VISION_ANGULAR_VELOCITY_THRESHOLD = Units.DegreesPerSecond.of(720.0);
   private static final String NAME = "SwervePoseEstimatorService";
   private static final String VISIBLE_TAGS_LOG_ENTRY = "/Vision/VisibleTags";
   private static final String ESTIMATED_POSES_LOG_ENTRY = "/Vision/EstimatedPoses";
 
   private boolean m_running;
   private Supplier<Rotation2d> m_rotation2dSupplier;
-  private Supplier<Measure<Velocity<Angle>>> m_yawRateSupplier;
+  private Supplier<AngularVelocity> m_yawRateSupplier;
   private Supplier<Boolean> m_imuConnectedSupplier;
   private Supplier<SwerveModulePosition[]> m_swerveModulePositionSupplier;
   private Consumer<Pose2d> m_poseResetMethod;
   private SwerveDriveKinematics m_kinematics;
   private SwerveDrivePoseEstimator m_poseEstimator;
   private List<AprilTagCamera> m_cameras;
-  private Measure<Time> m_threadPeriod;
+  private Time m_threadPeriod;
   private Instant m_lastVisionUpdateTime;
   private Notifier m_thread;
 
@@ -135,7 +132,7 @@ public class SwervePoseEstimatorService {
 
   private SwervePoseEstimatorService(Matrix<N3,N1> odometryStdDev,
                                      Supplier<Rotation2d> rotation2dSupplier,
-                                     Supplier<Measure<Velocity<Angle>>> yawRateSupplier,
+                                     Supplier<AngularVelocity> yawRateSupplier,
                                      Supplier<Boolean> imuConnectedSupplier,
                                      SwerveModule... modules) {
     if (modules.length != 4) throw new IllegalArgumentException("Four (4) modules must be used!");
@@ -149,10 +146,10 @@ public class SwervePoseEstimatorService {
 
     // Get each individual module
     var moduleList = Arrays.asList(modules);
-    var lFrontModule = moduleList.stream().filter(module -> module.getModuleLocation().equals(SwerveModuleLocation.LeftFront)).findFirst();
-    var rFrontModule = moduleList.stream().filter(module -> module.getModuleLocation().equals(SwerveModuleLocation.RightFront)).findFirst();
-    var lRearModule = moduleList.stream().filter(module -> module.getModuleLocation().equals(SwerveModuleLocation.LeftRear)).findFirst();
-    var rRearModule = moduleList.stream().filter(module -> module.getModuleLocation().equals(SwerveModuleLocation.RightRear)).findFirst();
+    var lFrontModule = moduleList.stream().filter(module -> module.getModuleLocation().equals(SwerveModule.Location.LeftFront)).findFirst();
+    var rFrontModule = moduleList.stream().filter(module -> module.getModuleLocation().equals(SwerveModule.Location.RightFront)).findFirst();
+    var lRearModule = moduleList.stream().filter(module -> module.getModuleLocation().equals(SwerveModule.Location.LeftRear)).findFirst();
+    var rRearModule = moduleList.stream().filter(module -> module.getModuleLocation().equals(SwerveModule.Location.RightRear)).findFirst();
 
     // Make sure each module is available
     if (lFrontModule.isEmpty()) throw new IllegalArgumentException("Left front module missing!");
@@ -228,7 +225,7 @@ public class SwervePoseEstimatorService {
       m_yawAngle = (isIMUConnected) ? m_rotation2dSupplier.get() :
         m_yawAngle.plus(new Rotation2d(m_kinematics.toTwist2d(moduleDeltas).dtheta));
       var yawRate = (isIMUConnected) ? m_yawRateSupplier.get() :
-        Units.Radians.of(m_yawAngle.minus(previousYawAngle).getRadians()).per(Units.Microseconds.of(m_currentTimestamp - m_previousTimestamp));
+        Units.Radians.of(m_yawAngle.minus(previousYawAngle).getRadians()).divide(Units.Microseconds.of(m_currentTimestamp - m_previousTimestamp));
 
       // If no cameras or yaw rate is too high, just update pose based on odometry and exit
       if (m_cameras.isEmpty() || yawRate.gte(VISION_ANGULAR_VELOCITY_THRESHOLD)) {
@@ -305,7 +302,7 @@ public class SwervePoseEstimatorService {
    * Defaults to 10ms if not set (100Hz), 20ms for simulation (50Hz)
    * @param period Period between pose estimator updates
    */
-  public void setPeriod(Measure<Time> period) {
+  public void setPeriod(Time period) {
     m_threadPeriod = period;
   }
 

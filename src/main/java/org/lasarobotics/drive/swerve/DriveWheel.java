@@ -4,16 +4,15 @@
 
 package org.lasarobotics.drive.swerve;
 
-import edu.wpi.first.units.Dimensionless;
-import edu.wpi.first.units.Distance;
-import edu.wpi.first.units.Measure;
+import edu.wpi.first.units.measure.Dimensionless;
+import edu.wpi.first.units.measure.Distance;
 
 public class DriveWheel {
-  public final Measure<Distance> diameter;
-  public final Measure<Dimensionless> staticCoF;
-  public final Measure<Dimensionless> dynamicCoF;
+  public final Distance diameter;
+  public final Dimensionless staticCoF;
+  public final Dimensionless dynamicCoF;
 
-  public DriveWheel(Measure<Distance> diameter, Measure<Dimensionless> staticCoF, Measure<Dimensionless> dynamicCoF) {
+  public DriveWheel(Distance diameter, Dimensionless staticCoF, Dimensionless dynamicCoF) {
     this.diameter = diameter;
     this.staticCoF = staticCoF;
     this.dynamicCoF = dynamicCoF;

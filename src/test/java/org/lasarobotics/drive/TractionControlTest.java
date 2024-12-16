@@ -15,21 +15,19 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.lasarobotics.utils.GlobalConstants;
 
-import edu.wpi.first.units.Dimensionless;
-import edu.wpi.first.units.Distance;
-import edu.wpi.first.units.Mass;
-import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Units;
-import edu.wpi.first.units.Velocity;
+import edu.wpi.first.units.measure.Dimensionless;
+import edu.wpi.first.units.measure.LinearVelocity;
+import edu.wpi.first.units.measure.Mass;
 import edu.wpi.first.wpilibj.Timer;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class TractionControlTest {
-  private final Measure<Dimensionless> SLIP_RATIO = Units.Percent.of(8.0);
-  private final Measure<Dimensionless> STATIC_FRICTION_COEFFICIENT = Units.Value.of(0.9);
-  private final Measure<Dimensionless> DYNAMIC_FRICTION_COEFFICIENT = Units.Value.of(0.8);
-  private final Measure<Mass> MASS = Units.Pounds.of(135.0);
-  private final Measure<Velocity<Distance>> MAX_LINEAR_SPEED = Units.MetersPerSecond.of(5.2);
+  private final Dimensionless SLIP_RATIO = Units.Percent.of(8.0);
+  private final Dimensionless STATIC_FRICTION_COEFFICIENT = Units.Value.of(0.9);
+  private final Dimensionless DYNAMIC_FRICTION_COEFFICIENT = Units.Value.of(0.8);
+  private final Mass MASS = Units.Pounds.of(135.0);
+  private final LinearVelocity MAX_LINEAR_SPEED = Units.MetersPerSecond.of(5.2);
   private final double THRESHOLD = 0.05;
 
   private TractionControlController m_tractionControlController;

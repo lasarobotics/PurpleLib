@@ -25,7 +25,6 @@ import org.photonvision.simulation.VisionSystemSim;
 import org.photonvision.simulation.VisionTargetSim;
 
 import com.ctre.phoenix6.SignalLogger;
-import com.revrobotics.REVPhysicsSim;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -148,8 +147,7 @@ public class PurpleManager {
     // Set thread priority
     Notifier.setHALThreadPriority(true, 99);
 
-    // Run REV physics sim
-    addCallbackSim(() -> REVPhysicsSim.getInstance().run());
+   //TODO add REV physics simulation
 
     // Register URCL for logging REV devices
     Logger.registerURCL(URCL.startExternal());

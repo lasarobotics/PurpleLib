@@ -9,9 +9,8 @@ import org.lasarobotics.hardware.PurpleManager;
 import org.littletonrobotics.junction.AutoLog;
 import org.littletonrobotics.junction.Logger;
 
-import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Units;
-import edu.wpi.first.units.Voltage;
+import edu.wpi.first.units.measure.MutVoltage;
 import edu.wpi.first.wpilibj.AnalogInput;
 
 /**
@@ -39,7 +38,7 @@ public class Analog extends LoggableHardware {
    */
   @AutoLog
   public static class AnalogInputs {
-    public Measure<Voltage> voltage = Units.Volts.of(0.0);
+    public MutVoltage voltage = Units.Volts.of(0.0).mutableCopy();
   }
 
   private AnalogInput m_analogInput;
@@ -67,7 +66,7 @@ public class Analog extends LoggableHardware {
    * Update sensor input readings
    */
   private void updateInputs() {
-    m_inputs.voltage = Units.Volts.of(m_analogInput.getVoltage());
+    m_inputs.voltage.mut_replace(Units.Volts.of(m_analogInput.getVoltage()));
   }
 
   /**

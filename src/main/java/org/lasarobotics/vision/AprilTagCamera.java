@@ -27,10 +27,9 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
-import edu.wpi.first.units.Angle;
-import edu.wpi.first.units.Distance;
-import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Units;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotState;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -40,10 +39,10 @@ public class AprilTagCamera implements AutoCloseable {
   public static final Object LOCK = new Object();
 
   private final double APRILTAG_POSE_AMBIGUITY_THRESHOLD = 0.1;
-  private final Measure<Distance> POSE_HEIGHT_TOLERANCE = Units.Meters.of(0.75);
-  private final Measure<Angle> POSE_PITCH_TOLERANCE = Units.Degrees.of(15.0);
-  private final Measure<Angle> POSE_ROLL_TOLERANCE = Units.Degrees.of(15.0);
-  private final Measure<Distance> MAX_TAG_DISTANCE = Units.Meters.of(5.0);
+  private final Distance POSE_HEIGHT_TOLERANCE = Units.Meters.of(0.75);
+  private final Angle POSE_PITCH_TOLERANCE = Units.Degrees.of(15.0);
+  private final Angle POSE_ROLL_TOLERANCE = Units.Degrees.of(15.0);
+  private final Distance MAX_TAG_DISTANCE = Units.Meters.of(5.0);
 
   /** AprilTagCamera Result */
   public static class Result {
@@ -144,7 +143,7 @@ public class AprilTagCamera implements AutoCloseable {
    * @param numTargetsUsed Number of tags used for pose estimate
    * @return Standard deviation of measurement
    */
-  private double getStandardDeviation(Measure<Distance> closestTagDistance, int numTagsUsed) {
+  private double getStandardDeviation(Distance closestTagDistance, int numTagsUsed) {
     return 0.01 * Math.pow(closestTagDistance.in(Units.Meters), 2.0) / numTagsUsed;
   }
 

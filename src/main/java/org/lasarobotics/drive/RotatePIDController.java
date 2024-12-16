@@ -12,10 +12,9 @@ import org.lasarobotics.utils.PIDConstants;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
-import edu.wpi.first.units.Angle;
-import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Units;
-import edu.wpi.first.units.Velocity;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
 
 /** Rotate PID controller */
 public class RotatePIDController {
@@ -66,7 +65,7 @@ public class RotatePIDController {
    *
    * @return Optimal rotate output
    */
-  public Measure<Velocity<Angle>> calculate(Measure<Angle> currentAngle, Measure<Velocity<Angle>> rotateRate, double rotateRequest) {
+  public AngularVelocity calculate(Angle currentAngle, AngularVelocity rotateRate, double rotateRequest) {
     // Filter rotate request
     m_rotateRequest -= (m_rotateRequest - rotateRequest) * FILTER_FACTOR;
 
@@ -94,7 +93,7 @@ public class RotatePIDController {
    * @param positionTolerance Position error that is tolerable
    * @param velocityTolerance Velocity error that is tolerable
    */
-  public void setTolerance(Measure<Angle> positionTolerance, Measure<Velocity<Angle>> velocityTolerance) {
+  public void setTolerance(Angle positionTolerance, AngularVelocity velocityTolerance) {
     m_pidController.setTolerance(positionTolerance.in(Units.Degrees), velocityTolerance.in(Units.DegreesPerSecond));
   }
 
@@ -102,7 +101,7 @@ public class RotatePIDController {
    * Set setpoint of rotation PID controller
    * @param angle
    */
-  public void setSetpoint(Measure<Angle> angle) {
+  public void setSetpoint(Angle angle) {
     m_pidController.setSetpoint(angle.in(Units.Degrees));
   }
 

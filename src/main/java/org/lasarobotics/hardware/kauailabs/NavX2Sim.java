@@ -11,19 +11,19 @@ import java.util.concurrent.ThreadLocalRandom;
 import org.lasarobotics.drive.swerve.AdvancedSwerveKinematics.ControlCentricity;
 
 import edu.wpi.first.hal.SimDouble;
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.units.Angle;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Units;
-import edu.wpi.first.units.Velocity;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Velocity;
 import edu.wpi.first.wpilibj.simulation.SimDeviceSim;
 
 /** NavX2 Sim */
 @SuppressWarnings("unused")
 public class NavX2Sim {
-  private static final Measure<Velocity<Angle>> NAVX2_YAW_DRIFT_RATE = Units.DegreesPerSecond.of(0.5 / 60);
+  private static final AngularVelocity NAVX2_YAW_DRIFT_RATE = Units.DegreesPerSecond.of(0.5 / 60);
   private final SimDouble m_pitch;
   private final SimDouble m_roll;
   private final SimDouble m_yaw;

@@ -15,11 +15,12 @@ import com.ctre.phoenix6.configs.MountPoseConfigs;
 import com.ctre.phoenix6.configs.Pigeon2Configuration;
 
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.units.Angle;
-import edu.wpi.first.units.Measure;
-import edu.wpi.first.units.Time;
 import edu.wpi.first.units.Units;
-import edu.wpi.first.units.Velocity;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.MutAngle;
+import edu.wpi.first.units.measure.MutAngularVelocity;
+import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.Notifier;
 
 /** CTRE Pigeon 2.0 */
@@ -55,17 +56,17 @@ public class Pigeon2 extends LoggableHardware {
    */
   @AutoLog
   public static class Pigeon2Inputs {
-    public Measure<Angle> pitchAngle = Units.Radians.of(0.0);
-    public Measure<Angle> yawAngle = Units.Radians.of(0.0);
-    public Measure<Angle> rollAngle = Units.Radians.of(0.0);
-    public Measure<Velocity<Angle>> yawRate = Units.RadiansPerSecond.of(0.0);
+    public MutAngle pitchAngle = Units.Radians.of(0.0).mutableCopy();
+    public MutAngle yawAngle = Units.Radians.of(0.0).mutableCopy();
+    public MutAngle rollAngle = Units.Radians.of(0.0).mutableCopy();
+    public MutAngularVelocity yawRate = Units.RadiansPerSecond.of(0.0).mutableCopy();
     public Rotation2d rotation2d = GlobalConstants.ROTATION_ZERO;
   }
 
   private int DEFAULT_THREAD_PERIOD = 10;
 
   private Notifier m_inputThread;
-  private Measure<Time> m_inputThreadPeriod = Units.Milliseconds.of(DEFAULT_THREAD_PERIOD);
+  private Time m_inputThreadPeriod = Units.Milliseconds.of(DEFAULT_THREAD_PERIOD);
 
   private com.ctre.phoenix6.hardware.Pigeon2 m_pigeon;
 
@@ -92,7 +93,7 @@ public class Pigeon2 extends LoggableHardware {
 	 * Get the pitch from the Pigeon
 	 * @return Pitch
 	 */
-  private double getPitch() {
+  private Angle getPitch() {
     return m_pigeon.getPitch().getValue();
   }
 
@@ -109,8 +110,8 @@ public class Pigeon2 extends LoggableHardware {
    *
    * @return The current heading of the robot in degrees
    */
-  private double getAngle() {
-    return m_pigeon.getAngle();
+  private Angle getAngle() {
+    return m_pigeon.getYaw().getValue();
   }
 
   /**
@@ -131,22 +132,54 @@ public class Pigeon2 extends LoggableHardware {
   }
 
   /**
-	 * Get the roll from the Pigeon
-	 * @return Roll
-	 */
-  private double getRoll() {
+   * Current reported roll of the Pigeon2.
+   *
+   * <ul>
+   *   <li> <b>Minimum Value:</b> -180.0
+   *   <li> <b>Maximum Value:</b> 179.9560546875
+   *   <li> <b>Default Value:</b> 0
+   *   <li> <b>Units:</b> deg
+   * </ul>
+   *
+   * Default Rates:
+   * <ul>
+   *   <li> <b>CAN 2.0:</b> 100.0 Hz
+   *   <li> <b>CAN FD:</b> 100.0 Hz (TimeSynced with Pro)
+   * </ul>
+   *
+   * This refreshes and returns a cached StatusSignal object.
+   *
+   * @return Roll angle
+   */
+  private Angle getRoll() {
     return m_pigeon.getRoll().getValue();
   }
 
   /**
-   * Return the rate of rotation of the yaw (Z-axis) gyro, in degrees per second.
-   *<p>
-   * The rate is based on the most recent reading of the yaw gyro angle.
-   *<p>
-   * @return The current rate of change in yaw angle (in degrees per second)
+   * Angular Velocity Quaternion Z Component
+   * <p>
+   * This is the Z component of the angular velocity with respect to the
+   * world frame and is mount-calibrated.
+   *
+   * <ul>
+   *   <li> <b>Minimum Value:</b> -2048.0
+   *   <li> <b>Maximum Value:</b> 2047.99609375
+   *   <li> <b>Default Value:</b> 0
+   *   <li> <b>Units:</b> dps
+   * </ul>
+   *
+   * Default Rates:
+   * <ul>
+   *   <li> <b>CAN 2.0:</b> 10.0 Hz
+   *   <li> <b>CAN FD:</b> 100.0 Hz (TimeSynced with Pro)
+   * </ul>
+   *
+   * This refreshes and returns a cached StatusSignal object.
+   *
+   * @return Yaw angular velocity
    */
-  private double getRate() {
-    return m_pigeon.getRate();
+  private AngularVelocity getRate() {
+    return m_pigeon.getAngularVelocityZWorld().getValue();
   }
 
 
@@ -154,10 +187,10 @@ public class Pigeon2 extends LoggableHardware {
    * Update Pidgeon input readings
    */
   private void updateInputs() {
-    m_inputs.pitchAngle = Units.Degrees.of(getPitch());
-    m_inputs.yawAngle = Units.Degrees.of(getAngle());
-    m_inputs.rollAngle = Units.Degrees.of(getRoll());
-    m_inputs.yawRate = Units.DegreesPerSecond.of(getRate());
+    m_inputs.pitchAngle.mut_replace(getPitch());
+    m_inputs.yawAngle.mut_replace(getAngle());
+    m_inputs.rollAngle.mut_replace(getRoll());
+    m_inputs.yawRate.mut_replace(getRate());
     m_inputs.rotation2d = getRotation2d();
   }
 
@@ -192,7 +225,7 @@ public class Pigeon2 extends LoggableHardware {
    * Defaults to 10ms
    * @param period Period between getting sensor updates
    */
-  public void setPeriod(Measure<Time> period) {
+  public void setPeriod(Time period) {
     m_inputThreadPeriod = period;
     m_inputThread.stop();
     m_inputThread.startPeriodic(m_inputThreadPeriod.in(Units.Seconds));

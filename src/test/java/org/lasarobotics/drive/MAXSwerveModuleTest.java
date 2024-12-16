@@ -18,9 +18,9 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.lasarobotics.drive.swerve.DriveWheel;
-import org.lasarobotics.drive.swerve.MAXSwerveModule;
-import org.lasarobotics.drive.swerve.SwerveModuleLocation;
-import org.lasarobotics.drive.swerve.MAXSwerveModule.GearRatio;
+import org.lasarobotics.drive.swerve.SwerveModule;
+import org.lasarobotics.drive.swerve.revrobotics.MAXSwerveModule;
+import org.lasarobotics.drive.swerve.revrobotics.REVSwerveModule;
 import org.lasarobotics.hardware.revrobotics.Spark;
 import org.lasarobotics.hardware.revrobotics.Spark.MotorKind;
 import org.lasarobotics.hardware.revrobotics.SparkInputsAutoLogged;
@@ -28,21 +28,20 @@ import org.lasarobotics.utils.GlobalConstants;
 import org.mockito.AdditionalMatchers;
 import org.mockito.ArgumentMatchers;
 
-import com.revrobotics.CANSparkBase.ControlType;
+import com.revrobotics.spark.SparkBase.ControlType;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
-import edu.wpi.first.units.Current;
-import edu.wpi.first.units.Dimensionless;
-import edu.wpi.first.units.Distance;
-import edu.wpi.first.units.Mass;
-import edu.wpi.first.units.Measure;
-import edu.wpi.first.units.Time;
 import edu.wpi.first.units.Units;
-import edu.wpi.first.units.Velocity;
+import edu.wpi.first.units.measure.Current;
+import edu.wpi.first.units.measure.Dimensionless;
+import edu.wpi.first.units.measure.Distance;
+import edu.wpi.first.units.measure.LinearVelocity;
+import edu.wpi.first.units.measure.Mass;
+import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.Timer;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -50,14 +49,14 @@ public class MAXSwerveModuleTest {
   private final double DELTA = 1e-3;
   private final Rotation2d ROTATION_PI = Rotation2d.fromRadians(Math.PI);
 
-  private final GearRatio GEAR_RATIO = MAXSwerveModule.GearRatio.L3;
+  private final MAXSwerveModule.GearRatio GEAR_RATIO = MAXSwerveModule.GearRatio.L3;
   private final DriveWheel DRIVE_WHEEL = new DriveWheel(Units.Inches.of(3.0), Units.Value.of(1.0), Units.Value.of(0.8));
-  private final Measure<Distance> WHEELBASE = Units.Meters.of(0.6);
-  private final Measure<Distance> TRACK_WIDTH = Units.Meters.of(0.6);
-  private final Measure<Mass> MASS = Units.Pounds.of(110.0);
-  private final Measure<Time> AUTO_LOCK_TIME = Units.Seconds.of(3.0);
-  private final Measure<Current> DRIVE_CURRENT_LIMIT = Units.Amps.of(50.0);
-  private final Measure<Dimensionless> SLIP_RATIO = Units.Percent.of(8.0);
+  private final Distance WHEELBASE = Units.Meters.of(0.6);
+  private final Distance TRACK_WIDTH = Units.Meters.of(0.6);
+  private final Mass MASS = Units.Pounds.of(110.0);
+  private final Time AUTO_LOCK_TIME = Units.Seconds.of(3.0);
+  private final Current DRIVE_CURRENT_LIMIT = Units.Amps.of(50.0);
+  private final Dimensionless SLIP_RATIO = Units.Percent.of(8.0);
   private final Spark.ID LEFT_FRONT_DRIVE_MOTOR_ID = new Spark.ID("DriveHardware/Swerve/LeftFront/Drive", 2);
   private final Spark.ID LEFT_FRONT_ROTATE_MOTOR_ID = new Spark.ID("DriveHardware/Swerve/LeftFront/Rotate", 3);
   private final Spark.ID RIGHT_FRONT_DRIVE_MOTOR_ID = new Spark.ID("DriveHardware/Swerve/RightFront/Drive", 4);
@@ -67,18 +66,18 @@ public class MAXSwerveModuleTest {
   private final Spark.ID RIGHT_REAR_DRIVE_MOTOR_ID = new Spark.ID("DriveHardware/Swerve/RightRear/Drive", 8);
   private final Spark.ID RIGHT_REAR_ROTATE_MOTOR_ID = new Spark.ID("DriveHardware/Swerve/RightRear/Rotate", 9);
 
-  private final Measure<Velocity<Distance>> NEO_MAX_LINEAR_SPEED = Units.MetersPerSecond.of(4.327);
-  private final Measure<Velocity<Distance>> VORTEX_MAX_LINEAR_SPEED = Units.MetersPerSecond.of(5.172);
+  private final LinearVelocity NEO_MAX_LINEAR_SPEED = Units.MetersPerSecond.of(4.327);
+  private final LinearVelocity VORTEX_MAX_LINEAR_SPEED = Units.MetersPerSecond.of(5.172);
 
   private Spark m_lFrontDriveMotor, m_lFrontRotateMotor;
   private Spark m_rFrontDriveMotor, m_rFrontRotateMotor;
   private Spark m_lRearDriveMotor, m_lRearRotateMotor;
   private Spark m_rRearDriveMotor, m_rRearRotateMotor;
 
-  private MAXSwerveModule m_lFrontModule;
-  private MAXSwerveModule m_rFrontModule;
-  private MAXSwerveModule m_lRearModule;
-  private MAXSwerveModule m_rRearModule;
+  private REVSwerveModule m_lFrontModule;
+  private REVSwerveModule m_rFrontModule;
+  private REVSwerveModule m_lRearModule;
+  private REVSwerveModule m_rRearModule;
 
 
   @BeforeEach
@@ -123,9 +122,9 @@ public class MAXSwerveModuleTest {
     when(m_rRearDriveMotor.getID()).thenReturn(id);
 
     // Create hardware objects using mock devices
-    m_lFrontModule = new MAXSwerveModule(
-      new MAXSwerveModule.Hardware(m_lFrontDriveMotor, m_lFrontRotateMotor),
-      SwerveModuleLocation.LeftFront,
+    m_lFrontModule = MAXSwerveModule.create(
+      new REVSwerveModule.Hardware(m_lFrontDriveMotor, m_lFrontRotateMotor),
+      SwerveModule.Location.LeftFront,
       GEAR_RATIO,
       DRIVE_WHEEL,
       SLIP_RATIO,
@@ -135,9 +134,9 @@ public class MAXSwerveModuleTest {
       AUTO_LOCK_TIME,
       DRIVE_CURRENT_LIMIT
     );
-    m_rFrontModule = new MAXSwerveModule(
-      new MAXSwerveModule.Hardware(m_rFrontDriveMotor, m_rFrontRotateMotor),
-      SwerveModuleLocation.RightFront,
+    m_rFrontModule = MAXSwerveModule.create(
+      new REVSwerveModule.Hardware(m_rFrontDriveMotor, m_rFrontRotateMotor),
+      SwerveModule.Location.RightFront,
       GEAR_RATIO,
       DRIVE_WHEEL,
       SLIP_RATIO,
@@ -147,9 +146,9 @@ public class MAXSwerveModuleTest {
       AUTO_LOCK_TIME,
       DRIVE_CURRENT_LIMIT
     );
-    m_lRearModule = new MAXSwerveModule(
-     new MAXSwerveModule.Hardware(m_lRearDriveMotor, m_lRearRotateMotor),
-      SwerveModuleLocation.LeftRear,
+    m_lRearModule = MAXSwerveModule.create(
+     new REVSwerveModule.Hardware(m_lRearDriveMotor, m_lRearRotateMotor),
+      SwerveModule.Location.LeftRear,
       GEAR_RATIO,
       DRIVE_WHEEL,
       SLIP_RATIO,
@@ -159,9 +158,9 @@ public class MAXSwerveModuleTest {
       AUTO_LOCK_TIME,
       DRIVE_CURRENT_LIMIT
     );
-    m_rRearModule = new MAXSwerveModule(
-      new MAXSwerveModule.Hardware(m_rRearDriveMotor, m_rRearRotateMotor),
-      SwerveModuleLocation.RightRear,
+    m_rRearModule = MAXSwerveModule.create(
+      new REVSwerveModule.Hardware(m_rRearDriveMotor, m_rRearRotateMotor),
+      SwerveModule.Location.RightRear,
       GEAR_RATIO,
       DRIVE_WHEEL,
       SLIP_RATIO,
@@ -200,13 +199,13 @@ public class MAXSwerveModuleTest {
     SparkInputsAutoLogged lRearSparkInputs = new SparkInputsAutoLogged();
     SparkInputsAutoLogged rRearSparkInputs = new SparkInputsAutoLogged();
 
-    lFrontSparkInputs.absoluteEncoderPosition = GlobalConstants.ROTATION_PI.minus(SwerveModuleLocation.LeftFront.getREVOffset()).getRadians();
+    lFrontSparkInputs.absoluteEncoderPosition = GlobalConstants.ROTATION_PI.minus(SwerveModule.Location.LeftFront.getOffset(SwerveModule.Vendor.REV)).getRadians();
     when(m_lFrontRotateMotor.getInputs()).thenReturn(lFrontSparkInputs);
-    rFrontSparkInputs.absoluteEncoderPosition = GlobalConstants.ROTATION_PI.minus(SwerveModuleLocation.RightFront.getREVOffset()).getRadians();
+    rFrontSparkInputs.absoluteEncoderPosition = GlobalConstants.ROTATION_PI.minus(SwerveModule.Location.RightFront.getOffset(SwerveModule.Vendor.REV)).getRadians();
     when(m_rFrontRotateMotor.getInputs()).thenReturn(rFrontSparkInputs);
-    lRearSparkInputs.absoluteEncoderPosition = GlobalConstants.ROTATION_PI.minus(SwerveModuleLocation.LeftRear.getREVOffset()).getRadians();
+    lRearSparkInputs.absoluteEncoderPosition = GlobalConstants.ROTATION_PI.minus(SwerveModule.Location.LeftRear.getOffset(SwerveModule.Vendor.REV)).getRadians();
     when(m_lRearRotateMotor.getInputs()).thenReturn(lRearSparkInputs);
-    rRearSparkInputs.absoluteEncoderPosition = GlobalConstants.ROTATION_PI.minus(SwerveModuleLocation.RightRear.getREVOffset()).getRadians();
+    rRearSparkInputs.absoluteEncoderPosition = GlobalConstants.ROTATION_PI.minus(SwerveModule.Location.RightRear.getOffset(SwerveModule.Vendor.REV)).getRadians();
     when(m_rRearRotateMotor.getInputs()).thenReturn(rRearSparkInputs);
 
     // Try to set module state
@@ -266,7 +265,7 @@ public class MAXSwerveModuleTest {
     // Hardcode sensor values
     SparkInputsAutoLogged defaultInputs = new SparkInputsAutoLogged();
     SparkInputsAutoLogged lFrontRotateMotorInputs = new SparkInputsAutoLogged();
-    lFrontRotateMotorInputs.absoluteEncoderPosition = SwerveModuleLocation.LeftFront.getREVOffset().getRadians();
+    lFrontRotateMotorInputs.absoluteEncoderPosition = SwerveModule.Location.LeftFront.getOffset(SwerveModule.Vendor.REV).getRadians();
     when(m_lFrontDriveMotor.getInputs()).thenReturn(defaultInputs);
     when(m_lFrontRotateMotor.getInputs()).thenReturn(lFrontRotateMotorInputs);
     when(m_rFrontDriveMotor.getInputs()).thenReturn(defaultInputs);

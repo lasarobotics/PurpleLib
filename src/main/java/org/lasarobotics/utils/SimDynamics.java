@@ -8,12 +8,10 @@ import java.util.function.DoubleConsumer;
 import java.util.function.DoubleSupplier;
 import java.util.function.Function;
 
-import edu.wpi.first.units.Angle;
-import edu.wpi.first.units.Current;
-import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Units;
-import edu.wpi.first.units.Velocity;
-import edu.wpi.first.units.Voltage;
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Current;
+import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.simulation.FlywheelSim;
 import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 
@@ -68,7 +66,7 @@ public class SimDynamics {
    * Set input voltage
    * @param vbus Vbus voltage
    */
-  public void setInputVoltage(Measure<Voltage> vbus) {
+  public void setInputVoltage(Voltage vbus) {
     m_setInputVoltage.accept(vbus.in(Units.Volts));
   }
 
@@ -76,7 +74,7 @@ public class SimDynamics {
    * Get velocity of simulated mechanism
    * @return Angular velocity
    */
-  public Measure<Velocity<Angle>> getAngularVelocity() {
+  public AngularVelocity getAngularVelocity() {
     return Units.RPM.of(m_getVelocityRPM.getAsDouble());
   }
 
@@ -84,7 +82,7 @@ public class SimDynamics {
    * Get current draw of simulated mechanism
    * @return Current draw
    */
-  public Measure<Current> getCurrentDraw() {
+  public Current getCurrentDraw() {
     return Units.Amps.of(m_getCurrentDrawAmps.getAsDouble());
   }
 }
