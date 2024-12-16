@@ -76,6 +76,11 @@ import com.ctre.phoenix6.controls.compound.Diff_VelocityVoltage_Velocity;
 import com.ctre.phoenix6.controls.compound.Diff_VoltageOut_Position;
 import com.ctre.phoenix6.controls.compound.Diff_VoltageOut_Velocity;
 
+import edu.wpi.first.units.Measure;
+import edu.wpi.first.units.Time;
+import edu.wpi.first.units.Units;
+import edu.wpi.first.wpilibj.Notifier;
+
 
 /** TalonFX */
 public class TalonFX extends LoggableHardware {
@@ -107,31 +112,43 @@ public class TalonFX extends LoggableHardware {
     public double selectedSensorVelocity = 0.0;
   }
 
-  private static final String VALUE_LOG_ENTRY = "/OutputValue";
+  private static final String VALUE1_LOG_ENTRY = "/OutputValue1";
+  private static final String VALUE2_LOG_ENTRY = "/OutputValue2";
   private static final String MODE_LOG_ENTRY = "/OutputMode";
-  private static final String CURRENT_LOG_ENTRY = "/Current";
+  private static final String SUPPLY_CURRENT_LOG_ENTRY = "/SupplyCurrent";
+  private static final String STATOR_CURRENT_LOG_ENTRY = "/StatorCurrent";
 
   private com.ctre.phoenix6.hardware.TalonFX m_talon;
 
   private ID m_id;
-  private TalonFXInputsAutoLogged m_inputs;
+  private Notifier m_inputThread;
+  private Measure<Time> m_inputThreadPeriod;
+  private volatile TalonFXInputsAutoLogged m_inputs;
 
 
   /**
    * Create a TalonFX object with built-in logging
    * @param id TalonFX ID
    */
-  public TalonFX(TalonFX.ID id) {
+  public TalonFX(TalonFX.ID id, Measure<Time> inputThreadPeriod) {
     this.m_id = id;
     this.m_talon = new com.ctre.phoenix6.hardware.TalonFX(id.deviceID);
     this.m_inputs = new TalonFXInputsAutoLogged();
+    this.m_inputThread = new Notifier(this::updateInputs);
+    this.m_inputThreadPeriod = inputThreadPeriod;
+
 
 
     // Disable motor safety
     m_talon.setSafetyEnabled(false);
 
-
+    // Update inputs on init
+    updateInputs();
     periodic();
+
+    // Start sensor input thread
+    m_inputThread.setName(m_id.name);
+    if (!Logger.hasReplaySource()) m_inputThread.startPeriodic(m_inputThreadPeriod.in(Units.Seconds));
   }
 
   /**
@@ -139,8 +156,10 @@ public class TalonFX extends LoggableHardware {
    * @param value Value that was set
    * @param mode The output mode to apply
    */
-  private void logOutputs(ControlRequest mode, double value) {
-
+  private void logOutputs(ControlRequest mode, double value1, double value2) {
+    Logger.recordOutput(m_id.name + VALUE1_LOG_ENTRY, value1);
+    Logger.recordOutput(m_id.name + VALUE2_LOG_ENTRY, value2);
+    Logger.recordOutput(m_id.name + MODE_LOG_ENTRY, mode.getName());
   }
 
 
@@ -162,16 +181,24 @@ public class TalonFX extends LoggableHardware {
   private double getSelectedSensorVelocity() {
     return m_talon.getVelocity().getValue();
   }
- 
+
+  /**
+   * Update sensor input readings
+   */
   private void updateInputs() {
-    m_inputs.selectedSensorPosition = getSelectedSensorPosition();
-    m_inputs.selectedSensorVelocity = getSelectedSensorVelocity();
+    synchronized (m_inputs) {
+      m_inputs.selectedSensorPosition = getSelectedSensorPosition();
+      m_inputs.selectedSensorVelocity = getSelectedSensorVelocity();
+    }
   }
 
   @Override
   protected void periodic() {
     updateInputs();
     Logger.processInputs(m_id.name, m_inputs);
+
+    Logger.recordOutput(m_id.name + SUPPLY_CURRENT_LOG_ENTRY, m_talon.getSupplyCurrent().getValueAsDouble());
+    Logger.recordOutput(m_id.name + STATOR_CURRENT_LOG_ENTRY, m_talon.getStatorCurrent().getValueAsDouble());
   }
 
   /**
@@ -180,7 +207,7 @@ public class TalonFX extends LoggableHardware {
    */
   @Override
   public TalonFXInputsAutoLogged getInputs() {
-    return m_inputs;
+    synchronized (m_inputs) { return m_inputs; }
   }
 
   /**
@@ -193,9 +220,6 @@ public class TalonFX extends LoggableHardware {
 
   /**
    * Applies the contents of the specified config to the device.
-   * <p>
-   * This will wait up to {@link #DefaultTimeoutSeconds}.
-   * <p>
    * Call to apply the selected configs.
    *
    * @param configs Configs to apply against.
@@ -206,141 +230,359 @@ public class TalonFX extends LoggableHardware {
   }
 
   /**
-     * Control motor with generic control request object.
-     * <p>
-     * User must make sure the specified object is castable to a valid control request,
-     * otherwise this function will fail at run-time and return the NotSupported StatusCode
-     *
-     * @param request Control object to request of the device
-     * @return Status Code of the request, 0 is OK
-     */
-    public StatusCode setControl(ControlRequest request)
-    {
-        if (request instanceof DutyCycleOut)
-            return m_talon.setControl((DutyCycleOut)request);
-        if (request instanceof TorqueCurrentFOC)
-            return m_talon.setControl((TorqueCurrentFOC)request);
-        if (request instanceof VoltageOut)
-            return m_talon.setControl((VoltageOut)request);
-        if (request instanceof PositionDutyCycle)
-            return m_talon.setControl((PositionDutyCycle)request);
-        if (request instanceof PositionVoltage)
-            return m_talon.setControl((PositionVoltage)request);
-        if (request instanceof PositionTorqueCurrentFOC)
-            return m_talon.setControl((PositionTorqueCurrentFOC)request);
-        if (request instanceof VelocityDutyCycle)
-            return m_talon.setControl((VelocityDutyCycle)request);
-        if (request instanceof VelocityVoltage)
-            return m_talon.setControl((VelocityVoltage)request);
-        if (request instanceof VelocityTorqueCurrentFOC)
-            return m_talon.setControl((VelocityTorqueCurrentFOC)request);
-        if (request instanceof MotionMagicDutyCycle)
-            return m_talon.setControl((MotionMagicDutyCycle)request);
-        if (request instanceof MotionMagicVoltage)
-            return m_talon.setControl((MotionMagicVoltage)request);
-        if (request instanceof MotionMagicTorqueCurrentFOC)
-            return m_talon.setControl((MotionMagicTorqueCurrentFOC)request);
-        if (request instanceof DifferentialDutyCycle)
-            return m_talon.setControl((DifferentialDutyCycle)request);
-        if (request instanceof DifferentialVoltage)
-            return m_talon.setControl((DifferentialVoltage)request);
-        if (request instanceof DifferentialPositionDutyCycle)
-            return m_talon.setControl((DifferentialPositionDutyCycle)request);
-        if (request instanceof DifferentialPositionVoltage)
-            return m_talon.setControl((DifferentialPositionVoltage)request);
-        if (request instanceof DifferentialVelocityDutyCycle)
-            return m_talon.setControl((DifferentialVelocityDutyCycle)request);
-        if (request instanceof DifferentialVelocityVoltage)
-            return m_talon.setControl((DifferentialVelocityVoltage)request);
-        if (request instanceof DifferentialMotionMagicDutyCycle)
-            return m_talon.setControl((DifferentialMotionMagicDutyCycle)request);
-        if (request instanceof DifferentialMotionMagicVoltage)
-            return m_talon.setControl((DifferentialMotionMagicVoltage)request);
-        if (request instanceof Follower)
-            return m_talon.setControl((Follower)request);
-        if (request instanceof StrictFollower)
-            return m_talon.setControl((StrictFollower)request);
-        if (request instanceof DifferentialFollower)
-            return m_talon.setControl((DifferentialFollower)request);
-        if (request instanceof DifferentialStrictFollower)
-            return m_talon.setControl((DifferentialStrictFollower)request);
-        if (request instanceof NeutralOut)
-            return m_talon.setControl((NeutralOut)request);
-        if (request instanceof CoastOut)
-            return m_talon.setControl((CoastOut)request);
-        if (request instanceof StaticBrake)
-            return m_talon.setControl((StaticBrake)request);
-        if (request instanceof MusicTone)
-            return m_talon.setControl((MusicTone)request);
-        if (request instanceof MotionMagicVelocityDutyCycle)
-            return m_talon.setControl((MotionMagicVelocityDutyCycle)request);
-        if (request instanceof MotionMagicVelocityTorqueCurrentFOC)
-            return m_talon.setControl((MotionMagicVelocityTorqueCurrentFOC)request);
-        if (request instanceof MotionMagicVelocityVoltage)
-            return m_talon.setControl((MotionMagicVelocityVoltage)request);
-        if (request instanceof MotionMagicExpoDutyCycle)
-            return m_talon.setControl((MotionMagicExpoDutyCycle)request);
-        if (request instanceof MotionMagicExpoVoltage)
-            return m_talon.setControl((MotionMagicExpoVoltage)request);
-        if (request instanceof MotionMagicExpoTorqueCurrentFOC)
-            return m_talon.setControl((MotionMagicExpoTorqueCurrentFOC)request);
-        if (request instanceof DynamicMotionMagicDutyCycle)
-            return m_talon.setControl((DynamicMotionMagicDutyCycle)request);
-        if (request instanceof DynamicMotionMagicVoltage)
-            return m_talon.setControl((DynamicMotionMagicVoltage)request);
-        if (request instanceof DynamicMotionMagicTorqueCurrentFOC)
-            return m_talon.setControl((DynamicMotionMagicTorqueCurrentFOC)request);
-        if (request instanceof Diff_DutyCycleOut_Position)
-            return m_talon.setControl((Diff_DutyCycleOut_Position)request);
-        if (request instanceof Diff_PositionDutyCycle_Position)
-            return m_talon.setControl((Diff_PositionDutyCycle_Position)request);
-        if (request instanceof Diff_VelocityDutyCycle_Position)
-            return m_talon.setControl((Diff_VelocityDutyCycle_Position)request);
-        if (request instanceof Diff_MotionMagicDutyCycle_Position)
-            return m_talon.setControl((Diff_MotionMagicDutyCycle_Position)request);
-        if (request instanceof Diff_DutyCycleOut_Velocity)
-            return m_talon.setControl((Diff_DutyCycleOut_Velocity)request);
-        if (request instanceof Diff_PositionDutyCycle_Velocity)
-            return m_talon.setControl((Diff_PositionDutyCycle_Velocity)request);
-        if (request instanceof Diff_VelocityDutyCycle_Velocity)
-            return m_talon.setControl((Diff_VelocityDutyCycle_Velocity)request);
-        if (request instanceof Diff_MotionMagicDutyCycle_Velocity)
-            return m_talon.setControl((Diff_MotionMagicDutyCycle_Velocity)request);
-        if (request instanceof Diff_VoltageOut_Position)
-            return m_talon.setControl((Diff_VoltageOut_Position)request);
-        if (request instanceof Diff_PositionVoltage_Position)
-            return m_talon.setControl((Diff_PositionVoltage_Position)request);
-        if (request instanceof Diff_VelocityVoltage_Position)
-            return m_talon.setControl((Diff_VelocityVoltage_Position)request);
-        if (request instanceof Diff_MotionMagicVoltage_Position)
-            return m_talon.setControl((Diff_MotionMagicVoltage_Position)request);
-        if (request instanceof Diff_VoltageOut_Velocity)
-            return m_talon.setControl((Diff_VoltageOut_Velocity)request);
-        if (request instanceof Diff_PositionVoltage_Velocity)
-            return m_talon.setControl((Diff_PositionVoltage_Velocity)request);
-        if (request instanceof Diff_VelocityVoltage_Velocity)
-            return m_talon.setControl((Diff_VelocityVoltage_Velocity)request);
-        if (request instanceof Diff_MotionMagicVoltage_Velocity)
-            return m_talon.setControl((Diff_MotionMagicVoltage_Velocity)request);
-        if (request instanceof Diff_TorqueCurrentFOC_Position)
-            return m_talon.setControl((Diff_TorqueCurrentFOC_Position)request);
-        if (request instanceof Diff_PositionTorqueCurrentFOC_Position)
-            return m_talon.setControl((Diff_PositionTorqueCurrentFOC_Position)request);
-        if (request instanceof Diff_VelocityTorqueCurrentFOC_Position)
-            return m_talon.setControl((Diff_VelocityTorqueCurrentFOC_Position)request);
-        if (request instanceof Diff_MotionMagicTorqueCurrentFOC_Position)
-            return m_talon.setControl((Diff_MotionMagicTorqueCurrentFOC_Position)request);
-        if (request instanceof Diff_TorqueCurrentFOC_Velocity)
-            return m_talon.setControl((Diff_TorqueCurrentFOC_Velocity)request);
-        if (request instanceof Diff_PositionTorqueCurrentFOC_Velocity)
-            return m_talon.setControl((Diff_PositionTorqueCurrentFOC_Velocity)request);
-        if (request instanceof Diff_VelocityTorqueCurrentFOC_Velocity)
-            return m_talon.setControl((Diff_VelocityTorqueCurrentFOC_Velocity)request);
-        if (request instanceof Diff_MotionMagicTorqueCurrentFOC_Velocity)
-            return m_talon.setControl((Diff_MotionMagicTorqueCurrentFOC_Velocity)request);
-        return StatusCode.NotSupported;
+   * Control motor with generic control request object.
+   * <p>
+   * User must make sure the specified object is castable to a valid control request,
+   * otherwise this function will fail at run-time and return the NotSupported StatusCode
+   *
+   * @param request Control object to request of the device
+   * @return Status Code of the request, 0 is OK
+   */
+  public StatusCode setControl(ControlRequest request) {
+
+    if (request instanceof DutyCycleOut) {
+      logOutputs(request, ((DutyCycleOut)request).Output, 0.0);
+      return m_talon.setControl((DutyCycleOut)request);
+    }
+    if (request instanceof TorqueCurrentFOC) {
+      logOutputs(request, ((TorqueCurrentFOC)request).Output, 0.0);
+      return m_talon.setControl((TorqueCurrentFOC)request);
+    }
+    if (request instanceof VoltageOut) {
+      logOutputs(request, ((VoltageOut)request).Output, 0.0);
+      return m_talon.setControl((VoltageOut)request);
+    }
+    if (request instanceof PositionDutyCycle) {
+      logOutputs(request, ((PositionDutyCycle)request).Position, 0.0);
+      return m_talon.setControl((PositionDutyCycle)request);
+    }
+    if (request instanceof PositionVoltage) {
+      logOutputs(request, ((PositionVoltage)request).Position, 0.0);
+      return m_talon.setControl((PositionVoltage)request);
+    }
+    if (request instanceof PositionTorqueCurrentFOC) {
+      logOutputs(request, ((PositionTorqueCurrentFOC)request).Position, 0.0);
+      return m_talon.setControl((PositionTorqueCurrentFOC)request);
+    }
+    if (request instanceof VelocityDutyCycle) {
+      logOutputs(request, ((VelocityDutyCycle)request).Velocity, 0.0);
+      return m_talon.setControl((VelocityDutyCycle)request);
+    }
+    if (request instanceof VelocityVoltage) {
+      logOutputs(request, ((VelocityVoltage)request).Velocity, 0.0);
+      return m_talon.setControl((VelocityVoltage)request);
+    }
+    if (request instanceof VelocityTorqueCurrentFOC) {
+      logOutputs(request, ((VelocityTorqueCurrentFOC)request).Velocity, 0.0);
+      return m_talon.setControl((VelocityTorqueCurrentFOC)request);
+    }
+    if (request instanceof MotionMagicDutyCycle) {
+      logOutputs(request, ((MotionMagicDutyCycle)request).Position, 0.0);
+      return m_talon.setControl((MotionMagicDutyCycle)request);
+    }
+    if (request instanceof MotionMagicVoltage) {
+      logOutputs(request, ((MotionMagicVoltage)request).Position, 0.0);
+      return m_talon.setControl((MotionMagicVoltage)request);
+    }
+    if (request instanceof MotionMagicTorqueCurrentFOC) {
+      logOutputs(request, ((MotionMagicTorqueCurrentFOC)request).Position, 0.0);
+      return m_talon.setControl((MotionMagicTorqueCurrentFOC)request);
+    }
+    if (request instanceof DifferentialDutyCycle) {
+      logOutputs(request, ((DifferentialDutyCycle)request).TargetOutput, 0.0);
+      return m_talon.setControl((DifferentialDutyCycle)request);
+    }
+    if (request instanceof DifferentialVoltage) {
+      logOutputs(request, ((DifferentialVoltage)request).TargetOutput, 0.0);
+      return m_talon.setControl((DifferentialVoltage)request);
+    }
+    if (request instanceof DifferentialPositionDutyCycle) {
+      logOutputs(request, ((DifferentialPositionDutyCycle)request).TargetPosition, 0.0);
+      return m_talon.setControl((DifferentialPositionDutyCycle)request);
+    }
+    if (request instanceof DifferentialPositionVoltage) {
+      logOutputs(request, ((DifferentialPositionVoltage)request).TargetPosition, 0.0);
+      return m_talon.setControl((DifferentialPositionVoltage)request);
+    }
+    if (request instanceof DifferentialVelocityDutyCycle) {
+      logOutputs(request, ((DifferentialVelocityDutyCycle)request).TargetVelocity, 0.0);
+      return m_talon.setControl((DifferentialVelocityDutyCycle)request);
+    }
+    if (request instanceof DifferentialVelocityVoltage) {
+      logOutputs(request, ((DifferentialVelocityVoltage)request).TargetVelocity, 0.0);
+      return m_talon.setControl((DifferentialVelocityVoltage)request);
+    }
+    if (request instanceof DifferentialMotionMagicDutyCycle) {
+      logOutputs(request, ((DifferentialMotionMagicDutyCycle)request).TargetPosition, 0.0);
+      return m_talon.setControl((DifferentialMotionMagicDutyCycle)request);
+    }
+    if (request instanceof DifferentialMotionMagicVoltage) {
+      logOutputs(request, ((DifferentialMotionMagicVoltage)request).TargetPosition, 0.0);
+      return m_talon.setControl((DifferentialMotionMagicVoltage)request);
+    }
+    if (request instanceof Follower) {
+      logOutputs(request, ((Follower)request).MasterID, 0.0);
+      return m_talon.setControl((Follower)request);
+    }
+    if (request instanceof StrictFollower) {
+      logOutputs(request, ((StrictFollower)request).MasterID, 0.0);
+      return m_talon.setControl((StrictFollower)request);
+    }
+    if (request instanceof DifferentialFollower) {
+      logOutputs(request, ((DifferentialFollower)request).MasterID, 0.0);
+      return m_talon.setControl((DifferentialFollower)request);
+    }
+    if (request instanceof DifferentialStrictFollower) {
+      logOutputs(request, ((DifferentialStrictFollower)request).MasterID, 0.0);
+      return m_talon.setControl((DifferentialStrictFollower)request);
+    }
+    if (request instanceof NeutralOut) {
+      logOutputs(request, 0.0, 0.0);
+      return m_talon.setControl((NeutralOut)request);
+    }
+    if (request instanceof CoastOut) {
+      logOutputs(request, 0.0, 0.0);
+      return m_talon.setControl((CoastOut)request);
+    }
+    if (request instanceof StaticBrake) {
+      logOutputs(request, 0.0, 0.0);
+      return m_talon.setControl((StaticBrake)request);
+    }
+    if (request instanceof MusicTone) {
+      logOutputs(request, ((MusicTone)request).AudioFrequency, 0.0);
+      return m_talon.setControl((MusicTone)request);
+    }
+    if (request instanceof MotionMagicVelocityDutyCycle) {
+      logOutputs(request, ((MotionMagicVelocityDutyCycle)request).Velocity, 0.0);
+      return m_talon.setControl((MotionMagicVelocityDutyCycle)request);
+    }
+    if (request instanceof MotionMagicVelocityTorqueCurrentFOC) {
+      logOutputs(request, ((MotionMagicVelocityDutyCycle)request).Velocity, 0.0);
+      return m_talon.setControl((MotionMagicVelocityTorqueCurrentFOC)request);
+    }
+    if (request instanceof MotionMagicVelocityVoltage) {
+      logOutputs(request, ((MotionMagicVelocityVoltage)request).Velocity, 0.0);
+      return m_talon.setControl((MotionMagicVelocityVoltage)request);
+    }
+    if (request instanceof MotionMagicExpoDutyCycle) {
+      logOutputs(request, ((MotionMagicExpoDutyCycle)request).Position, 0.0);
+      return m_talon.setControl((MotionMagicExpoDutyCycle)request);
+    }
+    if (request instanceof MotionMagicExpoVoltage) {
+      logOutputs(request, ((MotionMagicExpoVoltage)request).Position, 0.0);
+      return m_talon.setControl((MotionMagicExpoVoltage)request);
+    }
+    if (request instanceof MotionMagicExpoTorqueCurrentFOC) {
+      logOutputs(request, ((MotionMagicExpoTorqueCurrentFOC)request).Position, 0.0);
+      return m_talon.setControl((MotionMagicExpoTorqueCurrentFOC)request);
+    }
+    if (request instanceof DynamicMotionMagicDutyCycle) {
+      logOutputs(request, ((DynamicMotionMagicDutyCycle)request).Position, 0.0);
+      return m_talon.setControl((DynamicMotionMagicDutyCycle)request);
+    }
+    if (request instanceof DynamicMotionMagicVoltage) {
+      logOutputs(request, ((DynamicMotionMagicVoltage)request).Position, 0.0);
+      return m_talon.setControl((DynamicMotionMagicVoltage)request);
+    }
+    if (request instanceof DynamicMotionMagicTorqueCurrentFOC) {
+      logOutputs(request, ((DynamicMotionMagicTorqueCurrentFOC)request).Position, 0.0);
+      return m_talon.setControl((DynamicMotionMagicTorqueCurrentFOC)request);
+    }
+    if (request instanceof Diff_DutyCycleOut_Position) {
+      logOutputs(
+        request,
+        ((Diff_DutyCycleOut_Position)request).AverageRequest.Output,
+        ((Diff_DutyCycleOut_Position)request).DifferentialRequest.Position
+      );
+      return m_talon.setControl((Diff_DutyCycleOut_Position)request);
+    }
+    if (request instanceof Diff_PositionDutyCycle_Position) {
+      logOutputs(
+        request,
+        ((Diff_PositionDutyCycle_Position)request).AverageRequest.Position,
+        ((Diff_PositionDutyCycle_Position)request).DifferentialRequest.Position
+      );
+      return m_talon.setControl((Diff_PositionDutyCycle_Position)request);
+    }
+    if (request instanceof Diff_VelocityDutyCycle_Position) {
+      logOutputs(
+        request,
+        ((Diff_VelocityDutyCycle_Position)request).AverageRequest.Velocity,
+        ((Diff_VelocityDutyCycle_Position)request).DifferentialRequest.Position
+      );
+      return m_talon.setControl((Diff_VelocityDutyCycle_Position)request);
+    }
+    if (request instanceof Diff_MotionMagicDutyCycle_Position) {
+      logOutputs(
+        request,
+        ((Diff_MotionMagicDutyCycle_Position)request).AverageRequest.Position,
+        ((Diff_MotionMagicDutyCycle_Position)request).DifferentialRequest.Position
+      );
+      return m_talon.setControl((Diff_MotionMagicDutyCycle_Position)request);
+    }
+    if (request instanceof Diff_DutyCycleOut_Velocity) {
+      logOutputs(
+        request,
+        ((Diff_DutyCycleOut_Velocity)request).AverageRequest.Output,
+        ((Diff_DutyCycleOut_Velocity)request).DifferentialRequest.Velocity
+      );
+      return m_talon.setControl((Diff_DutyCycleOut_Velocity)request);
+    }
+    if (request instanceof Diff_PositionDutyCycle_Velocity) {
+      logOutputs(
+        request,
+        ((Diff_PositionDutyCycle_Velocity)request).AverageRequest.Position,
+        ((Diff_PositionDutyCycle_Velocity)request).DifferentialRequest.Velocity
+      );
+      return m_talon.setControl((Diff_PositionDutyCycle_Velocity)request);
+    }
+    if (request instanceof Diff_VelocityDutyCycle_Velocity) {
+      logOutputs(
+        request,
+        ((Diff_VelocityDutyCycle_Velocity)request).AverageRequest.Velocity,
+        ((Diff_VelocityDutyCycle_Velocity)request).DifferentialRequest.Velocity
+      );
+      return m_talon.setControl((Diff_VelocityDutyCycle_Velocity)request);
+    }
+    if (request instanceof Diff_MotionMagicDutyCycle_Velocity) {
+      logOutputs(
+        request,
+        ((Diff_MotionMagicDutyCycle_Velocity)request).AverageRequest.Position,
+        ((Diff_MotionMagicDutyCycle_Velocity)request).DifferentialRequest.Velocity
+      );
+      return m_talon.setControl((Diff_MotionMagicDutyCycle_Velocity)request);
+    }
+    if (request instanceof Diff_VoltageOut_Position) {
+      logOutputs(
+        request,
+        ((Diff_VoltageOut_Position)request).AverageRequest.Output,
+        ((Diff_VoltageOut_Position)request).DifferentialRequest.Position
+      );
+      return m_talon.setControl((Diff_VoltageOut_Position)request);
+    }
+    if (request instanceof Diff_PositionVoltage_Position) {
+      logOutputs(
+        request,
+        ((Diff_PositionVoltage_Position)request).AverageRequest.Position,
+        ((Diff_PositionVoltage_Position)request).DifferentialRequest.Position
+      );
+      return m_talon.setControl((Diff_PositionVoltage_Position)request);
+    }
+    if (request instanceof Diff_VelocityVoltage_Position) {
+      logOutputs(
+        request,
+        ((Diff_VelocityVoltage_Position)request).AverageRequest.Velocity,
+        ((Diff_VelocityVoltage_Position)request).DifferentialRequest.Position
+      );
+      return m_talon.setControl((Diff_VelocityVoltage_Position)request);
+    }
+    if (request instanceof Diff_MotionMagicVoltage_Position) {
+      logOutputs(
+        request,
+        ((Diff_MotionMagicVoltage_Position)request).AverageRequest.Position,
+        ((Diff_MotionMagicVoltage_Position)request).DifferentialRequest.Position
+      );
+      return m_talon.setControl((Diff_MotionMagicVoltage_Position)request);
+    }
+    if (request instanceof Diff_VoltageOut_Velocity) {
+      logOutputs(
+        request,
+        ((Diff_VoltageOut_Velocity)request).AverageRequest.Output,
+        ((Diff_VoltageOut_Velocity)request).DifferentialRequest.Velocity
+      );
+      return m_talon.setControl((Diff_VoltageOut_Velocity)request);
+    }
+    if (request instanceof Diff_PositionVoltage_Velocity) {
+      logOutputs(
+        request,
+        ((Diff_PositionVoltage_Velocity)request).AverageRequest.Position,
+        ((Diff_PositionVoltage_Velocity)request).DifferentialRequest.Velocity
+      );
+      return m_talon.setControl((Diff_PositionVoltage_Velocity)request);
+    }
+    if (request instanceof Diff_VelocityVoltage_Velocity) {
+      logOutputs(
+        request,
+        ((Diff_VelocityVoltage_Velocity)request).AverageRequest.Velocity,
+        ((Diff_VelocityVoltage_Velocity)request).DifferentialRequest.Velocity
+      );
+      return m_talon.setControl((Diff_VelocityVoltage_Velocity)request);
+    }
+    if (request instanceof Diff_MotionMagicVoltage_Velocity) {
+      logOutputs(
+        request,
+        ((Diff_MotionMagicDutyCycle_Velocity)request).AverageRequest.Position,
+        ((Diff_MotionMagicDutyCycle_Velocity)request).DifferentialRequest.Velocity
+      );
+      return m_talon.setControl((Diff_MotionMagicVoltage_Velocity)request);
+    }
+    if (request instanceof Diff_TorqueCurrentFOC_Position) {
+      logOutputs(
+        request,
+        ((Diff_TorqueCurrentFOC_Position)request).AverageRequest.Output,
+        ((Diff_TorqueCurrentFOC_Position)request).DifferentialRequest.Position
+      );
+      return m_talon.setControl((Diff_TorqueCurrentFOC_Position)request);
+    }
+    if (request instanceof Diff_PositionTorqueCurrentFOC_Position) {
+      logOutputs(
+        request,
+        ((Diff_PositionTorqueCurrentFOC_Position)request).AverageRequest.Position,
+        ((Diff_PositionTorqueCurrentFOC_Position)request).DifferentialRequest.Position
+      );
+      return m_talon.setControl((Diff_PositionTorqueCurrentFOC_Position)request);
+    }
+    if (request instanceof Diff_VelocityTorqueCurrentFOC_Position) {
+      logOutputs(
+        request,
+        ((Diff_VelocityTorqueCurrentFOC_Position)request).AverageRequest.Velocity,
+        ((Diff_VelocityTorqueCurrentFOC_Position)request).DifferentialRequest.Position
+      );
+      return m_talon.setControl((Diff_VelocityTorqueCurrentFOC_Position)request);
+    }
+    if (request instanceof Diff_MotionMagicTorqueCurrentFOC_Position) {
+      logOutputs(
+        request,
+        ((Diff_MotionMagicTorqueCurrentFOC_Position)request).AverageRequest.Position,
+        ((Diff_MotionMagicTorqueCurrentFOC_Position)request).DifferentialRequest.Position
+      );
+      return m_talon.setControl((Diff_MotionMagicTorqueCurrentFOC_Position)request);
+    }
+    if (request instanceof Diff_TorqueCurrentFOC_Velocity) {
+      logOutputs(
+        request,
+        ((Diff_TorqueCurrentFOC_Velocity)request).AverageRequest.Output,
+        ((Diff_TorqueCurrentFOC_Velocity)request).DifferentialRequest.Velocity
+      );
+      return m_talon.setControl((Diff_TorqueCurrentFOC_Velocity)request);
+    }
+    if (request instanceof Diff_PositionTorqueCurrentFOC_Velocity) {
+      logOutputs(
+        request,
+        ((Diff_PositionTorqueCurrentFOC_Velocity)request).AverageRequest.Position,
+        ((Diff_PositionTorqueCurrentFOC_Velocity)request).DifferentialRequest.Velocity
+      );
+      return m_talon.setControl((Diff_PositionTorqueCurrentFOC_Velocity)request);
+    }
+    if (request instanceof Diff_VelocityTorqueCurrentFOC_Velocity) {
+      logOutputs(
+        request,
+        ((Diff_VelocityTorqueCurrentFOC_Velocity)request).AverageRequest.Velocity,
+        ((Diff_VelocityTorqueCurrentFOC_Velocity)request).DifferentialRequest.Velocity
+      );
+      return m_talon.setControl((Diff_VelocityTorqueCurrentFOC_Velocity)request);
+    }
+    if (request instanceof Diff_MotionMagicTorqueCurrentFOC_Velocity) {
+      logOutputs(
+        request,
+        ((Diff_MotionMagicTorqueCurrentFOC_Velocity)request).AverageRequest.Position,
+        ((Diff_MotionMagicTorqueCurrentFOC_Velocity)request).DifferentialRequest.Velocity
+      );
+      return m_talon.setControl((Diff_MotionMagicTorqueCurrentFOC_Velocity)request);
     }
 
+    return StatusCode.NotSupported;
+  }
 
   /**
   * Closes the TalonFX motor controller
