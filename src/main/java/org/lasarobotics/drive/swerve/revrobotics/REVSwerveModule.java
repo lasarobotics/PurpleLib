@@ -31,6 +31,7 @@ import org.littletonrobotics.junction.Logger;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
+import com.revrobotics.spark.SparkClosedLoopController.ArbFFUnits;
 import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
 import com.revrobotics.spark.config.SparkBaseConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
@@ -38,6 +39,7 @@ import com.revrobotics.spark.config.SparkFlexConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -96,6 +98,7 @@ public class REVSwerveModule implements SwerveModule, Sendable, AutoCloseable {
   private Spark m_driveMotor;
   private Spark m_rotateMotor;
   private SwerveModuleSim m_moduleSim;
+  private SimpleMotorFeedforward m_driveFF;
   private SparkBaseConfig m_driveMotorConfig;
   private SparkBaseConfig m_rotateMotorConfig;
   private Translation2d m_moduleCoordinate;
@@ -154,6 +157,7 @@ public class REVSwerveModule implements SwerveModule, Sendable, AutoCloseable {
     this.m_driveMotor = swerveHardware.driveMotor;
     this.m_rotateMotor = swerveHardware.rotateMotor;
     this.m_moduleSim = new SwerveModuleSim(m_driveMotor.getKind().motor, driveFF, m_rotateMotor.getKind().motor, rotateFF);
+    this.m_driveFF = new SimpleMotorFeedforward(driveFF.kS, driveFF.kV, driveFF.kA);
     this.m_vendor = vendor;
     this.m_location = location;
     this.m_gearRatio = gearRatio;
@@ -443,13 +447,28 @@ public class REVSwerveModule implements SwerveModule, Sendable, AutoCloseable {
         m_driveMotor.configure(m_driveMotorConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
       }
     );
-    // Configure drive kF
+    // Configure drive kS
     builder.addDoubleProperty(
-      "Drive kF",
-      () -> m_driveMotor.getConfigAccessor().closedLoop.getFF(),
+      "Drive kS",
+      () -> m_driveFF.getKs(),
       (value) -> {
-        m_driveMotorConfig.closedLoop.velocityFF(value);
-        m_driveMotor.configure(m_driveMotorConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+        m_driveFF = new SimpleMotorFeedforward(value, m_driveFF.getKv(), m_driveFF.getKa());
+      }
+    );
+    // Configure drive kV
+    builder.addDoubleProperty(
+      "Drive kV",
+      () -> m_driveFF.getKv(),
+      (value) -> {
+        m_driveFF = new SimpleMotorFeedforward(m_driveFF.getKs(), value, m_driveFF.getKa());
+      }
+    );
+    // Configure drive kA
+    builder.addDoubleProperty(
+      "Drive kA",
+      () -> m_driveFF.getKa(),
+      (value) -> {
+        m_driveFF = new SimpleMotorFeedforward(m_driveFF.getKs(), m_driveFF.getKv(), value);
       }
     );
     // Configure rotate kP
@@ -521,14 +540,26 @@ public class REVSwerveModule implements SwerveModule, Sendable, AutoCloseable {
       m_autoLockTimer = Instant.now();
     }
 
+    // Save previous state
+    var oldState = m_desiredState;
+
     // Get desired state
     m_desiredState = getDesiredState(state);
 
     // Set rotate motor position
     m_rotateMotor.set(m_desiredState.angle.getRadians(), ControlType.kPosition);
 
+    // Calculate drive FF
+    var driveFF = m_driveFF.calculate(
+      Units.MetersPerSecond.of(oldState.speedMetersPerSecond),
+      Units.MetersPerSecond.of(m_desiredState.speedMetersPerSecond)
+    );
+
     // Set drive motor speed
-    m_driveMotor.set(m_desiredState.speedMetersPerSecond, ControlType.kVelocity);
+    m_driveMotor.set(
+      m_desiredState.speedMetersPerSecond, ControlType.kVelocity,
+      driveFF.in(Units.Volts), ArbFFUnits.kVoltage
+    );
 
     // Save rotate position
     m_previousRotatePosition = m_desiredState.angle;

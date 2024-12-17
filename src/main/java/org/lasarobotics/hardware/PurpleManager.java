@@ -70,6 +70,35 @@ public class PurpleManager {
   }
 
   /**
+   * Initialize and start logging, no signal logging
+   * <p>
+   * Call this at the beginning of <code>robotInit()</code>.
+   * <p>
+   * To enable replay, set the environment variable <code>ROBOT_REPLAY=1</code>,
+   * and <code>AKIT_LOG_PATH=path_to_log_file</code>, otherwise simply unset these variables.
+   * <p>
+   * Power distribution board must have default CAN ID (0 for CTRE, 1 for REV)
+   * @param robot Robot object
+   * @param fieldLayout AprilTag field layout
+   * @param logPath Path for log file
+   * @param projectName Project name
+   * @param gitSHA Git SHA
+   * @param buildDate Build date string
+   * @param batteryTrackingEnabled True to enable battery tracking
+   * @param signalLoggingEnabled True to enable signal logging (Recommended to only enable this temporarily while characterizing mechanisms)
+   */
+  @SuppressWarnings("resource")
+  public static void initialize(LoggedRobot robot,
+                                AprilTagFieldLayout fieldLayout,
+                                Path logPath,
+                                String projectName,
+                                String gitSHA,
+                                String buildDate,
+                                boolean batteryTrackingEnabled) {
+    initialize(robot, fieldLayout, logPath, projectName, gitSHA, buildDate, batteryTrackingEnabled, false);
+  }
+
+  /**
    * Initialize and start logging
    * <p>
    * Call this at the beginning of <code>robotInit()</code>.
@@ -84,8 +113,8 @@ public class PurpleManager {
    * @param projectName Project name
    * @param gitSHA Git SHA
    * @param buildDate Build date string
-   * @param signalLoggingEnabled True to enable signal logging (Recommended to only enable this temporarily while characterizing mechanisms)
    * @param batteryTrackingEnabled True to enable battery tracking
+   * @param signalLoggingEnabled True to enable signal logging (Recommended to only enable this temporarily while characterizing mechanisms)
    */
   @SuppressWarnings("resource")
   public static void initialize(LoggedRobot robot,
@@ -94,8 +123,8 @@ public class PurpleManager {
                                 String projectName,
                                 String gitSHA,
                                 String buildDate,
-                                boolean signalLoggingEnabled,
-                                boolean batteryTrackingEnabled) {
+                                boolean batteryTrackingEnabled,
+                                boolean signalLoggingEnabled) {
     // AdvantageKit Logging
     Logger.recordMetadata("ProjectName", projectName);
     Logger.recordMetadata("gitSHA", gitSHA);
@@ -147,13 +176,14 @@ public class PurpleManager {
     // Set thread priority
     Notifier.setHALThreadPriority(true, 99);
 
-   //TODO add REV physics simulation
+    // Enable signal logging if required
+    if (signalLoggingEnabled) {
+      // Register URCL for logging REV devices
+      Logger.registerURCL(URCL.startExternal());
 
-    // Register URCL for logging REV devices
-    Logger.registerURCL(URCL.startExternal());
-
-    // Start CTRE signal logging
-    SignalLogger.start();
+      // Start CTRE signal logging
+      SignalLogger.start();
+    }
 
     // Start logging! No more data receivers, replay sources, or metadata values may be added.
     Logger.start();

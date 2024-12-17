@@ -11,7 +11,6 @@ import org.lasarobotics.hardware.revrobotics.Spark;
 import org.lasarobotics.utils.FFConstants;
 import org.lasarobotics.utils.PIDConstants;
 
-import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Dimensionless;
 import edu.wpi.first.units.measure.Distance;
@@ -59,13 +58,6 @@ public class MAXSwerveModule {
     }
   }
 
-  // Swerve velocity PID settings
-  private static final double DRIVE_kP = 0.3;
-  private static final double DRIVE_kD = 0.001;
-
-  // Swerve rotate PID settings
-  private static final PIDConstants ROTATE_PID = new PIDConstants(2.0, 0.0, 0.1, 0.0, 0.0);
-
   /**
    * Create an instance of a MAXSwerveModule
    * @param swerveHardware Hardware devices required by swerve module
@@ -82,20 +74,19 @@ public class MAXSwerveModule {
   public static REVSwerveModule create(REVSwerveModule.Hardware swerveHardware,
                                        SwerveModule.Location location,
                                        MAXSwerveModule.GearRatio gearRatio, DriveWheel driveWheel,
+                                       PIDConstants drivePID, FFConstants driveFF,
+                                       PIDConstants rotatePID, FFConstants rotateFF,
                                        Dimensionless slipRatio, Mass mass,
                                        Distance wheelbase, Distance trackWidth,
                                        Time autoLockTime, Current driveMotorCurrentLimit) {
     if (!swerveHardware.rotateMotor.getKind().equals(Spark.MotorKind.NEO_550))
       throw new IllegalArgumentException("MAXSwerve rotate motor MUST be a NEO 550!");
 
-    double driveConversionFactor = driveWheel.diameter.in(Units.Meters) * Math.PI / gearRatio.getDriveRatio();
-    double drive_kF = 1 / ((swerveHardware.driveMotor.getKind().getMaxRPM() * REVSwerveModule.DRIVETRAIN_EFFICIENCY / 60) * driveConversionFactor);
-
     return new REVSwerveModule(swerveHardware,
                                SwerveModule.Vendor.REV, SwerveModule.MountOrientation.STANDARD, location,
                                gearRatio, driveWheel,
-                               new PIDConstants(DRIVE_kP, 0.0, DRIVE_kD, drive_kF, 0.0), new FFConstants(0, 0, 0, 0),
-                               ROTATE_PID, new FFConstants(0, 0, 0, 0),
+                               drivePID, driveFF,
+                               rotatePID, rotateFF,
                                slipRatio, mass,
                                wheelbase, trackWidth,
                                autoLockTime, driveMotorCurrentLimit);

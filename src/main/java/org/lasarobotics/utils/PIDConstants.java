@@ -4,8 +4,11 @@
 
 package org.lasarobotics.utils;
 
+import org.apache.commons.math3.util.Precision;
+
 /** PID constants */
 public class PIDConstants {
+  private static final double EPSILON = 1e-8;
   /** Proprotional gain */
   public final double kP;
   /** Integral gain */
@@ -47,5 +50,18 @@ public class PIDConstants {
    */
   public PIDConstants(double kP, double kI, double kD, double kF, double kIZone) {
     this(kP, kI, kD, kF, kIZone, GlobalConstants.ROBOT_LOOP_PERIOD);
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    if (object.getClass() != this.getClass()) return false;
+
+    var other = (PIDConstants)object;
+    return (Precision.equals(kP, other.kP, EPSILON) &&
+            Precision.equals(kI, other.kI, EPSILON) &&
+            Precision.equals(kD, other.kD, EPSILON) &&
+            Precision.equals(kF, other.kF, EPSILON) &&
+            Precision.equals(kIZone, other.kIZone, EPSILON) &&
+            Precision.equals(period, other.period, EPSILON));
   }
 }

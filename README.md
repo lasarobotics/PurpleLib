@@ -35,10 +35,10 @@ Note: CTRE will not be as well supported as REV products as our team primarily l
     * Single and double solenoid
     * Limit switch
     * Servo
-* MAXSwerve module support
-  * Supports NEO v1.0/1.1 or NEO Vortex + NEO 550 configuration only
-  * REV through bore encoder must be used
-  * Module must be calibrated using [REV MAXSwerve calibration tool](https://docs.revrobotics.com/sparkmax/software-resources/calibration-for-maxswerve)
+* REV Spark swerve module support
+  * Directly connected PWM encoder must be used (Such as REV through bore encoder)
+  * Module must be calibrated using calibration tool provided by module manufacturer
+  * More info [here](src/main/java/org/lasarobotics/drive/swerve/revrobotics/README.md)
 * Robot rotation PID
 * Traction control
 * Swerve second order kinematics correction

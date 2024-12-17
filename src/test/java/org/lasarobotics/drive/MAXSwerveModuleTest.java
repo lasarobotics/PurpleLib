@@ -24,11 +24,14 @@ import org.lasarobotics.drive.swerve.revrobotics.REVSwerveModule;
 import org.lasarobotics.hardware.revrobotics.Spark;
 import org.lasarobotics.hardware.revrobotics.Spark.MotorKind;
 import org.lasarobotics.hardware.revrobotics.SparkInputsAutoLogged;
+import org.lasarobotics.utils.FFConstants;
 import org.lasarobotics.utils.GlobalConstants;
+import org.lasarobotics.utils.PIDConstants;
 import org.mockito.AdditionalMatchers;
 import org.mockito.ArgumentMatchers;
 
 import com.revrobotics.spark.SparkBase.ControlType;
+import com.revrobotics.spark.SparkClosedLoopController.ArbFFUnits;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -51,6 +54,10 @@ public class MAXSwerveModuleTest {
 
   private final MAXSwerveModule.GearRatio GEAR_RATIO = MAXSwerveModule.GearRatio.L3;
   private final DriveWheel DRIVE_WHEEL = new DriveWheel(Units.Inches.of(3.0), Units.Value.of(1.0), Units.Value.of(0.8));
+  private final PIDConstants DRIVE_PID = new PIDConstants(0.3, 0.0, 0.001, 0.0, 0.0);
+  private final FFConstants DRIVE_FF = new FFConstants(0.2, 0.0, 0.0, 0.5);
+  private final PIDConstants ROTATE_PID = new PIDConstants(2.0, 0.0, 0.1, 0.0, 0.0);
+  private final FFConstants ROTATE_FF = new FFConstants(0.2, 0.0, 0.0, 0.01);
   private final Distance WHEELBASE = Units.Meters.of(0.6);
   private final Distance TRACK_WIDTH = Units.Meters.of(0.6);
   private final Mass MASS = Units.Pounds.of(110.0);
@@ -127,6 +134,10 @@ public class MAXSwerveModuleTest {
       SwerveModule.Location.LeftFront,
       GEAR_RATIO,
       DRIVE_WHEEL,
+      DRIVE_PID,
+      new FFConstants(DRIVE_FF.kS, DRIVE_FF.kG, 12.0 / NEO_MAX_LINEAR_SPEED.in(Units.MetersPerSecond), DRIVE_FF.kA),
+      ROTATE_PID,
+      ROTATE_FF,
       SLIP_RATIO,
       MASS,
       WHEELBASE,
@@ -139,6 +150,10 @@ public class MAXSwerveModuleTest {
       SwerveModule.Location.RightFront,
       GEAR_RATIO,
       DRIVE_WHEEL,
+      DRIVE_PID,
+      new FFConstants(DRIVE_FF.kS, DRIVE_FF.kG, 12.0 / NEO_MAX_LINEAR_SPEED.in(Units.MetersPerSecond), DRIVE_FF.kA),
+      ROTATE_PID,
+      ROTATE_FF,
       SLIP_RATIO,
       MASS,
       WHEELBASE,
@@ -151,6 +166,10 @@ public class MAXSwerveModuleTest {
       SwerveModule.Location.LeftRear,
       GEAR_RATIO,
       DRIVE_WHEEL,
+      DRIVE_PID,
+      new FFConstants(DRIVE_FF.kS, DRIVE_FF.kG, 12.0 / VORTEX_MAX_LINEAR_SPEED.in(Units.MetersPerSecond), DRIVE_FF.kA),
+      ROTATE_PID,
+      ROTATE_FF,
       SLIP_RATIO,
       MASS,
       WHEELBASE,
@@ -163,6 +182,10 @@ public class MAXSwerveModuleTest {
       SwerveModule.Location.RightRear,
       GEAR_RATIO,
       DRIVE_WHEEL,
+      DRIVE_PID,
+      new FFConstants(DRIVE_FF.kS, DRIVE_FF.kG, 12.0 / VORTEX_MAX_LINEAR_SPEED.in(Units.MetersPerSecond), DRIVE_FF.kA),
+      ROTATE_PID,
+      ROTATE_FF,
       SLIP_RATIO,
       MASS,
       WHEELBASE,
@@ -216,13 +239,13 @@ public class MAXSwerveModuleTest {
     m_rRearModule.set(state);
 
     // Verify that motors are being driven with expected values
-    verify(m_lFrontDriveMotor, times(1)).set(AdditionalMatchers.eq(-2.0, DELTA), ArgumentMatchers.eq(ControlType.kVelocity));
+    verify(m_lFrontDriveMotor, times(1)).set(AdditionalMatchers.eq(-2.0, DELTA), ArgumentMatchers.eq(ControlType.kVelocity), ArgumentMatchers.anyDouble(), ArgumentMatchers.eq(ArbFFUnits.kVoltage));
     verify(m_lFrontRotateMotor, times(1)).set(AdditionalMatchers.eq(-Math.PI / 2, DELTA), ArgumentMatchers.eq(ControlType.kPosition));
-    verify(m_rFrontDriveMotor, times(1)).set(AdditionalMatchers.eq(+2.0, DELTA), ArgumentMatchers.eq(ControlType.kVelocity));
+    verify(m_rFrontDriveMotor, times(1)).set(AdditionalMatchers.eq(+2.0, DELTA), ArgumentMatchers.eq(ControlType.kVelocity), ArgumentMatchers.anyDouble(), ArgumentMatchers.eq(ArbFFUnits.kVoltage));
     verify(m_rFrontRotateMotor, times(1)).set(AdditionalMatchers.eq(+Math.PI, DELTA), ArgumentMatchers.eq(ControlType.kPosition));
-    verify(m_lRearDriveMotor, times(1)).set(AdditionalMatchers.eq(+2.0, DELTA), ArgumentMatchers.eq(ControlType.kVelocity));
+    verify(m_lRearDriveMotor, times(1)).set(AdditionalMatchers.eq(+2.0, DELTA), ArgumentMatchers.eq(ControlType.kVelocity), ArgumentMatchers.anyDouble(), ArgumentMatchers.eq(ArbFFUnits.kVoltage));
     verify(m_lRearRotateMotor, times(1)).set(AdditionalMatchers.eq(0.0, DELTA), ArgumentMatchers.eq(ControlType.kPosition));
-    verify(m_rRearDriveMotor, times(1)).set(AdditionalMatchers.eq(-2.0, DELTA), ArgumentMatchers.eq(ControlType.kVelocity));
+    verify(m_rRearDriveMotor, times(1)).set(AdditionalMatchers.eq(-2.0, DELTA), ArgumentMatchers.eq(ControlType.kVelocity), ArgumentMatchers.anyDouble(), ArgumentMatchers.eq(ArbFFUnits.kVoltage));
     verify(m_rRearRotateMotor, times(1)).set(AdditionalMatchers.eq(+Math.PI / 2, DELTA), ArgumentMatchers.eq(ControlType.kPosition));
   }
 
@@ -248,13 +271,13 @@ public class MAXSwerveModuleTest {
     m_rRearModule.set(state);
 
     // Verify that motors are being driven with expected values
-    verify(m_lFrontDriveMotor, times(1)).set(AdditionalMatchers.eq(0.0, DELTA), ArgumentMatchers.eq(ControlType.kVelocity));
+    verify(m_lFrontDriveMotor, times(1)).set(AdditionalMatchers.eq(0.0, DELTA), ArgumentMatchers.eq(ControlType.kVelocity), ArgumentMatchers.anyDouble(), ArgumentMatchers.eq(ArbFFUnits.kVoltage));
     verify(m_lFrontRotateMotor, times(1)).set(AdditionalMatchers.eq(+Math.PI / 4, DELTA), ArgumentMatchers.eq(ControlType.kPosition));
-    verify(m_rFrontDriveMotor, times(1)).set(AdditionalMatchers.eq(0.0, DELTA), ArgumentMatchers.eq(ControlType.kVelocity));
+    verify(m_rFrontDriveMotor, times(1)).set(AdditionalMatchers.eq(0.0, DELTA), ArgumentMatchers.eq(ControlType.kVelocity), ArgumentMatchers.anyDouble(), ArgumentMatchers.eq(ArbFFUnits.kVoltage));
     verify(m_rFrontRotateMotor, times(1)).set(AdditionalMatchers.eq(+Math.PI / 4, DELTA), ArgumentMatchers.eq(ControlType.kPosition));
-    verify(m_lRearDriveMotor, times(1)).set(AdditionalMatchers.eq(0.0, DELTA), ArgumentMatchers.eq(ControlType.kVelocity));
+    verify(m_lRearDriveMotor, times(1)).set(AdditionalMatchers.eq(0.0, DELTA), ArgumentMatchers.eq(ControlType.kVelocity), ArgumentMatchers.anyDouble(), ArgumentMatchers.eq(ArbFFUnits.kVoltage));
     verify(m_lRearRotateMotor, times(1)).set(AdditionalMatchers.eq(+Math.PI / 4, DELTA), ArgumentMatchers.eq(ControlType.kPosition));
-    verify(m_rRearDriveMotor, times(1)).set(AdditionalMatchers.eq(0.0, DELTA), ArgumentMatchers.eq(ControlType.kVelocity));
+    verify(m_rRearDriveMotor, times(1)).set(AdditionalMatchers.eq(0.0, DELTA), ArgumentMatchers.eq(ControlType.kVelocity), ArgumentMatchers.anyDouble(), ArgumentMatchers.eq(ArbFFUnits.kVoltage));
     verify(m_rRearRotateMotor, times(1)).set(AdditionalMatchers.eq(+Math.PI / 4, DELTA), ArgumentMatchers.eq(ControlType.kPosition));
   }
 
@@ -318,7 +341,7 @@ public class MAXSwerveModuleTest {
     m_lFrontModule.set(moduleState, realSpeeds);
 
     // Verify that motors are being driven with expected values
-    verify(m_lFrontDriveMotor).set(AdditionalMatchers.leq(NEO_MAX_LINEAR_SPEED.in(Units.MetersPerSecond)), ArgumentMatchers.eq(ControlType.kVelocity));
+    verify(m_lFrontDriveMotor).set(AdditionalMatchers.leq(NEO_MAX_LINEAR_SPEED.in(Units.MetersPerSecond)), ArgumentMatchers.eq(ControlType.kVelocity), ArgumentMatchers.anyDouble(), ArgumentMatchers.eq(ArbFFUnits.kVoltage));
     verify(m_lFrontRotateMotor).set(AdditionalMatchers.eq(-Math.PI / 2, DELTA), ArgumentMatchers.eq(ControlType.kPosition));
   }
 }
