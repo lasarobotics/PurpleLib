@@ -85,9 +85,7 @@ public class PurpleManager {
    * @param gitSHA Git SHA
    * @param buildDate Build date string
    * @param batteryTrackingEnabled True to enable battery tracking
-   * @param signalLoggingEnabled True to enable signal logging (Recommended to only enable this temporarily while characterizing mechanisms)
    */
-  @SuppressWarnings("resource")
   public static void initialize(LoggedRobot robot,
                                 AprilTagFieldLayout fieldLayout,
                                 Path logPath,

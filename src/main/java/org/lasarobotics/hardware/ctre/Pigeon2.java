@@ -79,7 +79,6 @@ public class Pigeon2 extends LoggableHardware {
    * <p>
    * Input thread period of {@value Pigeon2#DEFAULT_THREAD_PERIOD} ms
    * @param id Pigeon 2.0 ID
-   * @param inputThreadPeriod Execution period of getting inputs from Pigeon
    */
   public Pigeon2(ID id) {
     this(id, Units.Milliseconds.of(DEFAULT_THREAD_PERIOD));

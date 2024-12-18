@@ -277,9 +277,8 @@ public class CTRESwerveModule implements SwerveModule, Sendable, AutoCloseable {
    * Initialize hardware devices for MAXSwerve module
    * @param driveMotorID Drive motor ID
    * @param rotateMotorID Rotate motor ID
-   * @param driveMotorKind Kind of drive motor
+   * @param canCoderID CANCoder ID
    * @return Hardware object containing all necessary objects for a MAXSwerve module
-   * @throws IllegalArgumentException If specified drive motor is not supported
    */
   public static Hardware initializeHardware(TalonFX.ID driveMotorID,
                                             TalonFX.ID rotateMotorID,
