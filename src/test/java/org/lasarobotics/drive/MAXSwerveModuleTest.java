@@ -19,8 +19,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.lasarobotics.drive.swerve.DriveWheel;
 import org.lasarobotics.drive.swerve.SwerveModule;
-import org.lasarobotics.drive.swerve.revrobotics.MAXSwerveModule;
-import org.lasarobotics.drive.swerve.revrobotics.REVSwerveModule;
+import org.lasarobotics.drive.swerve.child.MAXSwerveModule;
+import org.lasarobotics.drive.swerve.parent.REVSwerveModule;
 import org.lasarobotics.hardware.revrobotics.Spark;
 import org.lasarobotics.hardware.revrobotics.Spark.MotorKind;
 import org.lasarobotics.hardware.revrobotics.SparkInputsAutoLogged;
@@ -222,13 +222,13 @@ public class MAXSwerveModuleTest {
     SparkInputsAutoLogged lRearSparkInputs = new SparkInputsAutoLogged();
     SparkInputsAutoLogged rRearSparkInputs = new SparkInputsAutoLogged();
 
-    lFrontSparkInputs.absoluteEncoderPosition = GlobalConstants.ROTATION_PI.minus(SwerveModule.Location.LeftFront.getOffset(SwerveModule.Vendor.REV)).getRadians();
+    lFrontSparkInputs.absoluteEncoderPosition = Units.Radians.of(Math.PI).minus(MAXSwerveModule.ZERO_OFFSET.get(SwerveModule.Location.LeftFront)).in(Units.Radians);
     when(m_lFrontRotateMotor.getInputs()).thenReturn(lFrontSparkInputs);
-    rFrontSparkInputs.absoluteEncoderPosition = GlobalConstants.ROTATION_PI.minus(SwerveModule.Location.RightFront.getOffset(SwerveModule.Vendor.REV)).getRadians();
+    rFrontSparkInputs.absoluteEncoderPosition = Units.Radians.of(Math.PI).minus(MAXSwerveModule.ZERO_OFFSET.get(SwerveModule.Location.RightFront)).in(Units.Radians);
     when(m_rFrontRotateMotor.getInputs()).thenReturn(rFrontSparkInputs);
-    lRearSparkInputs.absoluteEncoderPosition = GlobalConstants.ROTATION_PI.minus(SwerveModule.Location.LeftRear.getOffset(SwerveModule.Vendor.REV)).getRadians();
+    lRearSparkInputs.absoluteEncoderPosition = Units.Radians.of(Math.PI).minus(MAXSwerveModule.ZERO_OFFSET.get(SwerveModule.Location.LeftRear)).in(Units.Radians);
     when(m_lRearRotateMotor.getInputs()).thenReturn(lRearSparkInputs);
-    rRearSparkInputs.absoluteEncoderPosition = GlobalConstants.ROTATION_PI.minus(SwerveModule.Location.RightRear.getOffset(SwerveModule.Vendor.REV)).getRadians();
+    rRearSparkInputs.absoluteEncoderPosition = Units.Radians.of(Math.PI).minus(MAXSwerveModule.ZERO_OFFSET.get(SwerveModule.Location.RightRear)).in(Units.Radians);
     when(m_rRearRotateMotor.getInputs()).thenReturn(rRearSparkInputs);
 
     // Try to set module state
@@ -240,7 +240,7 @@ public class MAXSwerveModuleTest {
 
     // Verify that motors are being driven with expected values
     verify(m_lFrontDriveMotor, times(1)).set(AdditionalMatchers.eq(-2.0, DELTA), ArgumentMatchers.eq(ControlType.kVelocity), ArgumentMatchers.anyDouble(), ArgumentMatchers.eq(ArbFFUnits.kVoltage));
-    verify(m_lFrontRotateMotor, times(1)).set(AdditionalMatchers.eq(-Math.PI / 2, DELTA), ArgumentMatchers.eq(ControlType.kPosition));
+    verify(m_lFrontRotateMotor, times(1)).set(AdditionalMatchers.eq(+Math.PI / 2, DELTA), ArgumentMatchers.eq(ControlType.kPosition));
     verify(m_rFrontDriveMotor, times(1)).set(AdditionalMatchers.eq(+2.0, DELTA), ArgumentMatchers.eq(ControlType.kVelocity), ArgumentMatchers.anyDouble(), ArgumentMatchers.eq(ArbFFUnits.kVoltage));
     verify(m_rFrontRotateMotor, times(1)).set(AdditionalMatchers.eq(+Math.PI, DELTA), ArgumentMatchers.eq(ControlType.kPosition));
     verify(m_lRearDriveMotor, times(1)).set(AdditionalMatchers.eq(+2.0, DELTA), ArgumentMatchers.eq(ControlType.kVelocity), ArgumentMatchers.anyDouble(), ArgumentMatchers.eq(ArbFFUnits.kVoltage));
@@ -288,7 +288,7 @@ public class MAXSwerveModuleTest {
     // Hardcode sensor values
     SparkInputsAutoLogged defaultInputs = new SparkInputsAutoLogged();
     SparkInputsAutoLogged lFrontRotateMotorInputs = new SparkInputsAutoLogged();
-    lFrontRotateMotorInputs.absoluteEncoderPosition = SwerveModule.Location.LeftFront.getOffset(SwerveModule.Vendor.REV).getRadians();
+    lFrontRotateMotorInputs.absoluteEncoderPosition = MAXSwerveModule.ZERO_OFFSET.get(SwerveModule.Location.LeftFront).in(Units.Radians);
     when(m_lFrontDriveMotor.getInputs()).thenReturn(defaultInputs);
     when(m_lFrontRotateMotor.getInputs()).thenReturn(lFrontRotateMotorInputs);
     when(m_rFrontDriveMotor.getInputs()).thenReturn(defaultInputs);
@@ -342,6 +342,6 @@ public class MAXSwerveModuleTest {
 
     // Verify that motors are being driven with expected values
     verify(m_lFrontDriveMotor).set(AdditionalMatchers.leq(NEO_MAX_LINEAR_SPEED.in(Units.MetersPerSecond)), ArgumentMatchers.eq(ControlType.kVelocity), ArgumentMatchers.anyDouble(), ArgumentMatchers.eq(ArbFFUnits.kVoltage));
-    verify(m_lFrontRotateMotor).set(AdditionalMatchers.eq(-Math.PI / 2, DELTA), ArgumentMatchers.eq(ControlType.kPosition));
+    verify(m_lFrontRotateMotor).set(AdditionalMatchers.eq(+Math.PI / 2, DELTA), ArgumentMatchers.eq(ControlType.kPosition));
   }
 }

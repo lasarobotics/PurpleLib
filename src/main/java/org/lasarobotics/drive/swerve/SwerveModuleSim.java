@@ -8,6 +8,7 @@ import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
+import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.simulation.FlywheelSim;
 
 public class SwerveModuleSim {
@@ -34,9 +35,9 @@ public class SwerveModuleSim {
    * @param driveVoltage Drive motor input voltage
    * @param rotateVoltage Rotate motor input voltage
    */
-  public void update(double driveVoltage, double rotateVoltage) {
-    m_driveSim.setInputVoltage(driveVoltage);
-    m_rotateSim.setInputVoltage(rotateVoltage);
+  public void update(Voltage driveVoltage, Voltage rotateVoltage) {
+    m_driveSim.setInputVoltage(driveVoltage.in(Units.Volts));
+    m_rotateSim.setInputVoltage(rotateVoltage.in(Units.Volts));
     m_driveSim.update(GlobalConstants.ROBOT_LOOP_PERIOD);
     m_rotateSim.update(GlobalConstants.ROBOT_LOOP_PERIOD);
   }

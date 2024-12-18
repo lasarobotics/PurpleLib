@@ -11,6 +11,7 @@ import org.littletonrobotics.junction.Logger;
 
 import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
+import com.ctre.phoenix6.configs.CANcoderConfigurator;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
 
 import edu.wpi.first.units.Units;
@@ -163,6 +164,15 @@ public class CANCoder extends LoggableHardware {
    */
   public StatusCode configFactoryDefault() {
     return m_canCoder.getConfigurator().apply(new CANcoderConfiguration());
+  }
+
+  /**
+   * Gets the configurator to use with this device's configs
+   *
+   * @return Configurator for this object
+   */
+  public CANcoderConfigurator getConfigurator() {
+    return m_canCoder.getConfigurator();
   }
 
   /**

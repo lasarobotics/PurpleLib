@@ -2,15 +2,19 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the MIT license file in the root directory of this project.
 
-package org.lasarobotics.drive.swerve.revrobotics;
+package org.lasarobotics.drive.swerve.child;
+
+import java.util.Map;
 
 import org.lasarobotics.drive.swerve.DriveWheel;
-import org.lasarobotics.drive.swerve.SwerveGearRatio;
 import org.lasarobotics.drive.swerve.SwerveModule;
+import org.lasarobotics.drive.swerve.parent.REVSwerveModule;
 import org.lasarobotics.hardware.revrobotics.Spark;
 import org.lasarobotics.utils.FFConstants;
 import org.lasarobotics.utils.PIDConstants;
 
+import edu.wpi.first.units.Units;
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Dimensionless;
 import edu.wpi.first.units.measure.Distance;
@@ -21,9 +25,9 @@ import edu.wpi.first.units.measure.Time;
 public class MAXSwerveModule {
 
   /**
-   * MAXSwerve gear ratio
+   * MAXSwerve gear ratios
    */
-  public enum GearRatio implements SwerveGearRatio {
+  public enum GearRatio implements SwerveModule.GearRatio {
     /** 5.50:1 */
     L1(5.50),
     /** 5.08:1 */
@@ -43,6 +47,7 @@ public class MAXSwerveModule {
 
     private static final double ROTATE_GEAR_RATIO = 9424.0 / 203.0;
     private final double driveGearRatio;
+
     private GearRatio(double driveGearRatio) {
       this.driveGearRatio = driveGearRatio;
     }
@@ -58,18 +63,29 @@ public class MAXSwerveModule {
     }
   }
 
+  public static final Map<SwerveModule.Location, Angle> ZERO_OFFSET = Map.ofEntries(
+    Map.entry(SwerveModule.Location.LeftFront, Units.Radians.of(Math.PI / 2)),
+    Map.entry(SwerveModule.Location.RightFront, Units.Radians.zero()),
+    Map.entry(SwerveModule.Location.LeftRear, Units.Radians.of(Math.PI)),
+    Map.entry(SwerveModule.Location.RightRear, Units.Radians.of(Math.PI / 2))
+  );
+
   /**
-   * Create an instance of a MAXSwerveModule
+   * Create an instance of a REV MAXSwerve module
    * @param swerveHardware Hardware devices required by swerve module
    * @param location Location of module
    * @param gearRatio Gear ratio for module
    * @param driveWheel Wheel installed in swerve module
+   * @param drivePID Drive motor PID gains
+   * @param driveFF Drive motor feed forward gains
+   * @param rotatePID Rotate motor PID gains
+   * @param rotateFF Rotate motor feed forward gains
    * @param slipRatio Desired slip ratio [1%, 40%]
    * @param mass Robot mass
    * @param wheelbase Robot wheelbase
    * @param trackWidth Robot track width
    * @param autoLockTime Time before automatically rotating module to locked position (10 seconds max)
-   * @param driveMotorCurrentLimit Desired current limit for the drive motor
+   * @param driveCurrentLimit Desired current limit for the drive motor
    */
   public static REVSwerveModule create(REVSwerveModule.Hardware swerveHardware,
                                        SwerveModule.Location location,
@@ -78,17 +94,19 @@ public class MAXSwerveModule {
                                        PIDConstants rotatePID, FFConstants rotateFF,
                                        Dimensionless slipRatio, Mass mass,
                                        Distance wheelbase, Distance trackWidth,
-                                       Time autoLockTime, Current driveMotorCurrentLimit) {
+                                       Time autoLockTime, Current driveCurrentLimit) {
     if (!swerveHardware.rotateMotor.getKind().equals(Spark.MotorKind.NEO_550))
       throw new IllegalArgumentException("MAXSwerve rotate motor MUST be a NEO 550!");
 
+
     return new REVSwerveModule(swerveHardware,
-                               SwerveModule.Vendor.REV, SwerveModule.MountOrientation.STANDARD, location,
-                               gearRatio, driveWheel,
+                               SwerveModule.MountOrientation.INVERTED, // Used to force encoder inversion
+                               location, gearRatio,
+                               driveWheel, ZERO_OFFSET.get(location),
                                drivePID, driveFF,
                                rotatePID, rotateFF,
                                slipRatio, mass,
                                wheelbase, trackWidth,
-                               autoLockTime, driveMotorCurrentLimit);
+                               autoLockTime, driveCurrentLimit);
   }
 }

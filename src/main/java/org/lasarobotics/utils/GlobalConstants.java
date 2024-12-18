@@ -27,6 +27,8 @@ public class GlobalConstants {
   public static final int VORTEX_ENCODER_TICKS_PER_ROTATION = 7168;
   /** Ticks per revolution of REV through bore encoder */
   public static final int REV_ENCODER_TICKS_PER_ROTATION = 8192;
+  /** Ticks per revolution of WCP/CTRE Kraken X60 */
+  public static final int KRAKEN_X60_ENCODER_TICKS_PER_ROTATION = 2048;
 
   /** Environment variable to toggle robot replay */
   public static final String REPLAY_ENVIRONMENT_VAR = "ROBOT_REPLAY";

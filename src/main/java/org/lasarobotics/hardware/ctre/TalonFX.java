@@ -75,6 +75,7 @@ import com.ctre.phoenix6.controls.compound.Diff_VelocityVoltage_Position;
 import com.ctre.phoenix6.controls.compound.Diff_VelocityVoltage_Velocity;
 import com.ctre.phoenix6.controls.compound.Diff_VoltageOut_Position;
 import com.ctre.phoenix6.controls.compound.Diff_VoltageOut_Velocity;
+import com.ctre.phoenix6.sim.TalonFXSimState;
 
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Angle;
@@ -139,8 +140,6 @@ public class TalonFX extends LoggableHardware {
     this.m_inputs = new TalonFXInputsAutoLogged();
     this.m_inputThread = new Notifier(this::updateInputs);
     this.m_inputThreadPeriod = inputThreadPeriod;
-
-
 
     // Disable motor safety
     m_talon.setSafetyEnabled(false);
@@ -230,6 +229,62 @@ public class TalonFX extends LoggableHardware {
    */
   public StatusCode applyConfigs(TalonFXConfiguration configs) {
     return m_talon.getConfigurator().apply(configs);
+  }
+
+  /**
+   * Get if Phoenix Pro is licensed
+   * @return True if Phoenix Pro license is active
+   */
+  public boolean isProLicensed() {
+    return m_talon.getIsProLicensed().getValue();
+  }
+
+  /**
+   * Resets the mechanism position of the device to zero.
+   * <p>
+   * This will wait up to 0.100 seconds (100ms) by default.
+   *
+   * @return StatusCode of the set command
+   */
+  public StatusCode resetPosition() {
+    return setPosition(0.0);
+  }
+
+  /**
+   * Sets the mechanism position of the device in mechanism rotations.
+   * <p>
+   * This will wait up to 0.100 seconds (100ms) by default.
+   *
+   * @param angle Angle to set to.
+   * @return StatusCode of the set command
+   */
+  public StatusCode setPosition(Angle angle) {
+    return m_talon.setPosition(angle);
+  }
+
+  /**
+   * Sets the mechanism position of the device in mechanism rotations.
+   * <p>
+   * This will wait up to 0.100 seconds (100ms) by default.
+   *
+   * @param value Value to set to. Units are in rotations.
+   * @return StatusCode of the set command
+   */
+  public StatusCode setPosition(double value) {
+    return m_talon.setPosition(value);
+  }
+
+  /**
+   * Get the simulation state for this device.
+   * <p>
+   * This function reuses an allocated simulation state
+   * object, so it is safe to call this function multiple
+   * times in a robot loop.
+   *
+   * @return Simulation state
+   */
+  public TalonFXSimState getSimState() {
+    return m_talon.getSimState();
   }
 
   /**
@@ -585,6 +640,13 @@ public class TalonFX extends LoggableHardware {
     }
 
     return StatusCode.NotSupported;
+  }
+
+  /**
+   * Common interface to stop motor movement until set is called again.
+   */
+  public void stopMotor() {
+    m_talon.stopMotor();
   }
 
   /**

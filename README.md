@@ -38,7 +38,7 @@ Note: CTRE will not be as well supported as REV products as our team primarily l
 * REV Spark swerve module support
   * Directly connected PWM encoder must be used (Such as REV through bore encoder)
   * Module must be calibrated using calibration tool provided by module manufacturer
-  * More info [here](src/main/java/org/lasarobotics/drive/swerve/revrobotics/README.md)
+  * More info [here](src/main/java/org/lasarobotics/drive/swerve/README.md)
 * Robot rotation PID
 * Traction control
 * Swerve second order kinematics correction

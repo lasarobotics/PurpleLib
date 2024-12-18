@@ -63,21 +63,39 @@ public class Pigeon2 extends LoggableHardware {
     public Rotation2d rotation2d = GlobalConstants.ROTATION_ZERO;
   }
 
-  private int DEFAULT_THREAD_PERIOD = 10;
+  private static final int DEFAULT_THREAD_PERIOD = 10;
 
   private Notifier m_inputThread;
-  private Time m_inputThreadPeriod = Units.Milliseconds.of(DEFAULT_THREAD_PERIOD);
+  private Time m_inputThreadPeriod;
 
   private com.ctre.phoenix6.hardware.Pigeon2 m_pigeon;
 
   private ID m_id;
   private Pigeon2InputsAutoLogged m_inputs;
 
+
+  /**
+   * Create a Pigeon 2.0 object with built-in logging
+   * <p>
+   * Input thread period of {@value Pigeon2#DEFAULT_THREAD_PERIOD} ms
+   * @param id Pigeon 2.0 ID
+   * @param inputThreadPeriod Execution period of getting inputs from Pigeon
+   */
   public Pigeon2(ID id) {
+    this(id, Units.Milliseconds.of(DEFAULT_THREAD_PERIOD));
+  }
+
+  /**
+   * Create a Pigeon 2.0 object with built-in logging
+   * @param id Pigeon 2.0 ID
+   * @param inputThreadPeriod Execution period of getting inputs from Pigeon
+   */
+  public Pigeon2(ID id, Time inputThreadPeriod) {
     this.m_id = id;
     this.m_pigeon = new com.ctre.phoenix6.hardware.Pigeon2(id.deviceID, id.bus.name);
     this.m_inputs = new Pigeon2InputsAutoLogged();
     this.m_inputThread = new Notifier(this::updateInputs);
+    this.m_inputThreadPeriod = inputThreadPeriod;
 
     // Start input thread
     m_inputThread.startPeriodic(m_inputThreadPeriod.in(Units.Seconds));
@@ -217,18 +235,6 @@ public class Pigeon2 extends LoggableHardware {
    */
   public ID getID() {
     return m_id;
-  }
-
-  /**
-   * Set input thread period
-   * <p>
-   * Defaults to 10ms
-   * @param period Period between getting sensor updates
-   */
-  public void setPeriod(Time period) {
-    m_inputThreadPeriod = period;
-    m_inputThread.stop();
-    m_inputThread.startPeriodic(m_inputThreadPeriod.in(Units.Seconds));
   }
 
   /**
