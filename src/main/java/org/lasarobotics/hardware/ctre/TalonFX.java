@@ -79,7 +79,6 @@ import com.ctre.phoenix6.sim.TalonFXSimState;
 
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Angle;
-import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.MutAngle;
 import edu.wpi.first.units.measure.MutAngularVelocity;
 import edu.wpi.first.units.measure.Time;
@@ -112,6 +111,8 @@ public class TalonFX extends LoggableHardware {
    */
   @AutoLog
   public static class TalonFXInputs {
+    public MutAngle rotorPosition = Units.Radians.zero().mutableCopy();
+    public MutAngularVelocity rotorVelocity = Units.RadiansPerSecond.zero().mutableCopy();
     public MutAngle selectedSensorPosition = Units.Radians.zero().mutableCopy();
     public MutAngularVelocity selectedSensorVelocity = Units.RadiansPerSecond.zero().mutableCopy();
   }
@@ -164,33 +165,15 @@ public class TalonFX extends LoggableHardware {
     Logger.recordOutput(m_id.name + MODE_LOG_ENTRY, mode.getName());
   }
 
-
-  /**
-   * Get the selected sensor position (in raw sensor units).
-   *
-   * @return Position of selected sensor (in raw sensor units).
-   */
-  private Angle getSelectedSensorPosition() {
-    return m_talon.getPosition().getValue();
-  }
-
-  /**
-   * Get the selected sensor velocity.
-   *
-   * @return selected sensor (in raw sensor units) per 100ms.
-   * See Phoenix-Documentation for how to interpret.
-   */
-  private AngularVelocity getSelectedSensorVelocity() {
-    return m_talon.getVelocity().getValue();
-  }
-
   /**
    * Update sensor input readings
    */
   private void updateInputs() {
     synchronized (m_inputs) {
-      m_inputs.selectedSensorPosition.mut_replace(getSelectedSensorPosition());
-      m_inputs.selectedSensorVelocity.mut_replace(getSelectedSensorVelocity());
+      m_inputs.rotorPosition.mut_replace(m_talon.getRotorPosition().getValue());
+      m_inputs.rotorVelocity.mut_replace(m_talon.getRotorVelocity().getValue());
+      m_inputs.selectedSensorPosition.mut_replace(m_talon.getPosition().getValue());
+      m_inputs.selectedSensorVelocity.mut_replace(m_talon.getVelocity().getValue());
     }
   }
 
