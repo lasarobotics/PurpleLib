@@ -152,7 +152,7 @@ public class ThriftybotMotor extends LoggableHardware {
 
   /**
    * 
-   * @returns an int that denotes Stator current which is the output current of the motor
+   * @return an int that denotes Stator current which is the output current of the motor
    *            measured in amps
    */           
   public int getStatorCurrent(){
@@ -233,7 +233,7 @@ public class ThriftybotMotor extends LoggableHardware {
   }
 
   /**
-   * @returns arraylist of errors stored in error buffer
+   * @return arraylist of errors stored in error buffer
    */
   public List<ThriftyNova.Error> getErrors(){
     return m_thrifty.getErrors();
@@ -242,7 +242,7 @@ public class ThriftybotMotor extends LoggableHardware {
   /**
    * @param errorType
    *            error type to check for
-   * @returns a boolean denoting if motor controller has incurred an error of specified type
+   * @return a boolean denoting if motor controller has incurred an error of specified type
    *        True = Error, False = No Error
    */
   public boolean hasErrors(ThriftyNova.Error errorType){
