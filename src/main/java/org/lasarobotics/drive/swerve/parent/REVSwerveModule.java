@@ -83,7 +83,6 @@ public class REVSwerveModule implements SwerveModule, Sendable, AutoCloseable {
   private final double EPSILON = 5e-3;
   private final Current DRIVE_MOTOR_CURRENT_LIMIT;
   private final Current ROTATE_MOTOR_CURRENT_LIMIT = Units.Amps.of(20.0);
-  private final Rotation2d LOCK_POSITION = Rotation2d.fromRadians(Math.PI / 4);
 
   private static final String IS_SLIPPING_LOG_ENTRY = "/IsSlipping";
   private static final String ODOMETER_LOG_ENTRY = "/Odometer";
@@ -170,9 +169,9 @@ public class REVSwerveModule implements SwerveModule, Sendable, AutoCloseable {
     this.m_zeroOffset = Rotation2d.fromRadians(zeroOffset.in(Units.Radians));
     this.m_autoLock = true;
     this.m_simDrivePosition = 0.0;
-    this.m_desiredState = new SwerveModuleState(Units.MetersPerSecond.of(0.0), LOCK_POSITION);
+    this.m_desiredState = new SwerveModuleState(Units.MetersPerSecond.of(0.0), m_zeroOffset.plus(m_location.getLockPosition()));
     this.m_autoLockTime = MathUtil.clamp(autoLockTime.in(Units.Milliseconds), 0.0, MAX_AUTO_LOCK_TIME * 1000);
-    this.m_previousRotatePosition = LOCK_POSITION;
+    this.m_previousRotatePosition = m_zeroOffset.plus(m_location.getLockPosition());
     this.m_tractionControlController =  new TractionControlController(driveWheel, slipRatio, mass, Units.MetersPerSecond.of(DRIVE_MAX_LINEAR_SPEED));
     this.m_autoLockTimer = Instant.now();
     this.m_runningOdometer = 0.0;
@@ -301,10 +300,10 @@ public class REVSwerveModule implements SwerveModule, Sendable, AutoCloseable {
       throw new IllegalArgumentException("Drive motor MUST be a NEO or a NEO Vortex!");
     if (rotateMotorKind != MotorKind.NEO && rotateMotorKind != MotorKind.NEO_VORTEX && rotateMotorKind != MotorKind.NEO_550)
       throw new IllegalArgumentException("Rotate motor MUST be a NEO 550, NEO, or NEO Vortex!");
-    var period = RobotBase.isReal() ? DEFAULT_SIGNAL_PERIOD : Units.Seconds.of(GlobalConstants.ROBOT_LOOP_PERIOD);
+    var frequency = RobotBase.isReal() ? DEFAULT_SIGNAL_PERIOD.asFrequency() : GlobalConstants.ROBOT_LOOP_HZ;
     Hardware swerveModuleHardware = new Hardware(
-      new Spark(driveMotorID, driveMotorKind, period),
-      new Spark(rotateMotorID, rotateMotorKind, period)
+      new Spark(driveMotorID, driveMotorKind, frequency),
+      new Spark(rotateMotorID, rotateMotorKind, frequency)
     );
 
     return swerveModuleHardware;
@@ -396,8 +395,8 @@ public class REVSwerveModule implements SwerveModule, Sendable, AutoCloseable {
     m_driveMotor.getSim().enable();
     m_rotateMotor.getSim().enable();
 
-    m_driveMotor.getSim().iterate(m_moduleSim.getDriveMotorVelocity().in(Units.RPM), vbus.in(Units.Volts), GlobalConstants.ROBOT_LOOP_PERIOD);
-    m_rotateMotor.getSim().iterate(m_moduleSim.getRotateMotorVelocity().in(Units.RPM), vbus.in(Units.Volts), GlobalConstants.ROBOT_LOOP_PERIOD);
+    m_driveMotor.getSim().iterate(m_moduleSim.getDriveMotorVelocity().in(Units.RPM), vbus.in(Units.Volts), GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Seconds));
+    m_rotateMotor.getSim().iterate(m_moduleSim.getRotateMotorVelocity().in(Units.RPM), vbus.in(Units.Volts), GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Seconds));
 
     m_moduleSim.update(
       vbus.times(m_driveMotor.getSim().getAppliedOutput()),
@@ -543,7 +542,7 @@ public class REVSwerveModule implements SwerveModule, Sendable, AutoCloseable {
       state.speedMetersPerSecond = 0.0;
       // Time's up, lock now...
       if (Duration.between(m_autoLockTimer, Instant.now()).toMillis() > m_autoLockTime)
-        state.angle = LOCK_POSITION.minus(m_zeroOffset);
+        state.angle = m_location.getLockPosition();
       // Waiting to lock...
       else state.angle = m_previousRotatePosition.minus(m_zeroOffset);
     } else {
@@ -576,7 +575,7 @@ public class REVSwerveModule implements SwerveModule, Sendable, AutoCloseable {
     m_previousRotatePosition = m_desiredState.angle;
 
     // Increment odometer
-    m_runningOdometer += Math.abs(m_desiredState.speedMetersPerSecond) * GlobalConstants.ROBOT_LOOP_PERIOD;
+    m_runningOdometer += Math.abs(m_desiredState.speedMetersPerSecond) * GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Seconds);
   }
 
   /**
@@ -680,7 +679,7 @@ public class REVSwerveModule implements SwerveModule, Sendable, AutoCloseable {
    * Lock swerve module
    */
   public void lock() {
-    set(new SwerveModuleState(0.0, LOCK_POSITION.minus(m_zeroOffset)));
+    set(new SwerveModuleState(0.0, m_location.getLockPosition()));
   }
 
   /**

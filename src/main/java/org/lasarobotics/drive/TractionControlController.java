@@ -96,7 +96,7 @@ public class TractionControlController {
     this.m_mass = mass.divide(4).in(Units.Kilograms);
     this.m_maxLinearSpeed = Math.floor(maxLinearSpeed.in(Units.MetersPerSecond) * 1000) / 1000;
     this.m_maxAcceleration = m_staticCoF * Units.Gs.one().in(Units.MetersPerSecondPerSecond);
-    this.m_maxPredictedSlipRatio = (m_maxAcceleration * GlobalConstants.ROBOT_LOOP_HZ)
+    this.m_maxPredictedSlipRatio = (m_maxAcceleration * GlobalConstants.ROBOT_LOOP_HZ.in(Units.Hertz))
       / (m_staticCoF * m_mass * Units.Gs.one().in(Units.MetersPerSecondPerSecond));
     this.m_isSlipping = false;
     this.m_slippingDebouncer = new Debouncer(MIN_SLIPPING_TIME.in(Units.Seconds), DebounceType.kRising);
@@ -154,7 +154,7 @@ public class TractionControlController {
 
     // Get desired acceleration
     var desiredAcceleration = velocityRequest.minus(inertialVelocity.times(oppositeDirection ? -1 : +1))
-      .divide(Units.Seconds.of(GlobalConstants.ROBOT_LOOP_PERIOD));
+      .divide(GlobalConstants.ROBOT_LOOP_HZ.asPeriod());
 
     // Get sigmoid value
     double sigmoid = 1 / (1 + Math.exp(-SIGMOID_K * MathUtil.clamp(2 * (currentSlipRatio - m_optimalSlipRatio) - 1, -1.0, +1.0)));

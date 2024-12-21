@@ -27,7 +27,6 @@ public class NavX2Sim {
   private final SimDouble m_pitch;
   private final SimDouble m_roll;
   private final SimDouble m_yaw;
-  private final SimDouble m_yawRate;
   private final SimDouble m_accelX;
   private final SimDouble m_accelY;
   private final SimDouble m_accelZ;
@@ -35,12 +34,11 @@ public class NavX2Sim {
   private ChassisSpeeds m_previousSpeeds;
   private Instant m_lastUpdateTime;
 
-  public NavX2Sim() {
-    SimDeviceSim simNavX2 = new SimDeviceSim("navX-Sensor", 0);
+  public NavX2Sim(NavX2 navx) {
+    SimDeviceSim simNavX2 = new SimDeviceSim("navX-Sensor", navx.getPort());
     this.m_pitch = simNavX2.getDouble("Pitch");
     this.m_roll = simNavX2.getDouble("Roll");
     this.m_yaw = simNavX2.getDouble("Yaw");
-    this.m_yawRate = simNavX2.getDouble("Rate");
     this.m_accelX = simNavX2.getDouble("LinearWorldAccelX");
     this.m_accelY = simNavX2.getDouble("LinearWorldAccelY");
     this.m_accelZ = simNavX2.getDouble("LinearWorldAccelZ");
@@ -61,7 +59,6 @@ public class NavX2Sim {
     double angle = m_yaw.get() + Math.toDegrees(desiredSpeeds.omegaRadiansPerSecond * randomNoise) * dt
                    + (NAVX2_YAW_DRIFT_RATE.in(Units.DegreesPerSecond) * dt * yawDriftDirection);
     m_yaw.set(angle);
-    m_yawRate.set(Math.toDegrees(desiredSpeeds.omegaRadiansPerSecond));
 
     m_accelX.set((desiredSpeeds.vxMetersPerSecond - m_previousSpeeds.vxMetersPerSecond) / dt);
     m_accelY.set((desiredSpeeds.vyMetersPerSecond - m_previousSpeeds.vyMetersPerSecond) / dt);

@@ -75,7 +75,6 @@ public class SwerveX2Module {
   /**
    * Create an instance of a WCP Swerve X2 module powered by REV Spark motor controllers
    * @param swerveHardware Hardware devices required by swerve module
-   * @param orientation Motor mount orientation
    * @param location Location of module
    * @param gearRatio Gear ratio for module
    * @param driveWheel Wheel installed in swerve module
@@ -91,7 +90,6 @@ public class SwerveX2Module {
    * @param driveCurrentLimit Desired current limit for the drive motor
    */
   public static REVSwerveModule create(REVSwerveModule.Hardware swerveHardware,
-                                       SwerveModule.MountOrientation orientation,
                                        SwerveModule.Location location,
                                        SwerveX2Module.GearRatio gearRatio, DriveWheel driveWheel,
                                        PIDConstants drivePID, FFConstants driveFF,
@@ -103,7 +101,8 @@ public class SwerveX2Module {
       throw new IllegalArgumentException("Swerve X2 rotate motor cannot be a NEO 550!");
 
     return new REVSwerveModule(swerveHardware,
-                               orientation, location,
+                               SwerveModule.MountOrientation.STANDARD,
+                               location,
                                gearRatio,
                                driveWheel, ZERO_OFFSET,
                                drivePID, driveFF,
@@ -116,7 +115,6 @@ public class SwerveX2Module {
   /**
    * Create an instance of a WCP Swerve X2 module powered by CTRE TalonFX motor controllers
    * @param swerveHardware Hardware devices required by swerve module
-   * @param orientation Motor mount orientation
    * @param location Location of module
    * @param gearRatio Gear ratio for module
    * @param driveWheel Wheel installed in swerve module
@@ -132,7 +130,6 @@ public class SwerveX2Module {
    * @param driveCurrentLimit Desired current limit for the drive motor
    */
   public static CTRESwerveModule create(CTRESwerveModule.Hardware swerveHardware,
-                                        SwerveModule.MountOrientation orientation,
                                         SwerveModule.Location location,
                                         SwerveX2Module.GearRatio gearRatio, DriveWheel driveWheel,
                                         PIDConstants drivePID, FFConstants driveFF,
@@ -141,7 +138,8 @@ public class SwerveX2Module {
                                         Distance wheelbase, Distance trackWidth,
                                         Time autoLockTime, Current driveCurrentLimit) {
     return new CTRESwerveModule(swerveHardware,
-                                orientation, location,
+                                SwerveModule.MountOrientation.STANDARD,
+                                location,
                                 gearRatio,
                                 driveWheel, ZERO_OFFSET,
                                 drivePID, driveFF,

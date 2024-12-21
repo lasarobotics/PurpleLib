@@ -39,7 +39,7 @@ import com.revrobotics.spark.config.SparkMaxConfigAccessor;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Current;
-import edu.wpi.first.units.measure.Time;
+import edu.wpi.first.units.measure.Frequency;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
@@ -147,7 +147,6 @@ public class Spark extends LoggableHardware {
   private ID m_id;
   private MotorKind m_kind;
   private Notifier m_inputThread;
-  private Time m_inputThreadPeriod;
 
   private LinkedHashSet<Supplier<REVLibError>> m_configChain;
   private Runnable m_invertedRunner;
@@ -164,9 +163,9 @@ public class Spark extends LoggableHardware {
    * Create a Spark that is unit-testing friendly with built-in logging
    * @param id Spark ID
    * @param kind The kind of motor connected to the controller
-   * @param inputThreadPeriod Execution period of getting inputs from Spark
+   * @param updateRate Update rate of Spark inputs
    */
-  public Spark(ID id, MotorKind kind, Time inputThreadPeriod) {
+  public Spark(ID id, MotorKind kind, Frequency updateRate) {
     if (kind.equals(MotorKind.NEO_VORTEX)) {
       this.m_spark = new SparkFlex(id.deviceID, kind.type);
       this.m_configAccessor = new SparkFlexConfigAccessor(SparkHelpers.getSparkHandle(m_spark));
@@ -180,7 +179,6 @@ public class Spark extends LoggableHardware {
     this.m_output = new SparkOutput(0.0, ControlType.kDutyCycle, 0.0, ArbFFUnits.kVoltage);
     this.m_inputs = new SparkInputsAutoLogged();
     this.m_inputThread = new Notifier(this::updateInputs);
-    this.m_inputThreadPeriod = inputThreadPeriod;
     this.m_configChain = new LinkedHashSet<>();
     this.m_invertedRunner = () -> {};
     this.m_forwardLimitSwitchTrigger = new Trigger(() -> getInputs().forwardLimitSwitch);
@@ -212,18 +210,18 @@ public class Spark extends LoggableHardware {
 
     // Start sensor input thread
     m_inputThread.setName(m_id.name);
-    if (!Logger.hasReplaySource()) m_inputThread.startPeriodic(m_inputThreadPeriod.in(Units.Seconds));
+    if (!Logger.hasReplaySource()) m_inputThread.startPeriodic(updateRate.asPeriod().in(Units.Seconds));
   }
 
   /**
    * Create a Spark that is unit-testing friendly with built-in logging
    * <p>
-   * Defaults to normally-open limit switches, {@value GlobalConstants#ROBOT_LOOP_HZ} Hz input thread frequency
+   * Defaults to normally-open limit switches, 50 Hz input thread frequency
    * @param id Spark ID
    * @param kind The kind of motor connected to the controller
    */
   public Spark(ID id, MotorKind kind) {
-    this(id, kind, Units.Seconds.of(GlobalConstants.ROBOT_LOOP_PERIOD));
+    this(id, kind, GlobalConstants.ROBOT_LOOP_HZ);
   }
 
   /**

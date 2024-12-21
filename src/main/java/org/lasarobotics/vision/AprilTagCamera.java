@@ -111,7 +111,7 @@ public class AprilTagCamera implements AutoCloseable {
 
     // Start camera thread
     this.m_thread = new Notifier(this::run);
-    m_thread.startPeriodic(GlobalConstants.ROBOT_LOOP_PERIOD);
+    m_thread.startPeriodic(GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Seconds));
   }
 
   /**

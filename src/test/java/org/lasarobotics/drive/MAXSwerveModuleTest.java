@@ -50,7 +50,6 @@ import edu.wpi.first.wpilibj.Timer;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class MAXSwerveModuleTest {
   private final double DELTA = 1e-3;
-  private final Rotation2d ROTATION_PI = Rotation2d.fromRadians(Math.PI);
 
   private final MAXSwerveModule.GearRatio GEAR_RATIO = MAXSwerveModule.GearRatio.L3;
   private final DriveWheel DRIVE_WHEEL = new DriveWheel(Units.Inches.of(3.0), Units.Value.of(1.0), Units.Value.of(0.8));
@@ -304,7 +303,13 @@ public class MAXSwerveModuleTest {
     m_lFrontModule.getPosition();
 
     // Verify module reports expected position
-    assertEquals(new SwerveModulePosition(-desiredState.speedMetersPerSecond * GlobalConstants.ROBOT_LOOP_PERIOD, desiredState.angle.minus(ROTATION_PI)), m_lFrontModule.getPosition());
+    assertEquals(
+      new SwerveModulePosition(
+        -desiredState.speedMetersPerSecond * GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Seconds),
+        desiredState.angle.minus(Rotation2d.kPi)
+      ),
+      m_lFrontModule.getPosition()
+    );
   }
 
   @Test

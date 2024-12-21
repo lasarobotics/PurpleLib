@@ -56,7 +56,7 @@ public class Canandgyro extends LoggableHardware {
     public MutAngularVelocity pitchRate = Units.RotationsPerSecond.zero().mutableCopy();
     public MutAngularVelocity rollRate = Units.RotationsPerSecond.zero().mutableCopy();
     public MutAngularVelocity yawRate = Units.RotationsPerSecond.zero().mutableCopy();
-    public Rotation2d rotation2d = new Rotation2d();
+    public Rotation2d rotation2d = Rotation2d.kZero;
   }
 
   private static final Time INITIAL_FRAME_WAIT_TIME = Units.Seconds.of(5.0);
@@ -95,14 +95,14 @@ public class Canandgyro extends LoggableHardware {
   }
 
   private void updateAcceleration(Frame<Vector<N3>> dataFrame) {
-    double dt = dataFrame.getTimestamp() - m_prevAccelerationTimestamp;
+    var dt = Units.Seconds.of(dataFrame.getTimestamp() - m_prevAccelerationTimestamp);
     var vector = dataFrame.getValue();
     m_inputs.xAcceleration.mut_replace(vector.get(0), Units.Gs);
     m_inputs.yAcceleration.mut_replace(vector.get(1), Units.Gs);
     m_inputs.zAcceleration.mut_replace(vector.get(2), Units.Gs);
-    m_inputs.xVelocity.mut_plus(m_inputs.xAcceleration.in(Units.MetersPerSecondPerSecond) * dt, Units.MetersPerSecond);
-    m_inputs.yVelocity.mut_plus(m_inputs.yAcceleration.in(Units.MetersPerSecondPerSecond) * dt, Units.MetersPerSecond);
-    m_inputs.zVelocity.mut_plus(m_inputs.zAcceleration.in(Units.MetersPerSecondPerSecond) * dt, Units.MetersPerSecond);
+    m_inputs.xVelocity.mut_plus(m_inputs.xAcceleration.times(dt));
+    m_inputs.yVelocity.mut_plus(m_inputs.yAcceleration.times(dt));
+    m_inputs.zVelocity.mut_plus(m_inputs.zAcceleration.times(dt));
 
     m_prevAccelerationTimestamp = dataFrame.getTimestamp();
   }

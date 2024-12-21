@@ -55,7 +55,7 @@ public class MK4cModule {
   private static final Angle ZERO_OFFSET = Units.Radians.zero();
 
   /**
-   * Create an instance of a MK4c module powered by REV Spark motor controllers
+   * Create an instance of a SDS MK4c module powered by REV Spark motor controllers
    * @param swerveHardware Hardware devices required by swerve module
    * @param location Location of module
    * @param gearRatio Gear ratio for module
@@ -95,7 +95,7 @@ public class MK4cModule {
   }
 
   /**
-   * Create an instance of a MK4c module powered by CTRE TalonFX motor controllers
+   * Create an instance of a SDS MK4c module powered by CTRE TalonFX motor controllers
    * @param swerveHardware Hardware devices required by swerve module
    * @param location Location of module
    * @param gearRatio Gear ratio for module

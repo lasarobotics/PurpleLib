@@ -263,7 +263,7 @@ public class SwervePoseEstimatorService {
       m_pose.currentPose = m_poseEstimator.updateWithTime(m_currentTimestamp / 1e6, m_yawAngle, m_swerveModulePositionSupplier.get());
 
       // Clear vision logging variables if its been a while since last update
-      if (Duration.between(m_lastVisionUpdateTime, Instant.now()).toMillis() / 1000.0 > GlobalConstants.ROBOT_LOOP_PERIOD) {
+      if (Duration.between(m_lastVisionUpdateTime, Instant.now()).toMillis() / 1000.0 > GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Seconds)) {
         m_visibleTags = new ArrayList<AprilTag>();
         m_visibleTagPoses = new ArrayList<Pose3d>();
         m_visionEstimatedPoses = new ArrayList<Pose2d>();
@@ -284,7 +284,7 @@ public class SwervePoseEstimatorService {
     this.m_lastVisionUpdateTime = Instant.now();
 
     // Set period if sim
-    if (RobotBase.isSimulation()) setPeriod(Units.Seconds.of(GlobalConstants.ROBOT_LOOP_PERIOD));
+    if (RobotBase.isSimulation()) setPeriod(GlobalConstants.ROBOT_LOOP_HZ.asPeriod());
   }
 
   /**

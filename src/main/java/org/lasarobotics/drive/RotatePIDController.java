@@ -39,7 +39,7 @@ public class RotatePIDController {
    * @param lookAhead Number of loops to look ahead by
    */
   public RotatePIDController(PolynomialSplineFunction rotateInputCurve, PIDConstants pidf, double rotateScalar, double deadband, double lookAhead) {
-    this.m_pidController = new PIDController(pidf.kP, 0.0, pidf.kD, pidf.period);
+    this.m_pidController = new PIDController(pidf.kP, 0.0, pidf.kD, pidf.period.in(Units.Seconds));
     this.m_rotateScalar = rotateScalar;
     this.m_deadband = MathUtil.clamp(deadband, MIN_DEADBAND, MAX_DEADBAND);
     this.m_lookAhead = lookAhead;
@@ -80,7 +80,7 @@ public class RotatePIDController {
     } else {
       // When rotation is complete, set setpoint to current angle
       if (m_isRotating) {
-        m_pidController.setSetpoint(currentAngle.in(Units.Degrees) + (rotateRate.in(Units.DegreesPerSecond) * m_lookAhead * GlobalConstants.ROBOT_LOOP_PERIOD));
+        m_pidController.setSetpoint(currentAngle.in(Units.Degrees) + (rotateRate.in(Units.DegreesPerSecond) * m_lookAhead * GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Seconds)));
         m_isRotating = false;
       }
     }

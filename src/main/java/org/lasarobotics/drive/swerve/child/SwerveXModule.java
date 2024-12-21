@@ -67,7 +67,7 @@ public class SwerveXModule {
   private static final Angle ZERO_OFFSET = Units.Radians.zero();
 
   /**
-   * Create an instance of a SwerveXModule powered by REV Spark motor controllers
+   * Create an instance of a WCP Swerve X module powered by REV Spark motor controllers
    * @param swerveHardware Hardware devices required by swerve module
    * @param location Location of module
    * @param gearRatio Gear ratio for module
@@ -107,7 +107,7 @@ public class SwerveXModule {
   }
 
   /**
-   * Create an instance of a SwerveXModule powered by CTRE TalonFX motor controllers
+   * Create an instance of a WCP Swerve X module powered by CTRE TalonFX motor controllers
    * @param swerveHardware Hardware devices required by swerve module
    * @param location Location of module
    * @param gearRatio Gear ratio for module

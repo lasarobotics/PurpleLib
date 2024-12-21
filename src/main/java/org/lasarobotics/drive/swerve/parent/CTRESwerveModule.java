@@ -20,7 +20,7 @@ import org.lasarobotics.drive.swerve.DriveWheel;
 import org.lasarobotics.drive.swerve.SwerveModule;
 import org.lasarobotics.drive.swerve.SwerveModuleSim;
 import org.lasarobotics.hardware.PurpleManager;
-import org.lasarobotics.hardware.ctre.CANCoder;
+import org.lasarobotics.hardware.ctre.CANcoder;
 import org.lasarobotics.hardware.ctre.TalonFX;
 import org.lasarobotics.utils.FFConstants;
 import org.lasarobotics.utils.GlobalConstants;
@@ -47,6 +47,7 @@ import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Dimensionless;
 import edu.wpi.first.units.measure.Distance;
+import edu.wpi.first.units.measure.Frequency;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Mass;
 import edu.wpi.first.units.measure.Time;
@@ -67,22 +68,21 @@ public class CTRESwerveModule implements SwerveModule, Sendable, AutoCloseable {
   public static class Hardware {
     public final TalonFX driveMotor;
     public final TalonFX rotateMotor;
-    public final CANCoder canCoder;
+    public final CANcoder canCoder;
 
-    public Hardware(TalonFX driveMotor, TalonFX rotateMotor, CANCoder canCoder) {
+    public Hardware(TalonFX driveMotor, TalonFX rotateMotor, CANcoder canCoder) {
       this.driveMotor = driveMotor;
       this.rotateMotor = rotateMotor;
       this.canCoder = canCoder;
     }
   }
 
-  public static final Time DEFAULT_SIGNAL_PERIOD = Units.Milliseconds.of(10.0);
-  public static final Time ALTERNATE_SIGNAL_PERIOD = Units.Seconds.of(10.0);
+  public static final Frequency DEFAULT_SIGNAL_PERIOD = Units.Hertz.of(100);
+  public static final Frequency ALTERNATE_SIGNAL_PERIOD = Units.Hertz.of(0.1);
   public static final double DRIVETRAIN_EFFICIENCY = 0.90;
 
   private final double EPSILON = 5e-3;
   private final Current ROTATE_MOTOR_CURRENT_LIMIT = Units.Amps.of(20.0);
-  private final Rotation2d LOCK_POSITION = Rotation2d.fromRadians(Math.PI / 4);
 
   private static final String IS_SLIPPING_LOG_ENTRY = "/IsSlipping";
   private static final String ODOMETER_LOG_ENTRY = "/Odometer";
@@ -96,7 +96,7 @@ public class CTRESwerveModule implements SwerveModule, Sendable, AutoCloseable {
 
   private TalonFX m_driveMotor;
   private TalonFX m_rotateMotor;
-  private CANCoder m_canCoder;
+  private CANcoder m_canCoder;
   private SwerveModuleSim m_moduleSim;
   private TalonFXConfiguration m_driveMotorConfig;
   private TalonFXConfiguration m_rotateMotorConfig;
@@ -169,9 +169,9 @@ public class CTRESwerveModule implements SwerveModule, Sendable, AutoCloseable {
     this.m_gearRatio = gearRatio;
     this.m_zeroOffset = Rotation2d.fromRadians(zeroOffset.in(Units.Radians));
     this.m_autoLock = true;
-    this.m_desiredState = new SwerveModuleState(Units.MetersPerSecond.of(0.0), LOCK_POSITION);
+    this.m_desiredState = new SwerveModuleState(Units.MetersPerSecond.of(0.0), m_zeroOffset.plus(m_location.getLockPosition()));
     this.m_autoLockTime = MathUtil.clamp(autoLockTime.in(Units.Milliseconds), 0.0, MAX_AUTO_LOCK_TIME * 1000);
-    this.m_previousRotatePosition = LOCK_POSITION;
+    this.m_previousRotatePosition = m_zeroOffset.plus(m_location.getLockPosition());
     this.m_tractionControlController =  new TractionControlController(driveWheel, slipRatio, mass, Units.MetersPerSecond.of(DRIVE_MAX_LINEAR_SPEED));
     this.m_autoLockTimer = Instant.now();
     this.m_runningOdometer = 0.0;
@@ -282,12 +282,12 @@ public class CTRESwerveModule implements SwerveModule, Sendable, AutoCloseable {
    */
   public static Hardware initializeHardware(TalonFX.ID driveMotorID,
                                             TalonFX.ID rotateMotorID,
-                                            CANCoder.ID canCoderID) {
-    var period = RobotBase.isReal() ? DEFAULT_SIGNAL_PERIOD : Units.Seconds.of(GlobalConstants.ROBOT_LOOP_PERIOD);
+                                            CANcoder.ID canCoderID) {
+    var period = RobotBase.isReal() ? DEFAULT_SIGNAL_PERIOD : GlobalConstants.ROBOT_LOOP_HZ;
     Hardware swerveModuleHardware = new Hardware(
       new TalonFX(driveMotorID, period),
       new TalonFX(rotateMotorID, period),
-      new CANCoder(canCoderID)
+      new CANcoder(canCoderID)
     );
 
     return swerveModuleHardware;
@@ -529,7 +529,7 @@ public class CTRESwerveModule implements SwerveModule, Sendable, AutoCloseable {
       state.speedMetersPerSecond = 0.0;
       // Time's up, lock now...
       if (Duration.between(m_autoLockTimer, Instant.now()).toMillis() > m_autoLockTime)
-        state.angle = LOCK_POSITION.minus(m_zeroOffset);
+        state.angle = m_zeroOffset.plus(m_location.getLockPosition());
       // Waiting to lock...
       else state.angle = m_previousRotatePosition.minus(m_zeroOffset);
     } else {
@@ -550,7 +550,7 @@ public class CTRESwerveModule implements SwerveModule, Sendable, AutoCloseable {
     m_previousRotatePosition = m_desiredState.angle;
 
     // Increment odometer
-    m_runningOdometer += Math.abs(m_desiredState.speedMetersPerSecond) * GlobalConstants.ROBOT_LOOP_PERIOD;
+    m_runningOdometer += Math.abs(m_desiredState.speedMetersPerSecond) * GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Seconds);
   }
 
   /**
@@ -639,7 +639,7 @@ public class CTRESwerveModule implements SwerveModule, Sendable, AutoCloseable {
    * Lock swerve module
    */
   public void lock() {
-    set(new SwerveModuleState(0.0, LOCK_POSITION.minus(m_zeroOffset)));
+    set(new SwerveModuleState(0.0, m_zeroOffset.plus(m_location.getLockPosition())));
   }
 
   /**

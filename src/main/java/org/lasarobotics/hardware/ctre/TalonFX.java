@@ -79,9 +79,9 @@ import com.ctre.phoenix6.sim.TalonFXSimState;
 
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.Frequency;
 import edu.wpi.first.units.measure.MutAngle;
 import edu.wpi.first.units.measure.MutAngularVelocity;
-import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.Notifier;
 
 
@@ -127,20 +127,19 @@ public class TalonFX extends LoggableHardware {
 
   private ID m_id;
   private Notifier m_inputThread;
-  private Time m_inputThreadPeriod;
   private volatile TalonFXInputsAutoLogged m_inputs;
 
 
   /**
    * Create a TalonFX object with built-in logging
    * @param id TalonFX ID
+   * @param updateRate Update rate of TalonFX inputs
    */
-  public TalonFX(TalonFX.ID id, Time inputThreadPeriod) {
+  public TalonFX(TalonFX.ID id, Frequency updateRate) {
     this.m_id = id;
     this.m_talon = new com.ctre.phoenix6.hardware.TalonFX(id.deviceID);
     this.m_inputs = new TalonFXInputsAutoLogged();
     this.m_inputThread = new Notifier(this::updateInputs);
-    this.m_inputThreadPeriod = inputThreadPeriod;
 
     // Disable motor safety
     m_talon.setSafetyEnabled(false);
@@ -149,9 +148,17 @@ public class TalonFX extends LoggableHardware {
     updateInputs();
     periodic();
 
+    // Set update rate of status frames
+    m_talon.getStatorCurrent().setUpdateFrequency(updateRate);
+    m_talon.getSupplyCurrent().setUpdateFrequency(updateRate);
+    m_talon.getRotorPosition().setUpdateFrequency(updateRate);
+    m_talon.getRotorVelocity().setUpdateFrequency(updateRate);
+    m_talon.getPosition().setUpdateFrequency(updateRate);
+    m_talon.getVelocity().setUpdateFrequency(updateRate);
+
     // Start sensor input thread
     m_inputThread.setName(m_id.name);
-    if (!Logger.hasReplaySource()) m_inputThread.startPeriodic(m_inputThreadPeriod.in(Units.Seconds));
+    if (!Logger.hasReplaySource()) m_inputThread.startPeriodic(updateRate.asPeriod().in(Units.Seconds));
   }
 
   /**

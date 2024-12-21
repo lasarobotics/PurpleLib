@@ -4,7 +4,6 @@
 
 Custom library for 418 Purple Haze
 
-Note: CTRE will not be as well supported as REV products as our team primarily lives in the REV Robotics ecosystem
 
 ## Features
 * Hardware wrappers with built-in AdvantageKit logging
@@ -18,8 +17,10 @@ Note: CTRE will not be as well supported as REV products as our team primarily l
     * More accurate velocity readings
   * CTRE
     * CANivore
+      * Use of CANivore is HIGHLY recommended, as adjustment of status frame rates isn't easily possible while protecting the underlying sensor getter methods.
     * Pigeon 2.0
-    * CANCoder
+    * CANcoder
+    * TalonFX
     * VictorSPX
     * TalonSRX
   * Kauai Labs
@@ -29,19 +30,30 @@ Note: CTRE will not be as well supported as REV products as our team primarily l
       * Field centric and robot centric velocity readings
   * Redux Robotics
     * Canandgyro
+  * ThriftyBot
+    * ThriftyNova
   * Generic
     * Analog sensor
     * Compressor
     * Single and double solenoid
     * Limit switch
     * Servo
-* REV Spark swerve module support
-  * Directly connected PWM encoder must be used (Such as REV through bore encoder)
+* Swerve module support with both REV and CTRE motor controllers
+  * Supported modules:
+    * REV MAXSwerve (REV Spark only)
+    * SDS MK4/MK4i/MK4c
+    * WCP Swerve X/Xi/X2
+    * TTB Swerve
+    * Support for custom or other modules can be added easily!
   * Module must be calibrated using calibration tool provided by module manufacturer
+  * Mixing motor controller vendors within a module is NOT supported (ex. TalonFX for drive, Spark Max for rotation)
   * More info [here](src/main/java/org/lasarobotics/drive/swerve/README.md)
 * Robot rotation PID
+* Automatic module "locking"
 * Traction control
 * Swerve second order kinematics correction
+* Health monitoring and automatic recovery
+  * Available in the hardware wrappers and for subsystems
 * Configurable input maps
 * LED strip support
 * JSON read/write

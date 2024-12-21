@@ -13,6 +13,8 @@ import org.tinylog.Logger;
 import com.revrobotics.spark.SparkBase;
 import com.revrobotics.spark.SparkBase.Faults;
 
+import edu.wpi.first.units.Units;
+
 /** This is a basic monitor class separate from the HealthMonitor setup. */
 public class SparkMonitor {
   private static SparkMonitor s_instance = new SparkMonitor();
@@ -57,7 +59,7 @@ public class SparkMonitor {
 
   public void periodic() {
     // Run at 1 second
-    if (s_runCount++ < GlobalConstants.ROBOT_LOOP_HZ) return;
+    if (s_runCount++ < GlobalConstants.ROBOT_LOOP_HZ.in(Units.Hertz)) return;
 
     s_runCount = 0;
 
