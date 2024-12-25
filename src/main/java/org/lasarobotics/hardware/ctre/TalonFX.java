@@ -75,10 +75,13 @@ import com.ctre.phoenix6.controls.compound.Diff_VelocityVoltage_Position;
 import com.ctre.phoenix6.controls.compound.Diff_VelocityVoltage_Velocity;
 import com.ctre.phoenix6.controls.compound.Diff_VoltageOut_Position;
 import com.ctre.phoenix6.controls.compound.Diff_VoltageOut_Velocity;
+import com.ctre.phoenix6.sim.TalonFXSimState;
 
-import edu.wpi.first.units.Measure;
-import edu.wpi.first.units.Time;
 import edu.wpi.first.units.Units;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.Frequency;
+import edu.wpi.first.units.measure.MutAngle;
+import edu.wpi.first.units.measure.MutAngularVelocity;
 import edu.wpi.first.wpilibj.Notifier;
 
 
@@ -108,8 +111,10 @@ public class TalonFX extends LoggableHardware {
    */
   @AutoLog
   public static class TalonFXInputs {
-    public double selectedSensorPosition = 0.0;
-    public double selectedSensorVelocity = 0.0;
+    public MutAngle rotorPosition = Units.Radians.zero().mutableCopy();
+    public MutAngularVelocity rotorVelocity = Units.RadiansPerSecond.zero().mutableCopy();
+    public MutAngle selectedSensorPosition = Units.Radians.zero().mutableCopy();
+    public MutAngularVelocity selectedSensorVelocity = Units.RadiansPerSecond.zero().mutableCopy();
   }
 
   private static final String VALUE1_LOG_ENTRY = "/OutputValue1";
@@ -122,22 +127,19 @@ public class TalonFX extends LoggableHardware {
 
   private ID m_id;
   private Notifier m_inputThread;
-  private Measure<Time> m_inputThreadPeriod;
   private volatile TalonFXInputsAutoLogged m_inputs;
 
 
   /**
    * Create a TalonFX object with built-in logging
    * @param id TalonFX ID
+   * @param updateRate Update rate of TalonFX inputs
    */
-  public TalonFX(TalonFX.ID id, Measure<Time> inputThreadPeriod) {
+  public TalonFX(TalonFX.ID id, Frequency updateRate) {
     this.m_id = id;
     this.m_talon = new com.ctre.phoenix6.hardware.TalonFX(id.deviceID);
     this.m_inputs = new TalonFXInputsAutoLogged();
     this.m_inputThread = new Notifier(this::updateInputs);
-    this.m_inputThreadPeriod = inputThreadPeriod;
-
-
 
     // Disable motor safety
     m_talon.setSafetyEnabled(false);
@@ -146,9 +148,20 @@ public class TalonFX extends LoggableHardware {
     updateInputs();
     periodic();
 
+    // Set update rate of status frames
+    m_talon.getStatorCurrent().setUpdateFrequency(updateRate);
+    m_talon.getSupplyCurrent().setUpdateFrequency(updateRate);
+    m_talon.getRotorPosition().setUpdateFrequency(updateRate);
+    m_talon.getRotorVelocity().setUpdateFrequency(updateRate);
+    m_talon.getPosition().setUpdateFrequency(updateRate);
+    m_talon.getVelocity().setUpdateFrequency(updateRate);
+
+    // Register device with manager
+    PurpleManager.add(this);
+
     // Start sensor input thread
     m_inputThread.setName(m_id.name);
-    if (!Logger.hasReplaySource()) m_inputThread.startPeriodic(m_inputThreadPeriod.in(Units.Seconds));
+    if (!Logger.hasReplaySource()) m_inputThread.startPeriodic(updateRate.asPeriod().in(Units.Seconds));
   }
 
   /**
@@ -162,40 +175,21 @@ public class TalonFX extends LoggableHardware {
     Logger.recordOutput(m_id.name + MODE_LOG_ENTRY, mode.getName());
   }
 
-
-  /**
-   * Get the selected sensor position (in raw sensor units).
-   *
-   * @return Position of selected sensor (in raw sensor units).
-   */
-  private double getSelectedSensorPosition() {
-    return m_talon.getPosition().getValue();
-  }
-
-  /**
-   * Get the selected sensor velocity.
-   *
-   * @return selected sensor (in raw sensor units) per 100ms.
-   * See Phoenix-Documentation for how to interpret.
-   */
-  private double getSelectedSensorVelocity() {
-    return m_talon.getVelocity().getValue();
-  }
-
   /**
    * Update sensor input readings
    */
   private void updateInputs() {
     synchronized (m_inputs) {
-      m_inputs.selectedSensorPosition = getSelectedSensorPosition();
-      m_inputs.selectedSensorVelocity = getSelectedSensorVelocity();
+      m_inputs.rotorPosition.mut_replace(m_talon.getRotorPosition().getValue());
+      m_inputs.rotorVelocity.mut_replace(m_talon.getRotorVelocity().getValue());
+      m_inputs.selectedSensorPosition.mut_replace(m_talon.getPosition().getValue());
+      m_inputs.selectedSensorVelocity.mut_replace(m_talon.getVelocity().getValue());
     }
   }
 
   @Override
   protected void periodic() {
-    updateInputs();
-    Logger.processInputs(m_id.name, m_inputs);
+    synchronized (m_inputs) { Logger.processInputs(m_id.name, m_inputs); }
 
     Logger.recordOutput(m_id.name + SUPPLY_CURRENT_LOG_ENTRY, m_talon.getSupplyCurrent().getValueAsDouble());
     Logger.recordOutput(m_id.name + STATOR_CURRENT_LOG_ENTRY, m_talon.getStatorCurrent().getValueAsDouble());
@@ -227,6 +221,62 @@ public class TalonFX extends LoggableHardware {
    */
   public StatusCode applyConfigs(TalonFXConfiguration configs) {
     return m_talon.getConfigurator().apply(configs);
+  }
+
+  /**
+   * Get if Phoenix Pro is licensed
+   * @return True if Phoenix Pro license is active
+   */
+  public boolean isProLicensed() {
+    return m_talon.getIsProLicensed().getValue();
+  }
+
+  /**
+   * Resets the mechanism position of the device to zero.
+   * <p>
+   * This will wait up to 0.100 seconds (100ms) by default.
+   *
+   * @return StatusCode of the set command
+   */
+  public StatusCode resetPosition() {
+    return setPosition(0.0);
+  }
+
+  /**
+   * Sets the mechanism position of the device in mechanism rotations.
+   * <p>
+   * This will wait up to 0.100 seconds (100ms) by default.
+   *
+   * @param angle Angle to set to.
+   * @return StatusCode of the set command
+   */
+  public StatusCode setPosition(Angle angle) {
+    return m_talon.setPosition(angle);
+  }
+
+  /**
+   * Sets the mechanism position of the device in mechanism rotations.
+   * <p>
+   * This will wait up to 0.100 seconds (100ms) by default.
+   *
+   * @param value Value to set to. Units are in rotations.
+   * @return StatusCode of the set command
+   */
+  public StatusCode setPosition(double value) {
+    return m_talon.setPosition(value);
+  }
+
+  /**
+   * Get the simulation state for this device.
+   * <p>
+   * This function reuses an allocated simulation state
+   * object, so it is safe to call this function multiple
+   * times in a robot loop.
+   *
+   * @return Simulation state
+   */
+  public TalonFXSimState getSimState() {
+    return m_talon.getSimState();
   }
 
   /**
@@ -582,6 +632,13 @@ public class TalonFX extends LoggableHardware {
     }
 
     return StatusCode.NotSupported;
+  }
+
+  /**
+   * Common interface to stop motor movement until set is called again.
+   */
+  public void stopMotor() {
+    m_talon.stopMotor();
   }
 
   /**

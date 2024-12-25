@@ -25,7 +25,6 @@ import org.photonvision.simulation.VisionSystemSim;
 import org.photonvision.simulation.VisionTargetSim;
 
 import com.ctre.phoenix6.SignalLogger;
-import com.revrobotics.REVPhysicsSim;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -71,7 +70,7 @@ public class PurpleManager {
   }
 
   /**
-   * Initialize and start logging
+   * Initialize and start logging, no signal logging
    * <p>
    * Call this at the beginning of <code>robotInit()</code>.
    * <p>
@@ -87,7 +86,6 @@ public class PurpleManager {
    * @param buildDate Build date string
    * @param batteryTrackingEnabled True to enable battery tracking
    */
-  @SuppressWarnings("resource")
   public static void initialize(LoggedRobot robot,
                                 AprilTagFieldLayout fieldLayout,
                                 Path logPath,
@@ -95,6 +93,36 @@ public class PurpleManager {
                                 String gitSHA,
                                 String buildDate,
                                 boolean batteryTrackingEnabled) {
+    initialize(robot, fieldLayout, logPath, projectName, gitSHA, buildDate, batteryTrackingEnabled, false);
+  }
+
+  /**
+   * Initialize and start logging
+   * <p>
+   * Call this at the beginning of <code>robotInit()</code>.
+   * <p>
+   * To enable replay, set the environment variable <code>ROBOT_REPLAY=1</code>,
+   * and <code>AKIT_LOG_PATH=path_to_log_file</code>, otherwise simply unset these variables.
+   * <p>
+   * Power distribution board must have default CAN ID (0 for CTRE, 1 for REV)
+   * @param robot Robot object
+   * @param fieldLayout AprilTag field layout
+   * @param logPath Path for log file
+   * @param projectName Project name
+   * @param gitSHA Git SHA
+   * @param buildDate Build date string
+   * @param batteryTrackingEnabled True to enable battery tracking
+   * @param signalLoggingEnabled True to enable signal logging (Recommended to only enable this temporarily while characterizing mechanisms)
+   */
+  @SuppressWarnings("resource")
+  public static void initialize(LoggedRobot robot,
+                                AprilTagFieldLayout fieldLayout,
+                                Path logPath,
+                                String projectName,
+                                String gitSHA,
+                                String buildDate,
+                                boolean batteryTrackingEnabled,
+                                boolean signalLoggingEnabled) {
     // AdvantageKit Logging
     Logger.recordMetadata("ProjectName", projectName);
     Logger.recordMetadata("gitSHA", gitSHA);
@@ -146,14 +174,14 @@ public class PurpleManager {
     // Set thread priority
     Notifier.setHALThreadPriority(true, 99);
 
-    // Run REV physics sim
-    addCallbackSim(() -> REVPhysicsSim.getInstance().run());
+    // Enable signal logging if required
+    if (signalLoggingEnabled) {
+      // Register URCL for logging REV devices
+      Logger.registerURCL(URCL.startExternal());
 
-    // Register URCL for logging REV devices
-    Logger.registerURCL(URCL.startExternal());
-
-    // Start CTRE signal logging
-    SignalLogger.start();
+      // Start CTRE signal logging
+      SignalLogger.start();
+    }
 
     // Start logging! No more data receivers, replay sources, or metadata values may be added.
     Logger.start();

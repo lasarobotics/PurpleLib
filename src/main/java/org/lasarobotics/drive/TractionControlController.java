@@ -10,13 +10,11 @@ import org.lasarobotics.utils.GlobalConstants;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
-import edu.wpi.first.units.Dimensionless;
-import edu.wpi.first.units.Distance;
-import edu.wpi.first.units.Mass;
-import edu.wpi.first.units.Measure;
-import edu.wpi.first.units.Time;
 import edu.wpi.first.units.Units;
-import edu.wpi.first.units.Velocity;
+import edu.wpi.first.units.measure.Dimensionless;
+import edu.wpi.first.units.measure.LinearVelocity;
+import edu.wpi.first.units.measure.Mass;
+import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.Timer;
 
 /** Traction control controller */
@@ -43,18 +41,18 @@ public class TractionControlController {
   private final double MAX_SLIP_RATIO = 0.40;
   private final int SIGMOID_K = 10;
   private final double FORCE_ACCELERATION_MULTIPLIER = 0.7;
-  private final Measure<Velocity<Distance>> INERTIAL_VELOCITY_THRESHOLD = Units.MetersPerSecond.of(0.01);
-  private final Measure<Velocity<Distance>> VELOCITY_DIFFERENCE_THRESHOLD = Units.MetersPerSecond.of(1.0);
-  private final Measure<Time> MIN_SLIPPING_TIME = Units.Seconds.of(0.5);
-  private final Measure<Velocity<Distance>> VELOCITY_REQUEST_THRESHOLD = Units.MetersPerSecond.of(0.05);
-  private final Measure<Velocity<Distance>> WHEEL_SPEED_THRESHOLD = Units.MetersPerSecond.of(0.05);
-  private final Measure<Time> STATIC_FORCE_ACCELERATE_TRIGGER_TIME = Units.Seconds.of(0.1);
-  private final Measure<Time> DYNAMIC_FORCE_ACCELERATE_TRIGGER_TIME = Units.Seconds.of(0.2);
-  private final Measure<Time> FORCE_ACCELERATE_TIME = Units.Seconds.of(2.0);
+  private final LinearVelocity INERTIAL_VELOCITY_THRESHOLD = Units.MetersPerSecond.of(0.01);
+  private final LinearVelocity VELOCITY_DIFFERENCE_THRESHOLD = Units.MetersPerSecond.of(1.0);
+  private final Time MIN_SLIPPING_TIME = Units.Seconds.of(0.5);
+  private final LinearVelocity VELOCITY_REQUEST_THRESHOLD = Units.MetersPerSecond.of(0.05);
+  private final LinearVelocity WHEEL_SPEED_THRESHOLD = Units.MetersPerSecond.of(0.05);
+  private final Time STATIC_FORCE_ACCELERATE_TRIGGER_TIME = Units.Seconds.of(0.1);
+  private final Time DYNAMIC_FORCE_ACCELERATE_TRIGGER_TIME = Units.Seconds.of(0.2);
+  private final Time FORCE_ACCELERATE_TIME = Units.Seconds.of(2.0);
 
   private double m_optimalSlipRatio;
   private double m_mass;
-  private double m_maxLinearSpeed;
+  private double m_maxLinearVelocity;
   private double m_maxAcceleration;
   private double m_staticCoF;
   private double m_dynamicCoF;
@@ -73,7 +71,7 @@ public class TractionControlController {
    * @param mass Mass of robot
    * @param maxLinearSpeed Maximum linear speed of robot
    */
-  public TractionControlController(DriveWheel driveWheel, Measure<Dimensionless> optimalSlipRatio, Measure<Mass> mass, Measure<Velocity<Distance>> maxLinearSpeed) {
+  public TractionControlController(DriveWheel driveWheel, Dimensionless optimalSlipRatio, Mass mass, LinearVelocity maxLinearSpeed) {
     this(driveWheel.staticCoF, driveWheel.dynamicCoF, optimalSlipRatio, mass, maxLinearSpeed);
   }
 
@@ -85,21 +83,21 @@ public class TractionControlController {
    * @param mass Mass of robot
    * @param maxLinearSpeed Maximum linear speed of robot
    */
-  public TractionControlController(Measure<Dimensionless> staticCoF,
-                                   Measure<Dimensionless> dynamicCoF,
-                                   Measure<Dimensionless> optimalSlipRatio,
-                                   Measure<Mass> mass,
-                                   Measure<Velocity<Distance>> maxLinearSpeed) {
+  public TractionControlController(Dimensionless staticCoF,
+                                   Dimensionless dynamicCoF,
+                                   Dimensionless optimalSlipRatio,
+                                   Mass mass,
+                                   LinearVelocity maxLinearSpeed) {
     if (dynamicCoF.gt(staticCoF))
       throw new IllegalArgumentException("Static CoF must be higher than dynamic CoF!");
     this.m_staticCoF = staticCoF.in(Units.Value);
     this.m_dynamicCoF = dynamicCoF.in(Units.Value);
     this.m_optimalSlipRatio = MathUtil.clamp(optimalSlipRatio.in(Units.Value), MIN_SLIP_RATIO, MAX_SLIP_RATIO);
     this.m_mass = mass.divide(4).in(Units.Kilograms);
-    this.m_maxLinearSpeed = Math.floor(maxLinearSpeed.in(Units.MetersPerSecond) * 1000) / 1000;
-    this.m_maxAcceleration = m_staticCoF * GlobalConstants.GRAVITATIONAL_ACCELERATION.in(Units.MetersPerSecondPerSecond);
-    this.m_maxPredictedSlipRatio = (m_maxAcceleration * GlobalConstants.ROBOT_LOOP_HZ)
-      / (m_staticCoF * m_mass * GlobalConstants.GRAVITATIONAL_ACCELERATION.in(Units.MetersPerSecondPerSecond));
+    this.m_maxLinearVelocity = Math.floor(maxLinearSpeed.in(Units.MetersPerSecond) * 1000) / 1000;
+    this.m_maxAcceleration = m_staticCoF * Units.Gs.one().in(Units.MetersPerSecondPerSecond);
+    this.m_maxPredictedSlipRatio = (m_maxAcceleration * GlobalConstants.ROBOT_LOOP_HZ.in(Units.Hertz))
+      / (m_staticCoF * m_mass * Units.Gs.one().in(Units.MetersPerSecondPerSecond));
     this.m_isSlipping = false;
     this.m_slippingDebouncer = new Debouncer(MIN_SLIPPING_TIME.in(Units.Seconds), DebounceType.kRising);
     this.m_state = State.ENABLED;
@@ -118,9 +116,9 @@ public class TractionControlController {
    * @param wheelSpeed Linear wheel speed
    * @return Optimal motor speed output
    */
-  public Measure<Velocity<Distance>> calculate(Measure<Velocity<Distance>> velocityRequest,
-                                               Measure<Velocity<Distance>> inertialVelocity,
-                                               Measure<Velocity<Distance>> wheelSpeed) {
+  public LinearVelocity calculate(LinearVelocity velocityRequest,
+                                  LinearVelocity inertialVelocity,
+                                  LinearVelocity wheelSpeed) {
     var velocityOutput = velocityRequest;
     boolean oppositeDirection = inertialVelocity.lt(Units.MetersPerSecond.zero());
 
@@ -145,18 +143,18 @@ public class TractionControlController {
     // Get current slip ratio, and check if slipping
     double currentSlipRatio = Math.abs(
       inertialVelocity.lte(INERTIAL_VELOCITY_THRESHOLD)
-        ? wheelSpeed.in(Units.MetersPerSecond) / m_maxLinearSpeed
+        ? wheelSpeed.in(Units.MetersPerSecond) / m_maxLinearVelocity
         : (Math.abs(wheelSpeed.in(Units.MetersPerSecond)) - inertialVelocity.in(Units.MetersPerSecond)) / inertialVelocity.in(Units.MetersPerSecond)
     );
     m_isSlipping = m_slippingDebouncer.calculate(
       currentSlipRatio > m_optimalSlipRatio
-      & Math.abs(wheelSpeed.in(Units.MetersPerSecond)) > m_maxLinearSpeed * m_optimalSlipRatio
+      & Math.abs(wheelSpeed.in(Units.MetersPerSecond)) > m_maxLinearVelocity * m_optimalSlipRatio
       & isEnabled()
     );
 
     // Get desired acceleration
     var desiredAcceleration = velocityRequest.minus(inertialVelocity.times(oppositeDirection ? -1 : +1))
-      .per(Units.Seconds.of(GlobalConstants.ROBOT_LOOP_PERIOD));
+      .divide(GlobalConstants.ROBOT_LOOP_HZ.asPeriod());
 
     // Get sigmoid value
     double sigmoid = 1 / (1 + Math.exp(-SIGMOID_K * MathUtil.clamp(2 * (currentSlipRatio - m_optimalSlipRatio) - 1, -1.0, +1.0)));
@@ -167,8 +165,8 @@ public class TractionControlController {
     // Simplified prediction of future slip ratio based on desired acceleration
     double predictedSlipRatio = Math.abs(
       desiredAcceleration.in(Units.MetersPerSecondPerSecond) /
-        (inertialVelocity.in(Units.MetersPerSecond) * GlobalConstants.GRAVITATIONAL_ACCELERATION.in(Units.MetersPerSecondPerSecond)
-          + effectiveCoF * m_mass * GlobalConstants.GRAVITATIONAL_ACCELERATION.in(Units.MetersPerSecondPerSecond))
+        (inertialVelocity.in(Units.MetersPerSecond) * Units.Gs.one().in(Units.MetersPerSecondPerSecond)
+          + effectiveCoF * m_mass * Units.Gs.one().in(Units.MetersPerSecondPerSecond))
     ) / m_maxPredictedSlipRatio;
 
     // Calculate correction based on difference between optimal and predicted slip ratio
@@ -180,8 +178,8 @@ public class TractionControlController {
     // Update output, clamping to max linear speed
     velocityOutput = Units.MetersPerSecond.of(MathUtil.clamp(
       velocityOutput.plus(velocityCorrection).in(Units.MetersPerSecond),
-      -m_maxLinearSpeed,
-      +m_maxLinearSpeed
+      -m_maxLinearVelocity,
+      +m_maxLinearVelocity
     ));
 
     return velocityOutput;
@@ -193,6 +191,14 @@ public class TractionControlController {
    */
   public boolean isSlipping() {
     return m_isSlipping;
+  }
+
+  /**
+   * Get max linear velocity
+   * @return Maximum linear velocity
+   */
+  public LinearVelocity getMaxLinearVelocity() {
+    return Units.MetersPerSecond.of(m_maxLinearVelocity);
   }
 
   /**

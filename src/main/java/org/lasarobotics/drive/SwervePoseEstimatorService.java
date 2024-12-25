@@ -13,11 +13,8 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import org.lasarobotics.drive.swerve.SwerveModule;
-import org.lasarobotics.drive.swerve.SwerveModuleLocation;
+import org.lasarobotics.hardware.IMU;
 import org.lasarobotics.hardware.PurpleManager;
-import org.lasarobotics.hardware.ctre.Pigeon2;
-import org.lasarobotics.hardware.kauailabs.NavX2;
-import org.lasarobotics.hardware.reduxrobotics.Canandgyro;
 import org.lasarobotics.utils.GlobalConstants;
 import org.lasarobotics.vision.AprilTagCamera;
 import org.littletonrobotics.junction.AutoLog;
@@ -34,11 +31,9 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
-import edu.wpi.first.units.Angle;
-import edu.wpi.first.units.Measure;
-import edu.wpi.first.units.Time;
 import edu.wpi.first.units.Units;
-import edu.wpi.first.units.Velocity;
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotBase;
 
@@ -51,22 +46,20 @@ public class SwervePoseEstimatorService {
   }
 
   private static final Matrix<N3,N1> VISION_STDDEV = VecBuilder.fill(1.0, 1.0, Math.toRadians(3.0));
-  private static final Measure<Time> DEFAULT_THREAD_PERIOD = Units.Milliseconds.of(10.0);
-  private static final Measure<Velocity<Angle>> VISION_ANGULAR_VELOCITY_THRESHOLD = Units.DegreesPerSecond.of(720.0);
+  private static final Time DEFAULT_THREAD_PERIOD = Units.Milliseconds.of(10.0);
+  private static final AngularVelocity VISION_ANGULAR_VELOCITY_THRESHOLD = Units.DegreesPerSecond.of(720.0);
   private static final String NAME = "SwervePoseEstimatorService";
   private static final String VISIBLE_TAGS_LOG_ENTRY = "/Vision/VisibleTags";
   private static final String ESTIMATED_POSES_LOG_ENTRY = "/Vision/EstimatedPoses";
 
   private boolean m_running;
-  private Supplier<Rotation2d> m_rotation2dSupplier;
-  private Supplier<Measure<Velocity<Angle>>> m_yawRateSupplier;
-  private Supplier<Boolean> m_imuConnectedSupplier;
+  private IMU m_imu;
   private Supplier<SwerveModulePosition[]> m_swerveModulePositionSupplier;
   private Consumer<Pose2d> m_poseResetMethod;
   private SwerveDriveKinematics m_kinematics;
   private SwerveDrivePoseEstimator m_poseEstimator;
   private List<AprilTagCamera> m_cameras;
-  private Measure<Time> m_threadPeriod;
+  private Time m_threadPeriod;
   private Instant m_lastVisionUpdateTime;
   private Notifier m_thread;
 
@@ -84,75 +77,20 @@ public class SwervePoseEstimatorService {
    * <p>
    * This service runs in the background and keeps track of where the robot is on the field
    * @param odometryStdDev Standard deviation of wheel odometry measurements
-   * @param imu NavX2 MXP IMU
+   * @param imu IMU installed on robot
    * @param modules Swerve modules
    */
-  public SwervePoseEstimatorService(Matrix<N3,N1> odometryStdDev, NavX2 imu, SwerveModule... modules) {
-    this(
-      odometryStdDev,
-      () -> imu.getInputs().rotation2d,
-      () -> imu.getInputs().yawRate,
-      () -> imu.getInputs().isConnected,
-      modules
-    );
-  }
-
-  /**
-   * Create Swerve Pose Estimator Service
-   * <p>
-   * This service runs in the background and keeps track of where the robot is on the field
-   * @param odometryStdDev Standard deviation of wheel odometry measurements
-   * @param imu CTRE Pigeon 2.0 IMU
-   * @param modules Swerve modules
-   */
-  public SwervePoseEstimatorService(Matrix<N3,N1> odometryStdDev, Pigeon2 imu, SwerveModule... modules) {
-    this(
-      odometryStdDev,
-      () -> imu.getInputs().rotation2d,
-      () -> imu.getInputs().yawRate,
-      () -> true,
-      modules
-    );
-  }
-
-  /**
-   * Create Swerve Pose Estimator Service
-   * <p>
-   * This service runs in the background and keeps track of where the robot is on the field
-   * @param odometryStdDev Standard deviation of wheel odometry measurements
-   * @param imu Redux Canandgyro IMU
-   * @param modules Swerve modules
-   */
-  public SwervePoseEstimatorService(Matrix<N3,N1> odometryStdDev, Canandgyro imu, SwerveModule... modules) {
-    this(
-      odometryStdDev,
-      () -> imu.getInputs().rotation2d,
-      () -> imu.getInputs().yawRate,
-      () -> true,
-      modules
-    );
-  }
-
-  private SwervePoseEstimatorService(Matrix<N3,N1> odometryStdDev,
-                                     Supplier<Rotation2d> rotation2dSupplier,
-                                     Supplier<Measure<Velocity<Angle>>> yawRateSupplier,
-                                     Supplier<Boolean> imuConnectedSupplier,
-                                     SwerveModule... modules) {
+  public SwervePoseEstimatorService(Matrix<N3,N1> odometryStdDev, IMU imu, SwerveModule... modules) {
     if (modules.length != 4) throw new IllegalArgumentException("Four (4) modules must be used!");
+    this.m_imu = imu;
     this.m_running = false;
-    // Remember how to get rotation2d from IMU
-    this.m_rotation2dSupplier = rotation2dSupplier;
-    // Remember how to get yaw rate from IMU
-    this.m_yawRateSupplier = yawRateSupplier;
-    // Remember how to check if IMU is connected
-    this.m_imuConnectedSupplier = imuConnectedSupplier;
 
     // Get each individual module
     var moduleList = Arrays.asList(modules);
-    var lFrontModule = moduleList.stream().filter(module -> module.getModuleLocation().equals(SwerveModuleLocation.LeftFront)).findFirst();
-    var rFrontModule = moduleList.stream().filter(module -> module.getModuleLocation().equals(SwerveModuleLocation.RightFront)).findFirst();
-    var lRearModule = moduleList.stream().filter(module -> module.getModuleLocation().equals(SwerveModuleLocation.LeftRear)).findFirst();
-    var rRearModule = moduleList.stream().filter(module -> module.getModuleLocation().equals(SwerveModuleLocation.RightRear)).findFirst();
+    var lFrontModule = moduleList.stream().filter(module -> module.getModuleLocation().equals(SwerveModule.Location.LeftFront)).findFirst();
+    var rFrontModule = moduleList.stream().filter(module -> module.getModuleLocation().equals(SwerveModule.Location.RightFront)).findFirst();
+    var lRearModule = moduleList.stream().filter(module -> module.getModuleLocation().equals(SwerveModule.Location.LeftRear)).findFirst();
+    var rRearModule = moduleList.stream().filter(module -> module.getModuleLocation().equals(SwerveModule.Location.RightRear)).findFirst();
 
     // Make sure each module is available
     if (lFrontModule.isEmpty()) throw new IllegalArgumentException("Left front module missing!");
@@ -185,7 +123,7 @@ public class SwervePoseEstimatorService {
     // Initialise pose estimator
     this.m_poseEstimator = new SwerveDrivePoseEstimator(
       m_kinematics,
-      m_rotation2dSupplier.get(),
+      m_imu.getRotation2d(),
       m_swerveModulePositionSupplier.get(),
       new Pose2d(),
       odometryStdDev,
@@ -210,7 +148,7 @@ public class SwervePoseEstimatorService {
       m_currentTimestamp = Logger.getRealTimestamp();
 
       // Check if IMU is connected
-      boolean isIMUConnected = m_imuConnectedSupplier.get();
+      boolean isIMUConnected = m_imu.isConnected();
 
       // Get synchronized swerve module positions
       var currentModulePositions = m_swerveModulePositionSupplier.get();
@@ -225,10 +163,10 @@ public class SwervePoseEstimatorService {
         m_previousModulePositions[i] = currentModulePositions[i];
       }
       var previousYawAngle = m_yawAngle;
-      m_yawAngle = (isIMUConnected) ? m_rotation2dSupplier.get() :
+      m_yawAngle = (isIMUConnected) ? m_imu.getRotation2d() :
         m_yawAngle.plus(new Rotation2d(m_kinematics.toTwist2d(moduleDeltas).dtheta));
-      var yawRate = (isIMUConnected) ? m_yawRateSupplier.get() :
-        Units.Radians.of(m_yawAngle.minus(previousYawAngle).getRadians()).per(Units.Microseconds.of(m_currentTimestamp - m_previousTimestamp));
+      var yawRate = (isIMUConnected) ? m_imu.getYawRate() :
+        Units.Radians.of(m_yawAngle.minus(previousYawAngle).getRadians()).divide(Units.Microseconds.of(m_currentTimestamp - m_previousTimestamp));
 
       // If no cameras or yaw rate is too high, just update pose based on odometry and exit
       if (m_cameras.isEmpty() || yawRate.gte(VISION_ANGULAR_VELOCITY_THRESHOLD)) {
@@ -266,7 +204,7 @@ public class SwervePoseEstimatorService {
       m_pose.currentPose = m_poseEstimator.updateWithTime(m_currentTimestamp / 1e6, m_yawAngle, m_swerveModulePositionSupplier.get());
 
       // Clear vision logging variables if its been a while since last update
-      if (Duration.between(m_lastVisionUpdateTime, Instant.now()).toMillis() / 1000.0 > GlobalConstants.ROBOT_LOOP_PERIOD) {
+      if (Duration.between(m_lastVisionUpdateTime, Instant.now()).toMillis() / 1000.0 > GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Seconds)) {
         m_visibleTags = new ArrayList<AprilTag>();
         m_visibleTagPoses = new ArrayList<Pose3d>();
         m_visionEstimatedPoses = new ArrayList<Pose2d>();
@@ -275,7 +213,7 @@ public class SwervePoseEstimatorService {
     m_thread.setName(NAME);
 
     // Remember how to reset pose
-    this.m_poseResetMethod = pose -> m_poseEstimator.resetPosition(m_rotation2dSupplier.get(), m_swerveModulePositionSupplier.get(), pose);
+    this.m_poseResetMethod = pose -> m_poseEstimator.resetPosition(m_imu.getRotation2d(), m_swerveModulePositionSupplier.get(), pose);
 
     // Register service as pose supplier with PurpleManager for simulation
     PurpleManager.setPoseSupplier(this::getPose);
@@ -287,7 +225,7 @@ public class SwervePoseEstimatorService {
     this.m_lastVisionUpdateTime = Instant.now();
 
     // Set period if sim
-    if (RobotBase.isSimulation()) setPeriod(Units.Seconds.of(GlobalConstants.ROBOT_LOOP_PERIOD));
+    if (RobotBase.isSimulation()) setPeriod(GlobalConstants.ROBOT_LOOP_HZ.asPeriod());
   }
 
   /**
@@ -305,7 +243,7 @@ public class SwervePoseEstimatorService {
    * Defaults to 10ms if not set (100Hz), 20ms for simulation (50Hz)
    * @param period Period between pose estimator updates
    */
-  public void setPeriod(Measure<Time> period) {
+  public void setPeriod(Time period) {
     m_threadPeriod = period;
   }
 

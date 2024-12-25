@@ -4,18 +4,31 @@
 
 package org.lasarobotics.drive.swerve;
 
-import edu.wpi.first.units.Dimensionless;
-import edu.wpi.first.units.Distance;
-import edu.wpi.first.units.Measure;
+import edu.wpi.first.units.measure.Dimensionless;
+import edu.wpi.first.units.measure.Distance;
 
 public class DriveWheel {
-  public final Measure<Distance> diameter;
-  public final Measure<Dimensionless> staticCoF;
-  public final Measure<Dimensionless> dynamicCoF;
+  public final Distance diameter;
+  public final Dimensionless staticCoF;
+  public final Dimensionless dynamicCoF;
 
-  public DriveWheel(Measure<Distance> diameter, Measure<Dimensionless> staticCoF, Measure<Dimensionless> dynamicCoF) {
+  private DriveWheel(Distance diameter, Dimensionless staticCoF, Dimensionless dynamicCoF) {
     this.diameter = diameter;
     this.staticCoF = staticCoF;
     this.dynamicCoF = dynamicCoF;
+  }
+
+  /**
+   * Create a swerve drive wheel
+   * @param diameter Diameter of wheel
+   * @param staticCoF Static coefficient of friction
+   * @param dynamicCoF Dynamic coefficient of friction
+   * @return
+   */
+  public static DriveWheel create(Distance diameter, Dimensionless staticCoF, Dimensionless dynamicCoF) {
+    if (dynamicCoF.gt(staticCoF))
+      throw new IllegalArgumentException("Static CoF must be higher than dynamic CoF!");
+
+    return new DriveWheel(diameter, staticCoF, dynamicCoF);
   }
 }

@@ -4,7 +4,6 @@
 
 Custom library for 418 Purple Haze
 
-Note: CTRE will not be as well supported as REV products as our team primarily lives in the REV Robotics ecosystem
 
 ## Features
 * Hardware wrappers with built-in AdvantageKit logging
@@ -18,8 +17,10 @@ Note: CTRE will not be as well supported as REV products as our team primarily l
     * More accurate velocity readings
   * CTRE
     * CANivore
+      * Use of CANivore is HIGHLY recommended, as adjustment of status frame rates isn't easily possible while protecting the underlying sensor getter methods.
     * Pigeon 2.0
-    * CANCoder
+    * CANcoder
+    * TalonFX
     * VictorSPX
     * TalonSRX
   * Kauai Labs
@@ -29,19 +30,32 @@ Note: CTRE will not be as well supported as REV products as our team primarily l
       * Field centric and robot centric velocity readings
   * Redux Robotics
     * Canandgyro
+  * ThriftyBot
+    * ThriftyNova
   * Generic
     * Analog sensor
     * Compressor
     * Single and double solenoid
     * Limit switch
     * Servo
-* MAXSwerve module support
-  * Supports NEO v1.0/1.1 or NEO Vortex + NEO 550 configuration only
-  * REV through bore encoder must be used
-  * Module must be calibrated using [REV MAXSwerve calibration tool](https://docs.revrobotics.com/sparkmax/software-resources/calibration-for-maxswerve)
-* Robot rotation PID
-* Traction control
-* Swerve second order kinematics correction
+* Swerve module support with both REV and CTRE motor controllers
+  * Supported modules:
+    * REV MAXSwerve (REV Spark only)
+    * SDS MK4/MK4i/MK4c
+    * WCP Swerve X/Xi/X2
+    * TTB Swerve
+    * Support for custom or other modules can be added easily!
+  * Module must be calibrated using calibration tool provided by module manufacturer
+  * Mixing motor controller vendors within a module is NOT supported (ex. TalonFX for drive, Spark Max for rotation)
+  * More info [here](src/main/java/org/lasarobotics/drive/swerve/README.md)
+* Swerve drive parent class
+  * Robot rotation PID
+  * Automatic module "locking"
+  * Traction control
+  * Swerve second order kinematics correction
+  * More info [here](src/main/java/org/lasarobotics/drive/swerve/README.md)
+* Health monitoring and automatic recovery
+  * Available in the hardware wrappers and for subsystems
 * Configurable input maps
 * LED strip support
 * JSON read/write
@@ -53,11 +67,11 @@ Note: CTRE will not be as well supported as REV products as our team primarily l
 ### Required dependencies
 * AdvantageKit - https://github.com/Mechanical-Advantage/AdvantageKit/blob/main/docs/INSTALLATION.md
 * URCL - https://raw.githubusercontent.com/Mechanical-Advantage/URCL/maven/URCL.json
-* NavX - https://dev.studica.com/releases/2024/NavX.json
-* REVLib - https://software-metadata.revrobotics.com/REVLib-2024.json
-* ReduxLib - https://frcsdk.reduxrobotics.com/ReduxLib_2024.json
-* CTRE Phoenix5 - https://maven.ctr-electronics.com/release/com/ctre/phoenix/Phoenix5-frc2024-latest.json
-* CTRE Phoenix6 - https://maven.ctr-electronics.com/release/com/ctre/phoenix6/latest/Phoenix6-frc2024-latest.json
+* NavX - https://dev.studica.com/releases/2025/Studica-2025.1.1-alpha-14.json
+* REVLib - https://software-metadata.revrobotics.com/REVLib-2025.json
+* ReduxLib - https://frcsdk.reduxrobotics.com/ReduxLib_2025.json
+* CTRE Phoenix5 - https://maven.ctr-electronics.com/release/com/ctre/phoenix/Phoenix5-frc2025-beta-latest.json
+* CTRE Phoenix6 - https://maven.ctr-electronics.com/release/com/ctre/phoenix6/latest/Phoenix6-frc2025-beta-latest.json
 * PhotonLib - https://maven.photonvision.org/repository/internal/org/photonvision/photonlib-json/1.0/photonlib-json-1.0.json
 
 ### Online installation
@@ -84,6 +98,38 @@ dependencies {
 }
 ```
 Change the file path as needed.
+
+## Robot project integration
+
+1. Follow AdvantageKit setup instructions, and make your main `Robot.java` class extend `LoggedRobot`.
+2. In your `build.gradle` add the following:
+  * To the `plugins` section: `id "com.peterabeles.gversion" version "1.10"`
+  * Paste this before the `deploy` section:
+  ```
+  project.compileJava.dependsOn(createVersionFile)
+  gversion {
+    srcDir       = "src/main/java/"
+    classPackage = "frc.robot"
+    className    = "BuildConstants"
+    dateFormat   = "yyyy-MM-dd HH:mm:ss z"
+    timeZone     = "America/Chicago" // Use preferred time zone
+    indent       = "  "
+  }
+  ```
+
+3. In your `Robot.java` constructor, initialize the `PurpleManager`.
+```
+PurpleManager.initialize(
+  this,
+  AprilTagFieldLayout.loadField(AprilTagFields.k2024Crescendo),
+  Path.of("/media/sda1"),
+  BuildConstants.MAVEN_NAME,
+  BuildConstants.GIT_SHA,
+  BuildConstants.BUILD_DATE,
+  true
+);
+```
+4. Call `PurpleManager.update()` in the beginning of the `robotPeriodic()` method of `Robot.java`.
 
 ## Releasing
 Create a release in GitHub. JitPack does the rest.

@@ -9,10 +9,9 @@ import java.util.HashMap;
 import org.apache.commons.math3.analysis.polynomials.PolynomialSplineFunction;
 
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.units.Distance;
-import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Units;
-import edu.wpi.first.units.Velocity;
+import edu.wpi.first.units.measure.Dimensionless;
+import edu.wpi.first.units.measure.LinearVelocity;
 
 /** Throttle map */
 public class ThrottleMap {
@@ -29,8 +28,8 @@ public class ThrottleMap {
    * @param maxLinearSpeed Maximum linear speed of robot
    * @param deadband Deadband for controller input [+0.001, +0.2]
    */
-  public ThrottleMap(PolynomialSplineFunction throttleInputCurve, Measure<Velocity<Distance>> maxLinearSpeed, double deadband) {
-    this.m_deadband = MathUtil.clamp(deadband, MIN_DEADBAND, MAX_DEADBAND);
+  public ThrottleMap(PolynomialSplineFunction throttleInputCurve, LinearVelocity maxLinearSpeed, Dimensionless deadband) {
+    this.m_deadband = MathUtil.clamp(deadband.in(Units.Percent), MIN_DEADBAND, MAX_DEADBAND);
 
     // Fill throttle input hashmap
     for (int i = 0; i <= 1000; i++) {
@@ -49,7 +48,7 @@ public class ThrottleMap {
    * @param throttleLookup Throttle input [-1.0, +1.0]
    * @return Corresponding velocity
    */
-  public Measure<Velocity<Distance>> throttleLookup(double throttleLookup) {
+  public LinearVelocity throttleLookup(double throttleLookup) {
     throttleLookup = Math.copySign(Math.floor(Math.abs(throttleLookup) * 1000) / 1000, throttleLookup) + 0.0;
     throttleLookup = MathUtil.clamp(throttleLookup, -1.0, +1.0);
 

@@ -15,21 +15,19 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.lasarobotics.utils.GlobalConstants;
 
-import edu.wpi.first.units.Dimensionless;
-import edu.wpi.first.units.Distance;
-import edu.wpi.first.units.Mass;
-import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Units;
-import edu.wpi.first.units.Velocity;
+import edu.wpi.first.units.measure.Dimensionless;
+import edu.wpi.first.units.measure.LinearVelocity;
+import edu.wpi.first.units.measure.Mass;
 import edu.wpi.first.wpilibj.Timer;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class TractionControlTest {
-  private final Measure<Dimensionless> SLIP_RATIO = Units.Percent.of(8.0);
-  private final Measure<Dimensionless> STATIC_FRICTION_COEFFICIENT = Units.Value.of(0.9);
-  private final Measure<Dimensionless> DYNAMIC_FRICTION_COEFFICIENT = Units.Value.of(0.8);
-  private final Measure<Mass> MASS = Units.Pounds.of(135.0);
-  private final Measure<Velocity<Distance>> MAX_LINEAR_SPEED = Units.MetersPerSecond.of(5.2);
+  private final Dimensionless SLIP_RATIO = Units.Percent.of(8.0);
+  private final Dimensionless STATIC_FRICTION_COEFFICIENT = Units.Value.of(0.9);
+  private final Dimensionless DYNAMIC_FRICTION_COEFFICIENT = Units.Value.of(0.8);
+  private final Mass MASS = Units.Pounds.of(135.0);
+  private final LinearVelocity MAX_LINEAR_SPEED = Units.MetersPerSecond.of(5.2);
   private final double THRESHOLD = 0.05;
 
   private TractionControlController m_tractionControlController;
@@ -45,8 +43,8 @@ public class TractionControlTest {
   public void limitSlip() {
     // Simulate scenario
     var outputSpeed = Units.MetersPerSecond.of(100.0);
-    for (int i = 0; i < GlobalConstants.ROBOT_LOOP_HZ * 2; i++) {
-      Timer.delay(GlobalConstants.ROBOT_LOOP_PERIOD);
+    for (int i = 0; i < GlobalConstants.ROBOT_LOOP_HZ.times(2).in(Units.Hertz); i++) {
+      Timer.delay(GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Seconds));
       outputSpeed = m_tractionControlController.calculate(MAX_LINEAR_SPEED, Units.MetersPerSecond.of(0.0), MAX_LINEAR_SPEED.divide(2));
     }
 
@@ -65,7 +63,7 @@ public class TractionControlTest {
     var wheelSpeed = Units.MetersPerSecond.of(0.0);
 
     while (inertialVelocity.lt(MAX_LINEAR_SPEED)) {
-      Timer.delay(GlobalConstants.ROBOT_LOOP_PERIOD);
+      Timer.delay(GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Seconds));
       outputSpeed = m_tractionControlController.calculate(MAX_LINEAR_SPEED, inertialVelocity, wheelSpeed);
 
       // Verify behavior

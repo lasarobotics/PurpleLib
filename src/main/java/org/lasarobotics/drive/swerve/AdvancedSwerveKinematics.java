@@ -106,17 +106,17 @@ public class AdvancedSwerveKinematics {
    */
   public static ChassisSpeeds correctForDynamics(ChassisSpeeds requestedSpeeds) {
     Pose2d futureRobotPose = new Pose2d(
-      requestedSpeeds.vxMetersPerSecond * GlobalConstants.ROBOT_LOOP_PERIOD,
-      requestedSpeeds.vyMetersPerSecond * GlobalConstants.ROBOT_LOOP_PERIOD,
-      Rotation2d.fromRadians(requestedSpeeds.omegaRadiansPerSecond * GlobalConstants.ROBOT_LOOP_PERIOD)
+      requestedSpeeds.vxMetersPerSecond * GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Seconds),
+      requestedSpeeds.vyMetersPerSecond * GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Seconds),
+      Rotation2d.fromRadians(requestedSpeeds.omegaRadiansPerSecond * GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Seconds))
     );
 
     Twist2d twistForPose = log(futureRobotPose);
 
     ChassisSpeeds correctedSpeeds = new ChassisSpeeds(
-      twistForPose.dx / GlobalConstants.ROBOT_LOOP_PERIOD,
-      twistForPose.dy / GlobalConstants.ROBOT_LOOP_PERIOD,
-      twistForPose.dtheta / GlobalConstants.ROBOT_LOOP_PERIOD
+      twistForPose.dx / GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Seconds),
+      twistForPose.dy / GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Seconds),
+      twistForPose.dtheta / GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Seconds)
     );
 
     return correctedSpeeds;

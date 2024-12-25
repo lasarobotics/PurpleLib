@@ -11,10 +11,19 @@ import org.littletonrobotics.junction.Logger;
 
 import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
-import com.ctre.phoenix6.signals.SensorDirectionValue;
+import com.ctre.phoenix6.configs.CANcoderConfigurator;
+import com.ctre.phoenix6.sim.CANcoderSimState;
+
+import edu.wpi.first.units.Units;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Frequency;
+import edu.wpi.first.units.measure.MutAngle;
+import edu.wpi.first.units.measure.MutAngularVelocity;
+import edu.wpi.first.wpilibj.Notifier;
 
 /** CTRE CANCoder */
-public class CANCoder extends LoggableHardware {
+public class CANcoder extends LoggableHardware {
   /** CANCoder ID */
   public static class ID {
     public final String name;
@@ -35,38 +44,51 @@ public class CANCoder extends LoggableHardware {
   }
 
   /** CANCoder Status Frame */
-  public enum CANCoderFrame {
+  public enum CANcoderFrame {
     ABSOLUTE_POSITION,
     RELATIVE_POSITION,
     VELOCITY
   }
 
   @AutoLog
-  public static class CANCoderInputs {
-    public double absolutePosition = 0.0;
-    public double relativePosition = 0.0;
-    public double velocity = 0.0;
+  public static class CANcoderInputs {
+    public MutAngle absolutePosition = Units.Radians.zero().mutableCopy();
+    public MutAngle relativePosition = Units.Radians.zero().mutableCopy();
+    public MutAngularVelocity velocity = Units.RadiansPerSecond.zero().mutableCopy();
   }
 
   private com.ctre.phoenix6.hardware.CANcoder m_canCoder;
 
   private ID m_id;
-  private CANCoderInputsAutoLogged m_inputs;
+  private Notifier m_inputThread;
+  private CANcoderInputsAutoLogged m_inputs;
 
-  private double m_absolutePositionCoefficient = 1.0;
-  private double m_relativePositionCoefficient = 1.0;
-  private double m_velocityCoefficient = 1.0;
-
-  public CANCoder(ID id) {
+  /**
+   * Create a CANcoder object with built-in logging
+   * @param id CANcoder ID
+   * @param updateRate Update rate of CANcoder inputs
+   */
+  public CANcoder(ID id, Frequency updateRate) {
     this.m_id = id;
     this.m_canCoder = new com.ctre.phoenix6.hardware.CANcoder(m_id.deviceID, m_id.bus.name);
-    this.m_inputs = new CANCoderInputsAutoLogged();
+    this.m_inputs = new CANcoderInputsAutoLogged();
+    this.m_inputThread = new Notifier(this::updateInputs);
 
     // Update inputs on init
+    updateInputs();
     periodic();
+
+    // Set update rate of status frames
+    m_canCoder.getAbsolutePosition().setUpdateFrequency(updateRate);
+    m_canCoder.getPosition().setUpdateFrequency(updateRate);
+    m_canCoder.getVelocity().setUpdateFrequency(updateRate);
 
     // Register device with manager
     PurpleManager.add(this);
+
+    // Start sensor input thread
+    m_inputThread.setName(m_id.name);
+    if (!Logger.hasReplaySource()) m_inputThread.startPeriodic(updateRate.asPeriod().in(Units.Seconds));
   }
 
    /**
@@ -76,8 +98,8 @@ public class CANCoder extends LoggableHardware {
      * Note: this signal is not affected by calls to SetPosition().
      * @return The position of the sensor.
      */
-  private double getAbsolutePosition() {
-    return m_canCoder.getAbsolutePosition().getValue() * m_absolutePositionCoefficient;
+  private Angle getAbsolutePosition() {
+    return m_canCoder.getAbsolutePosition().getValue();
   }
 
   /**
@@ -85,8 +107,8 @@ public class CANCoder extends LoggableHardware {
    * The units are determined by the internal coefficient, default is rotations.
    * @return The position of the sensor.
    */
-  private double getRelativePosition() {
-    return m_canCoder.getPosition().getValue() * m_relativePositionCoefficient;
+  private Angle getRelativePosition() {
+    return m_canCoder.getPosition().getValue();
   }
 
   /**
@@ -94,8 +116,8 @@ public class CANCoder extends LoggableHardware {
    * The units are determined by the internal coefficient, default is rotations per second.
    * @return The velocity of the sensor.
    */
-  private double getVelocity() {
-    return m_canCoder.getVelocity().getValue() * m_velocityCoefficient;
+  private AngularVelocity getVelocity() {
+    return m_canCoder.getVelocity().getValue();
   }
 
   /**
@@ -104,9 +126,11 @@ public class CANCoder extends LoggableHardware {
    * @return The Velocity of the sensor.
    */
   private void updateInputs() {
-    m_inputs.absolutePosition = getAbsolutePosition();
-    m_inputs.relativePosition = getRelativePosition();
-    m_inputs.velocity = getVelocity();
+    synchronized (m_inputs) {
+      m_inputs.absolutePosition.mut_replace(getAbsolutePosition());
+      m_inputs.relativePosition.mut_replace(getRelativePosition());
+      m_inputs.velocity.mut_replace(getVelocity());
+    }
   }
 
   /**
@@ -114,8 +138,7 @@ public class CANCoder extends LoggableHardware {
    */
   @Override
   protected void periodic() {
-    updateInputs();
-    Logger.processInputs(m_id.name, m_inputs);
+    synchronized (m_inputs) { Logger.processInputs(m_id.name, m_inputs); }
   }
 
   /**
@@ -123,8 +146,8 @@ public class CANCoder extends LoggableHardware {
    * @return Latest sensor data
    */
   @Override
-  public CANCoderInputsAutoLogged getInputs() {
-    return m_inputs;
+  public CANcoderInputsAutoLogged getInputs() {
+    synchronized (m_inputs) { return m_inputs; }
   }
 
   /**
@@ -136,37 +159,13 @@ public class CANCoder extends LoggableHardware {
   }
 
   /**
-   * Sets the Absolute Position coefficent to allow control of units.
-   * @param absolutePositionCoefficient Scalar to multiply the absolute position by when it is returned. Defaults to 1.0.
-   */
-  public void setAbsolutePositionCoefficient(double absolutePositionCoefficient) {
-    m_absolutePositionCoefficient = absolutePositionCoefficient;
-  }
-
-  /**
-   * Sets the Relative Position coefficent to allow control of units.
-   * @param relativePositionCoefficient Scalar to multiply the relative position by when it is returned. Defaults to 1.0.
-   */
-  public void setRelativePositionCoefficient(double relativePositionCoefficient) {
-    m_relativePositionCoefficient = relativePositionCoefficient;
-  }
-
-  /**
-   * Sets the Velocity coefficent to allow control of units.
-   * @param velocityCoefficient Scalar to multiply the absolute Velocity by when it is returned. Defaults to 1.0.
-   */
-  public void setVelocityCoefficient(double velocityCoefficient) {
-    m_velocityCoefficient = velocityCoefficient;
-  }
-
-  /**
    * Sets the position of the sensor to specified value
    * The units are determined by the coefficient and unit-string configuration params, default is rotations.
    * @param position Position to reset to
    * @return StatusCode generated by function. 0 indicates no error.
    */
   public StatusCode resetPosition(double position) {
-    return m_canCoder.setPosition(position / m_relativePositionCoefficient);
+    return m_canCoder.setPosition(position);
   }
 
  /**
@@ -188,15 +187,25 @@ public class CANCoder extends LoggableHardware {
   }
 
   /**
-   * Configures direction of the sensor to determine positive facing the LED side of the CANcoder.
-   * @param direction The new sensor direction
-   * @return StatusCode generated by function. 0 indicates no error.
+   * Gets the configurator to use with this device's configs
+   *
+   * @return Configurator for this object
    */
-  public StatusCode configSensorDirection(SensorDirectionValue direction) {
-    CANcoderConfiguration config = new CANcoderConfiguration();
-    config.MagnetSensor.SensorDirection = direction;
+  public CANcoderConfigurator getConfigurator() {
+    return m_canCoder.getConfigurator();
+  }
 
-    return m_canCoder.getConfigurator().apply(config);
+  /**
+   * Get the simulation state for this device.
+   * <p>
+   * This function reuses an allocated simulation state
+   * object, so it is safe to call this function multiple
+   * times in a robot loop.
+   *
+   * @return Simulation state
+   */
+  public CANcoderSimState getSimState() {
+    return m_canCoder.getSimState();
   }
 
 	/**
@@ -204,18 +213,18 @@ public class CANCoder extends LoggableHardware {
 	 *
 	 * @param statusFrame
 	 *            Frame whose period is to be changed.
-	 * @param frequencyHz
-	 *            Frequency in Hz for the given frame.
+	 * @param frequency
+	 *            Frequency for the given frame.
 	 * @return Status Code generated by function. 0 indicates no error.
 	 */
-  public StatusCode setStatusFramePeriod(CANCoderFrame statusFrame, int frequencyHz) {
+  public StatusCode setStatusFramePeriod(CANcoderFrame statusFrame, Frequency frequency) {
     switch (statusFrame) {
       case ABSOLUTE_POSITION:
-        return m_canCoder.getAbsolutePosition().setUpdateFrequency(frequencyHz);
+        return m_canCoder.getAbsolutePosition().setUpdateFrequency(frequency);
       case RELATIVE_POSITION:
-        return m_canCoder.getPosition().setUpdateFrequency(frequencyHz);
+        return m_canCoder.getPosition().setUpdateFrequency(null);
       case VELOCITY:
-        return m_canCoder.getVelocity().setUpdateFrequency(frequencyHz);
+        return m_canCoder.getVelocity().setUpdateFrequency(null);
       default:
         return StatusCode.OK;
     }

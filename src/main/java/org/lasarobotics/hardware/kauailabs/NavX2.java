@@ -4,29 +4,37 @@
 
 package org.lasarobotics.hardware.kauailabs;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.concurrent.ThreadLocalRandom;
+
+import org.lasarobotics.drive.swerve.AdvancedSwerveKinematics.ControlCentricity;
+import org.lasarobotics.hardware.IMU;
 import org.lasarobotics.hardware.LoggableHardware;
 import org.lasarobotics.hardware.PurpleManager;
-import org.lasarobotics.utils.GlobalConstants;
 import org.littletonrobotics.junction.AutoLog;
 import org.littletonrobotics.junction.Logger;
 
-import com.kauailabs.navx.frc.AHRS;
+import com.studica.frc.AHRS;
+import com.studica.frc.AHRS.NavXComType;
+import com.studica.frc.AHRS.NavXUpdateRate;
 
 import edu.wpi.first.hal.SimDouble;
-import edu.wpi.first.hal.simulation.SimDeviceDataJNI;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.units.Angle;
-import edu.wpi.first.units.Distance;
-import edu.wpi.first.units.Measure;
-import edu.wpi.first.units.MutableMeasure;
 import edu.wpi.first.units.Units;
-import edu.wpi.first.units.Velocity;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.LinearVelocity;
+import edu.wpi.first.units.measure.MutAngle;
+import edu.wpi.first.units.measure.MutAngularVelocity;
+import edu.wpi.first.units.measure.MutLinearAcceleration;
+import edu.wpi.first.units.measure.MutLinearVelocity;
 import edu.wpi.first.wpilibj.Notifier;
-import edu.wpi.first.wpilibj.SPI;
+import edu.wpi.first.wpilibj.simulation.SimDeviceSim;
 
 /** NavX2 */
-public class NavX2 extends LoggableHardware {
+public class NavX2 extends LoggableHardware implements IMU {
   /** NavX2 ID */
   public static class ID {
     public final String name;
@@ -46,30 +54,36 @@ public class NavX2 extends LoggableHardware {
   @AutoLog
   public static class NavX2Inputs {
     public boolean isConnected = false;
-    public MutableMeasure<Angle> rollAngle = Units.Radians.zero().mutableCopy();
-    public MutableMeasure<Angle> pitchAngle = Units.Radians.zero().mutableCopy();
-    public MutableMeasure<Angle> yawAngle = Units.Radians.zero().mutableCopy();
-    public MutableMeasure<Velocity<Velocity<Distance>>> xAcceleration = Units.MetersPerSecondPerSecond.zero().mutableCopy();
-    public MutableMeasure<Velocity<Velocity<Distance>>> yAcceleration = Units.MetersPerSecondPerSecond.zero().mutableCopy();
-    public MutableMeasure<Velocity<Velocity<Distance>>> zAcceleration = Units.MetersPerSecondPerSecond.zero().mutableCopy();
-    public MutableMeasure<Velocity<Distance>> xVelocity = Units.MetersPerSecond.zero().mutableCopy();
-    public MutableMeasure<Velocity<Distance>> yVelocity = Units.MetersPerSecond.zero().mutableCopy();
-    public MutableMeasure<Velocity<Distance>> zVelocity = Units.MetersPerSecond.zero().mutableCopy();
-    public MutableMeasure<Velocity<Angle>> yawRate = Units.RadiansPerSecond.zero().mutableCopy();
-    public Rotation2d rotation2d = GlobalConstants.ROTATION_ZERO;
+    public MutAngle rollAngle = Units.Radians.zero().mutableCopy();
+    public MutAngle pitchAngle = Units.Radians.zero().mutableCopy();
+    public MutAngle yawAngle = Units.Radians.zero().mutableCopy();
+    public MutLinearAcceleration xAcceleration = Units.MetersPerSecondPerSecond.zero().mutableCopy();
+    public MutLinearAcceleration yAcceleration = Units.MetersPerSecondPerSecond.zero().mutableCopy();
+    public MutLinearAcceleration zAcceleration = Units.MetersPerSecondPerSecond.zero().mutableCopy();
+    public MutLinearVelocity xVelocity = Units.MetersPerSecond.zero().mutableCopy();
+    public MutLinearVelocity yVelocity = Units.MetersPerSecond.zero().mutableCopy();
+    public MutLinearVelocity zVelocity = Units.MetersPerSecond.zero().mutableCopy();
+    public MutAngularVelocity yawRate = Units.RadiansPerSecond.zero().mutableCopy();
+    public Rotation2d rotation2d = Rotation2d.kZero;
   }
 
-  private static final int UPDATE_RATE = 200;
+  private static final AngularVelocity NAVX2_YAW_DRIFT_RATE = Units.DegreesPerSecond.of(0.5 / 60);
 
   private AHRS m_navx;
-  private SimDouble m_simNavXYaw;
   private Notifier m_inputThread;
+  private ChassisSpeeds m_previousSpeeds;
+  private Instant m_lastUpdateTime;
+
+  private final SimDouble m_simPitch;
+  private final SimDouble m_simRoll;
+  private final SimDouble m_simYaw;
+  private final SimDouble m_simAccelX;
+  private final SimDouble m_simAccelY;
+  private final SimDouble m_simAccelZ;
 
   private String m_name;
   private NavX2InputsAutoLogged m_inputs;
 
-  private boolean m_swapXYAxes;
-  private boolean m_invertXYAxes;
   private boolean m_fieldCentricVelocities;
 
   /**
@@ -78,135 +92,59 @@ public class NavX2 extends LoggableHardware {
    */
   public NavX2(ID id) {
     this.m_name = id.name;
-    this.m_navx = new AHRS(SPI.Port.kMXP, (byte)UPDATE_RATE);
+    this.m_navx = new AHRS(NavXComType.kMXP_SPI, NavXUpdateRate.k200Hz);
     this.m_inputs = new NavX2InputsAutoLogged();
     this.m_inputThread = new Notifier(this::updateInputs);
-    this.m_swapXYAxes = false;
-    this.m_invertXYAxes = false;
     this.m_fieldCentricVelocities = false;
-    this.m_simNavXYaw = new SimDouble(SimDeviceDataJNI.getSimValueHandle(SimDeviceDataJNI.getSimDeviceHandle("navX-Sensor[0]"), "Yaw"));
+
+    SimDeviceSim simNavX2 = new SimDeviceSim("navX-Sensor", m_navx.getPort());
+    this.m_simPitch = simNavX2.getDouble("Pitch");
+    this.m_simRoll = simNavX2.getDouble("Roll");
+    this.m_simYaw = simNavX2.getDouble("Yaw");
+    this.m_simAccelX = simNavX2.getDouble("LinearWorldAccelX");
+    this.m_simAccelY = simNavX2.getDouble("LinearWorldAccelY");
+    this.m_simAccelZ = simNavX2.getDouble("LinearWorldAccelZ");
+    this.m_previousSpeeds = new ChassisSpeeds();
+    this.m_lastUpdateTime = Instant.now();
+
     System.out.println();
 
     // Update inputs on init
     updateInputs();
 
     // Start input thread
-    m_inputThread.startPeriodic(1.0 / UPDATE_RATE);
+    m_inputThread.startPeriodic(1.0 / NavXUpdateRate.k200Hz.getValue());
 
     // Register device with manager
     PurpleManager.add(this);
   }
 
   /**
-   * Get roll angle
-   * @return Roll angle measurement
+   * Get NavX port number
+   * @return Port number
    */
-  private Measure<Angle> getRoll() {
-    var value = Units.Degrees.of(!m_swapXYAxes ? m_navx.getRoll() : m_navx.getPitch());
-    return m_invertXYAxes ? value.negate() : value;
-  }
-
-  /**
-   * Get pitch angle
-   * @return Pitch angle measurement
-   */
-  private Measure<Angle> getPitch() {
-    var value = Units.Degrees.of(!m_swapXYAxes ? m_navx.getPitch() : m_navx.getRoll());
-    return m_invertXYAxes ? value.negate() : value;
-  }
-
-  /**
-   * Get yaw angle
-   * @return Yaw angle measurement
-   */
-  private Measure<Angle> getYaw() {
-    return Units.Degrees.of(m_navx.getAngle());
-  }
-
-  /**
-   * Get yaw rate
-   * @return Yaw angle rate
-   */
-  private Measure<Velocity<Angle>> getYawRate() {
-    return Units.DegreesPerSecond.of(m_navx.getRate());
-  }
-
-  /**
-   * Get X acceleration
-   * @return X axis acceleration
-   */
-  private Measure<Velocity<Velocity<Distance>>> getAccelerationX() {
-    var value = Units.MetersPerSecondPerSecond.of(!m_swapXYAxes ? m_navx.getWorldLinearAccelX() : m_navx.getWorldLinearAccelX());
-    return m_invertXYAxes ? value.negate() : value;
-  }
-
-  /**
-   * Get Y acceleration
-   * @return Y axis acceleration
-   */
-  private Measure<Velocity<Velocity<Distance>>> getAccelerationY() {
-    var value = Units.MetersPerSecondPerSecond.of(!m_swapXYAxes ? m_navx.getWorldLinearAccelY() : m_navx.getWorldLinearAccelY());
-    return m_invertXYAxes ? value.negate() : value;
-  }
-
-  /**
-   * Get Z acceleration
-   * @return Z axis acceleration
-   */
-  private Measure<Velocity<Velocity<Distance>>> getAccelerationZ() {
-    return Units.MetersPerSecondPerSecond.of(m_navx.getWorldLinearAccelZ());
-  }
-
-  /**
-   * Get X velocity
-   * @return X axis velocity
-   */
-  private Measure<Velocity<Distance>> getVelocityX() {
-    var value = Units.MetersPerSecond.of(!m_swapXYAxes ? m_navx.getVelocityX() : m_navx.getVelocityY());
-    return m_invertXYAxes ? value.negate() : value;
-  }
-
-  /**
-   * Get Y velocity
-   * @return Y axis velocity
-   */
-  private Measure<Velocity<Distance>> getVelocityY() {
-    var value = Units.MetersPerSecond.of(!m_swapXYAxes ? m_navx.getVelocityY() : m_navx.getVelocityX());
-    return m_invertXYAxes ? value.negate() : value;
-  }
-
-  /**
-   * Get Z velocity
-   * @return Z axis velocity
-   */
-  private Measure<Velocity<Distance>> getVelocityZ() {
-    return Units.MetersPerSecond.of(m_navx.getVelocityZ());
+  int getPort() {
+    return m_navx.getPort();
   }
 
   /**
    * Update NavX input readings
    */
   private void updateInputs() {
-    var chassisSpeeds = m_fieldCentricVelocities
-      ? new ChassisSpeeds(getVelocityX(), getVelocityY(), getYawRate())
-      : ChassisSpeeds.fromFieldRelativeSpeeds(
-          getVelocityX(),
-          getVelocityY(),
-          getYawRate(),
-          Rotation2d.fromRadians(getYaw().in(Units.Radians))
-        );
-    m_inputs.isConnected = m_navx.isConnected();
-    m_inputs.rollAngle.mut_replace(getRoll());
-    m_inputs.pitchAngle.mut_replace(getPitch());
-    m_inputs.yawAngle.mut_replace(getYaw());
-    m_inputs.xAcceleration.mut_replace(getAccelerationX());
-    m_inputs.yAcceleration.mut_replace(getAccelerationY());
-    m_inputs.zAcceleration.mut_replace(getAccelerationZ());
-    m_inputs.xVelocity.mut_replace(Units.MetersPerSecond.of(chassisSpeeds.vxMetersPerSecond));
-    m_inputs.yVelocity.mut_replace(Units.MetersPerSecond.of(chassisSpeeds.vyMetersPerSecond));
-    m_inputs.zVelocity.mut_replace(getVelocityZ());
-    m_inputs.yawRate.mut_replace(Units.RadiansPerSecond.of(chassisSpeeds.omegaRadiansPerSecond));
-    m_inputs.rotation2d = Rotation2d.fromRadians(m_inputs.yawAngle.negate().in(Units.Radians));
+    synchronized (m_inputs) {
+      m_inputs.isConnected = m_navx.isConnected();
+      m_inputs.rollAngle.mut_replace(m_navx.getRoll(), Units.Degrees);
+      m_inputs.pitchAngle.mut_replace(m_navx.getPitch(), Units.Degrees);
+      m_inputs.yawAngle.mut_replace(m_navx.getAngle(), Units.Degrees);
+      m_inputs.xAcceleration.mut_replace(m_navx.getWorldLinearAccelX(), Units.Gs);
+      m_inputs.yAcceleration.mut_replace(m_navx.getWorldLinearAccelY(), Units.Gs);
+      m_inputs.zAcceleration.mut_replace(m_navx.getWorldLinearAccelZ(), Units.Gs);
+      //m_inputs.xVelocity.mut_replace((m_fieldCentricVelocities) ? m_navx.getVelocityX() : m_navx.getRobotCentricVelocityX(), Units.MetersPerSecond);
+      //m_inputs.yVelocity.mut_replace((m_fieldCentricVelocities) ? m_navx.getVelocityY() : m_navx.getRobotCentricVelocityY(), Units.MetersPerSecond);
+      //m_inputs.zVelocity.mut_replace((m_fieldCentricVelocities) ? m_navx.getVelocityZ() : m_navx.getRobotCentricVelocityZ(), Units.MetersPerSecond);
+      m_inputs.yawRate.mut_replace(m_navx.getRate(), Units.DegreesPerSecond);
+      m_inputs.rotation2d = Rotation2d.fromRadians(m_inputs.yawAngle.times(-1).in(Units.Radians));
+    }
   }
 
   /**
@@ -214,7 +152,7 @@ public class NavX2 extends LoggableHardware {
    */
   @Override
   protected void periodic() {
-    Logger.processInputs(m_name, m_inputs);
+    synchronized (m_inputs) { Logger.processInputs(m_name, m_inputs); }
   }
 
   /**
@@ -224,6 +162,26 @@ public class NavX2 extends LoggableHardware {
   @Override
   public NavX2InputsAutoLogged getInputs() {
     synchronized (m_inputs) { return m_inputs; }
+  }
+
+  /**
+   * Call this to configure swapable axes for X/Y or to invert an axis. Currently, this will also swap/invert
+   * the robot centic values.
+   * @param swapAxes Will swap X/Y Axis
+   * @param invertX Will invert X
+   * @param invertY Will invert Y
+   * @param invertZ Will invert Z
+   */
+  public void configureVelocity(boolean swapAxes, boolean invertX, boolean invertY, boolean invertZ) {
+    m_navx.configureVelocity(swapAxes, invertX, invertY, invertZ);
+  }
+
+  /**
+   * Zeros the displacement integration variables.   Invoke this at the moment when
+   * integration begins.
+   */
+  public void resetDisplacement() {
+    m_navx.resetDisplacement();
   }
 
   /**
@@ -243,65 +201,73 @@ public class NavX2 extends LoggableHardware {
     return m_navx.isCalibrating();
   }
 
-  /**
-   * Whether or not to swap X and Y axes on NavX2 when returning values.
-   * This swaps X/Y velocities, and roll/pitch angle.
-   * <p>
-   * Defaults to false
-   * @param swap True to swap X and Y axes
-   */
-  public void swapXYAxes(boolean swap) {
-    m_swapXYAxes = swap;
+  @Override
+  public boolean isConnected() {
+    synchronized (m_inputs) { return m_inputs.isConnected; }
   }
 
-  /**
-   * Whether or not to invert X and Y axes on NavX2 when returning values.
-   * This inverts the X/Y velocities, and roll/pitch angle.
-   * <p>
-   * Defaults to false
-   * @param invert True to invert X and Y axes
-   */
-  public void invertXYAxes(boolean invert) {
-    m_invertXYAxes = invert;
-  }
-
-  /**
-   * Whether or not to make velocity readings field centric.
-   * <p>
-   * Defaults to false, so velocity readings are robot centric.
-   * Acceleration readings remain field centric regardless of this setting.
-   * @param fieldCentric
-   */
-  public void fieldCentricVelocities(boolean fieldCentric) {
-    m_fieldCentricVelocities = fieldCentric;
-  }
-
-  /**
-   * Reset the Yaw gyro.
-   * <p>
-   * Resets the Gyro Z (Yaw) axis to a heading of zero. This can be used if
-   * there is significant drift in the gyro and it needs to be recalibrated
-   * after it has been running.
-   */
+  @Override
   public void reset() {
     m_navx.reset();
-    m_simNavXYaw.set(0.0);
   }
 
-  /**
-   * Set yaw angle for simulator
-   * @param angle Angle to set in degrees
-   */
-  public void setSimAngle(double angle) {
-    m_simNavXYaw.set(angle);
+  @Override
+  public Angle getRoll() {
+    synchronized (m_inputs) { return m_inputs.rollAngle; }
   }
 
-  /**
-   * Get yaw angle for simulator
-   * @return Simulated angle that was set
-   */
-  public double getSimAngle() {
-    return m_simNavXYaw.get();
+  @Override
+  public Angle getPitch() {
+    synchronized (m_inputs) { return m_inputs.pitchAngle; }
+  }
+
+  @Override
+  public Angle getYaw() {
+    synchronized (m_inputs) { return m_inputs.yawAngle; }
+  }
+
+  @Override
+  public AngularVelocity getYawRate() {
+    synchronized (m_inputs) { return m_inputs.yawRate; }
+  }
+
+  @Override
+  public Rotation2d getRotation2d() {
+    synchronized (m_inputs) { return m_inputs.rotation2d; }
+  }
+
+  @Override
+  public LinearVelocity getVelocityX() {
+    synchronized (m_inputs) { return m_inputs.xVelocity; }
+  }
+
+  @Override
+  public LinearVelocity getVelocityY() {
+    synchronized (m_inputs) { return m_inputs.yVelocity; }
+  }
+
+  @Override
+  public void updateSim(Rotation2d orientation, ChassisSpeeds desiredSpeeds, ControlCentricity controlCentricity) {
+    var currentTime = Instant.now();
+    double randomNoise = ThreadLocalRandom.current().nextDouble(0.9, 1.0);
+    double dt = Duration.between(currentTime, m_lastUpdateTime).toMillis() / 1000.0;
+
+    if (controlCentricity.equals(ControlCentricity.FIELD_CENTRIC))
+      desiredSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(desiredSpeeds, orientation);
+
+    m_inputs.xVelocity.mut_replace(desiredSpeeds.vxMetersPerSecond, Units.MetersPerSecond);
+    m_inputs.yVelocity.mut_replace(desiredSpeeds.vyMetersPerSecond, Units.MetersPerSecond);
+
+    int yawDriftDirection = ThreadLocalRandom.current().nextDouble(1.0) < 0.5 ? -1 : +1;
+    double angle = m_simYaw.get() + Math.toDegrees(desiredSpeeds.omegaRadiansPerSecond * randomNoise) * dt
+                   + (NAVX2_YAW_DRIFT_RATE.in(Units.DegreesPerSecond) * dt * yawDriftDirection);
+    m_simYaw.set(angle);
+
+    m_simAccelX.set((desiredSpeeds.vxMetersPerSecond - m_previousSpeeds.vxMetersPerSecond) / dt);
+    m_simAccelY.set((desiredSpeeds.vyMetersPerSecond - m_previousSpeeds.vyMetersPerSecond) / dt);
+
+    m_previousSpeeds = desiredSpeeds;
+    m_lastUpdateTime = currentTime;
   }
 
   /**
