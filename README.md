@@ -8,11 +8,8 @@ Custom library for 418 Purple Haze
 ## Features
 * Hardware wrappers with built-in AdvantageKit logging
   * REV Robotics
-    * Spark Max with SmoothMotion<sup>TM</sup>
-    * Spark Flex with SmoothMotion<sup>TM</sup>
     * Through bore encoder connected to Spark Max/Flex in absolute mode ONLY!
     * Spark Flex and NEO Vortex MUST be paired together!
-    * 3-way communication to ensure parameters are set
     * Improved velocity PID performance
     * More accurate velocity readings
   * CTRE
@@ -32,6 +29,10 @@ Custom library for 418 Purple Haze
     * Canandgyro
   * ThriftyBot
     * ThriftyNova
+  * PhotonVision
+    * Includes camera simulation
+    * AprilTag 3D pose estimation cameras
+    * AI object detection cameras (coming soon)
   * Generic
     * Analog sensor
     * Compressor
@@ -41,17 +42,19 @@ Custom library for 418 Purple Haze
 * Swerve module support with both REV and CTRE motor controllers
   * Supported modules:
     * REV MAXSwerve (REV Spark only)
-    * SDS MK4/MK4i/MK4c
+    * SDS MK4/MK4i/MK4c/MK4n
     * WCP Swerve X/Xi/X2
     * TTB Swerve
     * Support for custom or other modules can be added easily!
   * Module must be calibrated using calibration tool provided by module manufacturer
   * Mixing motor controller vendors within a module is NOT supported (ex. TalonFX for drive, Spark Max for rotation)
-  * More info [here](src/main/java/org/lasarobotics/drive/swerve/README.md)
-* Swerve drive parent class
-  * Robot rotation PID
   * Automatic module "locking"
   * Traction control
+  * More info [here](src/main/java/org/lasarobotics/drive/swerve/README.md)
+* Swerve drive parent class
+  * High frequency, threaded odometry
+  * Easy PhotonVision integration
+  * Robot rotation PID
   * Swerve second order kinematics correction
   * More info [here](src/main/java/org/lasarobotics/drive/swerve/README.md)
 * Health monitoring and automatic recovery
@@ -87,8 +90,9 @@ dependencies {
 ```
 
 ### Offline installation
-When PurpleLib is built, files are placed in the `build/libs` directory.
-Create a link to this directory, or copy it to your robot project.
+When PurpleLib is built from source, files are placed in the `build/libs` directory.
+Create a link to this directory and copy the link to the root of your project,
+or copy the directory itself to the root of your robot project.
 
 Add the following to your project `build.gradle`
 ```
