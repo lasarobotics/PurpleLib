@@ -4,6 +4,7 @@
 
 package org.lasarobotics.fsm;
 
+/** System state */
 public interface SystemState {
   /**
    * Initial action of state. Called once when state is initially scheduled

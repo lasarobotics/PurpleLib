@@ -7,6 +7,7 @@ package org.lasarobotics.drive.swerve;
 import edu.wpi.first.units.measure.Dimensionless;
 import edu.wpi.first.units.measure.Distance;
 
+/** Swerve drive wheel */
 public class DriveWheel {
   public final Distance diameter;
   public final Dimensionless staticCoF;

@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 
+/** State machine subsystem */
 public abstract class StateMachine extends Monitorable implements Subsystem, Sendable {
   private SystemState m_currentState;
 

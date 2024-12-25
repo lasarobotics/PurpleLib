@@ -52,6 +52,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 
+/** Swerve drive template */
 public class SwerveDrive extends SubsystemBase implements AutoCloseable {
 
   /**
@@ -90,7 +91,7 @@ public class SwerveDrive extends SubsystemBase implements AutoCloseable {
 
     // Set alliance if available
     setAlliance(alliance.get());
-  }).andThen(Commands.waitSeconds(5)).ignoringDisable(true).repeatedly();
+  }).andThen(Commands.waitSeconds(2)).ignoringDisable(true).repeatedly();
 
   public final Command ANTI_TIP_COMMAND = new FunctionalCommand(
     () -> {},
