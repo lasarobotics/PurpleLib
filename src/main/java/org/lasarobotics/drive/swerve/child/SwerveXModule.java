@@ -90,7 +90,7 @@ public abstract class SwerveXModule {
    */
   public static REVSwerveModule create(REVSwerveModule.Hardware swerveHardware,
                                        SwerveModule.Location location,
-                                       SwerveXModule.GearRatio gearRatio, DriveWheel driveWheel,
+                                       GearRatio gearRatio, DriveWheel driveWheel,
                                        PIDConstants drivePID, FFConstants driveFF,
                                        PIDConstants rotatePID, FFConstants rotateFF,
                                        Dimensionless slipRatio, Mass mass,
@@ -131,7 +131,7 @@ public abstract class SwerveXModule {
    */
   public static CTRESwerveModule create(CTRESwerveModule.Hardware swerveHardware,
                                         SwerveModule.Location location,
-                                        SwerveXModule.GearRatio gearRatio, DriveWheel driveWheel,
+                                        GearRatio gearRatio, DriveWheel driveWheel,
                                         PIDConstants drivePID, FFConstants driveFF,
                                         PIDConstants rotatePID, FFConstants rotateFF,
                                         Dimensionless slipRatio, Mass mass,

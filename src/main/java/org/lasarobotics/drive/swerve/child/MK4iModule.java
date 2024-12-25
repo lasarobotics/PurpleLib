@@ -80,7 +80,7 @@ public abstract class MK4iModule {
    */
   public static REVSwerveModule create(REVSwerveModule.Hardware swerveHardware,
                                        SwerveModule.Location location,
-                                       MK4Module.GearRatio gearRatio, DriveWheel driveWheel,
+                                       MK4iModule.GearRatio gearRatio, DriveWheel driveWheel,
                                        PIDConstants drivePID, FFConstants driveFF,
                                        PIDConstants rotatePID, FFConstants rotateFF,
                                        Dimensionless slipRatio, Mass mass,
@@ -121,7 +121,7 @@ public abstract class MK4iModule {
    */
   public static CTRESwerveModule create(CTRESwerveModule.Hardware swerveHardware,
                                         SwerveModule.Location location,
-                                        MK4Module.GearRatio gearRatio, DriveWheel driveWheel,
+                                        MK4iModule.GearRatio gearRatio, DriveWheel driveWheel,
                                         PIDConstants drivePID, FFConstants driveFF,
                                         PIDConstants rotatePID, FFConstants rotateFF,
                                         Dimensionless slipRatio, Mass mass,

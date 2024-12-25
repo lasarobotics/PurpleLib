@@ -85,7 +85,7 @@ public abstract class TTBModule {
    */
   public static REVSwerveModule create(REVSwerveModule.Hardware swerveHardware,
                                        SwerveModule.MountOrientation orientation, SwerveModule.Location location,
-                                       MK4Module.GearRatio gearRatio, DriveWheel driveWheel,
+                                       GearRatio gearRatio, DriveWheel driveWheel,
                                        PIDConstants drivePID, FFConstants driveFF,
                                        PIDConstants rotatePID, FFConstants rotateFF,
                                        Dimensionless slipRatio, Mass mass,
@@ -127,7 +127,7 @@ public abstract class TTBModule {
    */
   public static CTRESwerveModule create(CTRESwerveModule.Hardware swerveHardware,
                                         SwerveModule.MountOrientation orientation, SwerveModule.Location location,
-                                        MK4Module.GearRatio gearRatio, DriveWheel driveWheel,
+                                        GearRatio gearRatio, DriveWheel driveWheel,
                                         PIDConstants drivePID, FFConstants driveFF,
                                         PIDConstants rotatePID, FFConstants rotateFF,
                                         Dimensionless slipRatio, Mass mass,

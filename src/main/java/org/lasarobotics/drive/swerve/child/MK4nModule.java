@@ -20,23 +20,21 @@ import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.Mass;
 import edu.wpi.first.units.measure.Time;
 
-/** Helper class to create an instance of MK4Module */
-public abstract class MK4Module {
+/** Helper class to create an instance of MK4nModule */
+public abstract class MK4nModule {
 
   /**
-   * MK4 gear ratios
+   * MK4n gear ratios
    */
   public enum GearRatio implements SwerveModule.GearRatio {
-    /** 8.14:1 */
-    L1(8.14),
-    /** 6.75:1 */
-    L2(6.75),
-    /** 6.12:1 */
-    L3(6.12),
-    /** 5.14:1 */
-    L4(5.14);
+    /** 7.13:1 */
+    L1(7.13),
+    /** 5.90:1 */
+    L2(5.90),
+    /** 5.36:1 */
+    L3(5.36);
 
-    private static final double ROTATE_GEAR_RATIO = 12.8;
+    private static final double ROTATE_GEAR_RATIO = 18.75;
     private final double driveGearRatio;
 
     private GearRatio(double driveGearRatio) {
@@ -59,10 +57,10 @@ public abstract class MK4Module {
   /**
    * Do not allow direct instantiation
    */
-  private MK4Module() {}
+  private MK4nModule() {}
 
   /**
-   * Create an instance of a SDS MK4 module powered by REV Spark motor controllers
+   * Create an instance of a SDS MK4n module powered by REV Spark motor controllers
    * @param swerveHardware Hardware devices required by swerve module
    * @param location Location of module
    * @param gearRatio Gear ratio for module
@@ -87,11 +85,11 @@ public abstract class MK4Module {
                                        Distance wheelbase, Distance trackWidth,
                                        Time autoLockTime, Current driveCurrentLimit) {
     if (swerveHardware.rotateMotor.getKind().equals(Spark.MotorKind.NEO_550))
-      throw new IllegalArgumentException("MK4 rotate motor cannot be a NEO 550!");
+      throw new IllegalArgumentException("MK4n rotate motor cannot be a NEO 550!");
 
     return new REVSwerveModule(swerveHardware,
                                location,
-                               SwerveModule.MountOrientation.STANDARD,
+                               SwerveModule.MountOrientation.INVERTED,
                                SwerveModule.MountOrientation.STANDARD,
                                gearRatio,
                                driveWheel, ZERO_OFFSET,
@@ -103,7 +101,7 @@ public abstract class MK4Module {
   }
 
   /**
-   * Create an instance of a SDS MK4 module powered by CTRE TalonFX motor controllers
+   * Create an instance of a SDS MK4i module powered by CTRE TalonFX motor controllers
    * @param swerveHardware Hardware devices required by swerve module
    * @param location Location of module
    * @param gearRatio Gear ratio for module
@@ -129,7 +127,7 @@ public abstract class MK4Module {
                                         Time autoLockTime, Current driveCurrentLimit) {
     return new CTRESwerveModule(swerveHardware,
                                 location,
-                                SwerveModule.MountOrientation.STANDARD,
+                                SwerveModule.MountOrientation.INVERTED,
                                 SwerveModule.MountOrientation.STANDARD,
                                 gearRatio,
                                 driveWheel, ZERO_OFFSET,
