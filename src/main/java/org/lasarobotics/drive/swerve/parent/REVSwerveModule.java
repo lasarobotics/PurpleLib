@@ -121,7 +121,7 @@ public class REVSwerveModule extends SwerveModule implements Sendable {
    * @param wheelbase Robot wheelbase
    * @param trackWidth Robot track width
    * @param autoLockTime Time before automatically rotating module to locked position (10 seconds max)
-   * @param driveCurrentLimit Desired current limit for the drive motor
+   * @param driveCurrentLimit Desired stator current limit for the drive motor
    */
   public REVSwerveModule(Hardware swerveHardware,
                          SwerveModule.Location location,

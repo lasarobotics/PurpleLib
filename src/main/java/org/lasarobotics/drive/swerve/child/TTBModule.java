@@ -81,7 +81,7 @@ public abstract class TTBModule {
    * @param wheelbase Robot wheelbase
    * @param trackWidth Robot track width
    * @param autoLockTime Time before automatically rotating module to locked position (10 seconds max)
-   * @param driveCurrentLimit Desired current limit for the drive motor
+   * @param driveCurrentLimit Desired stator current limit for the drive motor
    */
   public static REVSwerveModule create(REVSwerveModule.Hardware swerveHardware,
                                        SwerveModule.MountOrientation orientation, SwerveModule.Location location,
@@ -123,7 +123,7 @@ public abstract class TTBModule {
    * @param wheelbase Robot wheelbase
    * @param trackWidth Robot track width
    * @param autoLockTime Time before automatically rotating module to locked position (10 seconds max)
-   * @param driveCurrentLimit Desired current limit for the drive motor
+   * @param driveCurrentLimit Desired stator current limit for the drive motor
    */
   public static CTRESwerveModule create(CTRESwerveModule.Hardware swerveHardware,
                                         SwerveModule.MountOrientation orientation, SwerveModule.Location location,
