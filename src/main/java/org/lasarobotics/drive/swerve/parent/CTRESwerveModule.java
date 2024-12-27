@@ -434,7 +434,7 @@ public class CTRESwerveModule extends SwerveModule implements Sendable {
     m_desiredState = getDesiredState(state, Rotation2d.fromRadians(m_rotateMotor.getInputs().selectedSensorPosition.in(Units.Radians)));
 
     // Set rotate motor position
-    m_rotateMotor.setControl(new PositionVoltage(m_desiredState.angle.getRadians() / (Math.PI * 2)));
+    m_rotateMotor.setControl(new PositionVoltage(m_desiredState.angle.getMeasure()));
 
     // Set drive motor speed
     m_driveMotor.setControl(new VelocityVoltage(m_desiredState.speedMetersPerSecond));
