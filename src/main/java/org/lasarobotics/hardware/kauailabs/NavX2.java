@@ -31,6 +31,7 @@ import edu.wpi.first.units.measure.MutAngularVelocity;
 import edu.wpi.first.units.measure.MutLinearAcceleration;
 import edu.wpi.first.units.measure.MutLinearVelocity;
 import edu.wpi.first.wpilibj.Notifier;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.simulation.SimDeviceSim;
 
 /** NavX2 */
@@ -139,11 +140,13 @@ public class NavX2 extends LoggableHardware implements IMU {
       m_inputs.xAcceleration.mut_replace(m_navx.getWorldLinearAccelX(), Units.Gs);
       m_inputs.yAcceleration.mut_replace(m_navx.getWorldLinearAccelY(), Units.Gs);
       m_inputs.zAcceleration.mut_replace(m_navx.getWorldLinearAccelZ(), Units.Gs);
-      //m_inputs.xVelocity.mut_replace((m_fieldCentricVelocities) ? m_navx.getVelocityX() : m_navx.getRobotCentricVelocityX(), Units.MetersPerSecond);
-      //m_inputs.yVelocity.mut_replace((m_fieldCentricVelocities) ? m_navx.getVelocityY() : m_navx.getRobotCentricVelocityY(), Units.MetersPerSecond);
-      //m_inputs.zVelocity.mut_replace((m_fieldCentricVelocities) ? m_navx.getVelocityZ() : m_navx.getRobotCentricVelocityZ(), Units.MetersPerSecond);
       m_inputs.yawRate.mut_replace(m_navx.getRate(), Units.DegreesPerSecond);
       m_inputs.rotation2d = Rotation2d.fromRadians(m_inputs.yawAngle.times(-1).in(Units.Radians));
+
+      if (RobotBase.isSimulation()) return;
+      m_inputs.xVelocity.mut_replace((m_fieldCentricVelocities) ? m_navx.getVelocityX() : m_navx.getRobotCentricVelocityX(), Units.MetersPerSecond);
+      m_inputs.yVelocity.mut_replace((m_fieldCentricVelocities) ? m_navx.getVelocityY() : m_navx.getRobotCentricVelocityY(), Units.MetersPerSecond);
+      m_inputs.zVelocity.mut_replace((m_fieldCentricVelocities) ? m_navx.getVelocityZ() : m_navx.getRobotCentricVelocityZ(), Units.MetersPerSecond);
     }
   }
 
