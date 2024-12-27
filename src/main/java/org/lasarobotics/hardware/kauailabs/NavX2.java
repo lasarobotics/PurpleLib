@@ -35,6 +35,7 @@ import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.simulation.SimDeviceSim;
 
 /** NavX2 */
+@SuppressWarnings("unused")
 public class NavX2 extends LoggableHardware implements IMU {
   /** NavX2 ID */
   public static class ID {
