@@ -8,6 +8,7 @@ Custom library for 418 Purple Haze
 ## Features
 * Hardware wrappers with built-in AdvantageKit logging
   * REV Robotics
+    * Spark fault monitoring
     * Through bore encoder connected to Spark Max/Flex in absolute mode ONLY!
     * Spark Flex and NEO Vortex MUST be paired together!
     * Improved velocity PID performance
