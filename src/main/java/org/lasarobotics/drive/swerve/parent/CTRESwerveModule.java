@@ -108,6 +108,9 @@ public class CTRESwerveModule extends SwerveModule implements Sendable {
 
   private Instant m_autoLockTimer;
 
+  private PositionVoltage m_rotatePositionSetter;
+  private VelocityVoltage m_driveVelocitySetter;
+
   /**
    * Create an instance of a CTRE swerve module
    * @param swerveHardware Hardware devices required by swerve module
@@ -169,6 +172,8 @@ public class CTRESwerveModule extends SwerveModule implements Sendable {
     this.m_previousRotatePosition = m_zeroOffset.plus(m_location.getLockPosition());
     this.m_autoLockTimer = Instant.now();
     this.m_runningOdometer = 0.0;
+    this.m_rotatePositionSetter = new PositionVoltage(Units.Radians.zero());
+    this.m_driveVelocitySetter = new VelocityVoltage(Units.RotationsPerSecond.zero());
 
     Logger.recordOutput(m_driveMotor.getID().name + MAX_LINEAR_VELOCITY_LOG_ENTRY, DRIVE_MAX_LINEAR_SPEED);
 
@@ -434,10 +439,10 @@ public class CTRESwerveModule extends SwerveModule implements Sendable {
     m_desiredState = getDesiredState(state, Rotation2d.fromRadians(m_rotateMotor.getInputs().selectedSensorPosition.in(Units.Radians)));
 
     // Set rotate motor position
-    m_rotateMotor.setControl(new PositionVoltage(m_desiredState.angle.getMeasure()));
+    m_rotateMotor.setControl(m_rotatePositionSetter.withPosition(m_desiredState.angle.getMeasure()));
 
     // Set drive motor speed
-    m_driveMotor.setControl(new VelocityVoltage(m_desiredState.speedMetersPerSecond));
+    m_driveMotor.setControl(m_driveVelocitySetter.withVelocity(m_desiredState.speedMetersPerSecond));
 
     // Save rotate position
     m_previousRotatePosition = m_desiredState.angle;
