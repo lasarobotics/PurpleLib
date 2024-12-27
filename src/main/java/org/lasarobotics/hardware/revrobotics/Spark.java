@@ -138,6 +138,7 @@ public class Spark extends LoggableHardware {
   private static final String IDLE_MODE_LOG_ENTRY = "/IdleMode";
   private static final String INPUT_CURRENT_LOG_ENTRY = "/InputCurrent";
   private static final String OUTPUT_CURRENT_LOG_ENTRY = "/OutputCurrent";
+  private static final String HEALTH_STATUS_LOG_ENTRY = "/IsHealthy";
   private static final String TEMPERATURE_LOG_ENTRY = "/Temperature";
 
   private SparkBase m_spark;
@@ -376,6 +377,7 @@ public class Spark extends LoggableHardware {
 
     Logger.recordOutput(m_id.name + INPUT_CURRENT_LOG_ENTRY, getInputCurrent());
     Logger.recordOutput(m_id.name + OUTPUT_CURRENT_LOG_ENTRY, getOutputCurrent());
+    Logger.recordOutput(m_id.name + HEALTH_STATUS_LOG_ENTRY, isHealthy());
 
     if (getMotorType() == MotorType.kBrushed) return;
     Logger.recordOutput(m_id.name + TEMPERATURE_LOG_ENTRY, m_spark.getMotorTemperature());
