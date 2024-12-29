@@ -280,6 +280,6 @@ public class NavX2 extends LoggableHardware implements IMU {
   @Override
   public void close() {
     PurpleManager.remove(this);
-    m_navx = null;
+    m_navx.close();
   }
 }
