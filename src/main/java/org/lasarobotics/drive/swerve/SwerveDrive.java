@@ -76,7 +76,7 @@ public class SwerveDrive extends SubsystemBase implements AutoCloseable {
   private static final Matrix<N3, N1> ODOMETRY_STDDEV = VecBuilder.fill(0.1, 0.1, Math.toRadians(1.0));
   private static final TrapezoidProfile.Constraints AIM_PID_CONSTRAINT = new TrapezoidProfile.Constraints(2160.0, 4320.0);
   private static final Angle ROTATE_TOLERANCE = Units.Degrees.of(2.5);
-  public static final AngularVelocity AIM_VELOCITY_THRESHOLD = Units.DegreesPerSecond.of(20.0);
+  private static final AngularVelocity AIM_VELOCITY_THRESHOLD = Units.DegreesPerSecond.of(20.0);
 
   // Log
   private static final String POSE_LOG_ENTRY = "/Pose";

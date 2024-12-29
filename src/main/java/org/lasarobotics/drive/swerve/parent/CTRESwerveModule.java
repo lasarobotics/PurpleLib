@@ -35,6 +35,7 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Dimensionless;
 import edu.wpi.first.units.measure.Distance;
@@ -191,8 +192,7 @@ public class CTRESwerveModule extends SwerveModule implements Sendable {
                                                                         : SensorDirectionValue.CounterClockwise_Positive));
 
     // Set sensor to use for closed loop control
-    m_driveMotorConfig.Feedback.withFeedbackSensorSource(FeedbackSensorSourceValue.RotorSensor)
-                               .withSensorToMechanismRatio(1 / m_driveConversionFactor);
+    m_driveMotorConfig.Feedback.withFeedbackSensorSource(FeedbackSensorSourceValue.RotorSensor);
     m_rotateMotorConfig.Feedback.withFeedbackSensorSource(FeedbackSensorSourceValue.FusedCANcoder)
                                 .withRotorToSensorRatio(m_gearRatio.getRotateRatio())
                                 .withFeedbackRemoteSensorID(m_canCoder.getID().deviceID);
@@ -266,14 +266,62 @@ public class CTRESwerveModule extends SwerveModule implements Sendable {
   void updateSimPosition() {
     m_simDrivePosition.mut_plus(m_desiredState.speedMetersPerSecond * GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Seconds), Units.Meters);
     synchronized (m_driveMotor.getInputs()) {
-      m_driveMotor.getInputs().selectedSensorPosition.mut_replace(m_simDrivePosition.in(Units.Meters), Units.Rotations);
-      m_driveMotor.getInputs().selectedSensorVelocity.mut_replace(m_desiredState.speedMetersPerSecond, Units.RotationsPerSecond);
+      m_driveMotor.getInputs().selectedSensorPosition.mut_replace(distanceToAngle(m_simDrivePosition));
+      m_driveMotor.getInputs().selectedSensorVelocity.mut_replace(linearToAngularVelocity(Units.MetersPerSecond.of(m_desiredState.speedMetersPerSecond)));
       synchronized (m_rotateMotor.getInputs()) {
         m_rotateMotor.getInputs().selectedSensorPosition.mut_replace(m_desiredState.angle.getRadians(), Units.Radians);
         m_canCoder.getInputs().absolutePosition.mut_replace(m_desiredState.angle.getRadians(), Units.Radians);
         m_simModulePosition = new SwerveModulePosition(m_simDrivePosition, m_desiredState.angle);
       }
     }
+  }
+
+  /**
+   * Convert anglular position to linear distance
+   * @param angle Angular position
+   * @return Distance
+   */
+  private Distance angleToDistance(Angle angle) {
+    // Apply gear ratio to input rotations
+    var gearedRadians = angle.in(Units.Radians) / m_gearRatio.getDriveRatio();
+    // Then multiply the wheel radius by radians of rotation to get distance
+    return getDriveWheel().radius.times(gearedRadians);
+  }
+
+  /**
+   * Convert linear distance to angular position
+   * @param distance Distsance
+   * @return Angular position
+   */
+  private Angle distanceToAngle(Distance distance) {
+    // Divide the distance by the wheel radius to get radians
+    var wheelRadians = distance.in(Units.Meters) / getDriveWheel().radius.in(Units.Meters);
+    // Then multiply by gear ratio to get rotor rotations
+    return Units.Radians.of(wheelRadians * m_gearRatio.getDriveRatio());
+  }
+
+  /**
+   * Convert angular velocity to linear velocity
+   * @param angularVelocity
+   * @return Linear velocity
+   */
+  private LinearVelocity angularToLinearVelocity(AngularVelocity angularVelocity) {
+    // Apply gear ratio to input rotations
+    double gearedRotations = angularVelocity.in(Units.RadiansPerSecond) / m_gearRatio.getDriveRatio();
+    // Then multiply the wheel radius by radians of rotation to get distance
+    return getDriveWheel().radius.per(Units.Seconds).times(gearedRotations);
+  }
+
+  /**
+   * Convert linear velocity to angular velocity
+   * @param velocity Linear velocity
+   * @return Angular velocity
+   */
+  private AngularVelocity linearToAngularVelocity(LinearVelocity velocity) {
+    // Divide the distance by the wheel radius to get radians
+    var wheelRadians = velocity.in(Units.MetersPerSecond) / getDriveWheel().radius.in(Units.Meters);
+    // Then multiply by gear ratio to get rotor rotations
+    return Units.RadiansPerSecond.of(wheelRadians * m_gearRatio.getDriveRatio());
   }
 
   /**
@@ -442,7 +490,9 @@ public class CTRESwerveModule extends SwerveModule implements Sendable {
     m_rotateMotor.setControl(m_rotatePositionSetter.withPosition(m_desiredState.angle.getMeasure()));
 
     // Set drive motor speed
-    m_driveMotor.setControl(m_driveVelocitySetter.withVelocity(m_desiredState.speedMetersPerSecond));
+    m_driveMotor.setControl(
+      m_driveVelocitySetter.withVelocity(linearToAngularVelocity(Units.MetersPerSecond.of(m_desiredState.speedMetersPerSecond)))
+    );
 
     // Save rotate position
     m_previousRotatePosition = m_desiredState.angle;
@@ -453,7 +503,7 @@ public class CTRESwerveModule extends SwerveModule implements Sendable {
 
   @Override
   public LinearVelocity getDriveVelocity() {
-    return Units.MetersPerSecond.of(m_driveMotor.getInputs().selectedSensorVelocity.magnitude());
+    return angularToLinearVelocity(m_driveMotor.getInputs().selectedSensorVelocity);
   }
 
   @Override
@@ -468,7 +518,7 @@ public class CTRESwerveModule extends SwerveModule implements Sendable {
   public SwerveModulePosition getPosition() {
     if (RobotBase.isSimulation()) return m_simModulePosition;
     return new SwerveModulePosition(
-      Units.Meters.of(m_driveMotor.getInputs().selectedSensorPosition.in(Units.Rotations)),
+      angleToDistance(m_driveMotor.getInputs().selectedSensorPosition),
       Rotation2d.fromRadians(m_rotateMotor.getInputs().selectedSensorPosition.in(Units.Radians)).minus(m_zeroOffset)
     );
   }

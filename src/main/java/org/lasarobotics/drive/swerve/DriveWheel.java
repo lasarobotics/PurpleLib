@@ -9,11 +9,13 @@ import edu.wpi.first.units.measure.Distance;
 
 /** Swerve drive wheel */
 public class DriveWheel {
+  public final Distance radius;
   public final Distance diameter;
   public final Dimensionless staticCoF;
   public final Dimensionless dynamicCoF;
 
   private DriveWheel(Distance diameter, Dimensionless staticCoF, Dimensionless dynamicCoF) {
+    this.radius = diameter.divide(2);
     this.diameter = diameter;
     this.staticCoF = staticCoF;
     this.dynamicCoF = dynamicCoF;
