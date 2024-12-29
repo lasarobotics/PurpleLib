@@ -4,6 +4,9 @@
 
 package org.lasarobotics.hardware;
 
+/*
+ * A health monitoring class that allows for automatic recovery in case something goes wrong
+ */
 public abstract class Monitorable {
   private static final int DEFAULT_RETRIES = 3;
   private int m_errorCount = 0;
