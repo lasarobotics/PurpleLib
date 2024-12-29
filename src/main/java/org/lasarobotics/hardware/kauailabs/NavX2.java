@@ -59,12 +59,12 @@ public class NavX2 extends LoggableHardware implements IMU {
     public MutAngle rollAngle = Units.Radians.zero().mutableCopy();
     public MutAngle pitchAngle = Units.Radians.zero().mutableCopy();
     public MutAngle yawAngle = Units.Radians.zero().mutableCopy();
-    public MutLinearAcceleration xAcceleration = Units.MetersPerSecondPerSecond.zero().mutableCopy();
-    public MutLinearAcceleration yAcceleration = Units.MetersPerSecondPerSecond.zero().mutableCopy();
-    public MutLinearAcceleration zAcceleration = Units.MetersPerSecondPerSecond.zero().mutableCopy();
-    public MutLinearVelocity xVelocity = Units.MetersPerSecond.zero().mutableCopy();
-    public MutLinearVelocity yVelocity = Units.MetersPerSecond.zero().mutableCopy();
-    public MutLinearVelocity zVelocity = Units.MetersPerSecond.zero().mutableCopy();
+    public MutLinearAcceleration accelerationX = Units.MetersPerSecondPerSecond.zero().mutableCopy();
+    public MutLinearAcceleration accelerationY = Units.MetersPerSecondPerSecond.zero().mutableCopy();
+    public MutLinearAcceleration accelerationZ = Units.MetersPerSecondPerSecond.zero().mutableCopy();
+    public MutLinearVelocity velocityX = Units.MetersPerSecond.zero().mutableCopy();
+    public MutLinearVelocity velocityY = Units.MetersPerSecond.zero().mutableCopy();
+    public MutLinearVelocity velocityZ = Units.MetersPerSecond.zero().mutableCopy();
     public MutAngularVelocity yawRate = Units.RadiansPerSecond.zero().mutableCopy();
     public Rotation2d rotation2d = Rotation2d.kZero;
   }
@@ -138,16 +138,16 @@ public class NavX2 extends LoggableHardware implements IMU {
       m_inputs.rollAngle.mut_replace(m_navx.getRoll(), Units.Degrees);
       m_inputs.pitchAngle.mut_replace(m_navx.getPitch(), Units.Degrees);
       m_inputs.yawAngle.mut_replace(m_navx.getAngle(), Units.Degrees);
-      m_inputs.xAcceleration.mut_replace(m_navx.getWorldLinearAccelX(), Units.Gs);
-      m_inputs.yAcceleration.mut_replace(m_navx.getWorldLinearAccelY(), Units.Gs);
-      m_inputs.zAcceleration.mut_replace(m_navx.getWorldLinearAccelZ(), Units.Gs);
+      m_inputs.accelerationX.mut_replace(m_navx.getWorldLinearAccelX(), Units.Gs);
+      m_inputs.accelerationY.mut_replace(m_navx.getWorldLinearAccelY(), Units.Gs);
+      m_inputs.accelerationZ.mut_replace(m_navx.getWorldLinearAccelZ(), Units.Gs);
       m_inputs.yawRate.mut_replace(m_navx.getRate(), Units.DegreesPerSecond);
       m_inputs.rotation2d = Rotation2d.fromRadians(m_inputs.yawAngle.times(-1).in(Units.Radians));
 
       if (RobotBase.isSimulation()) return;
-      m_inputs.xVelocity.mut_replace((m_fieldCentricVelocities) ? m_navx.getVelocityX() : m_navx.getRobotCentricVelocityX(), Units.MetersPerSecond);
-      m_inputs.yVelocity.mut_replace((m_fieldCentricVelocities) ? m_navx.getVelocityY() : m_navx.getRobotCentricVelocityY(), Units.MetersPerSecond);
-      m_inputs.zVelocity.mut_replace((m_fieldCentricVelocities) ? m_navx.getVelocityZ() : m_navx.getRobotCentricVelocityZ(), Units.MetersPerSecond);
+      m_inputs.velocityX.mut_replace((m_fieldCentricVelocities) ? m_navx.getVelocityX() : m_navx.getRobotCentricVelocityX(), Units.MetersPerSecond);
+      m_inputs.velocityY.mut_replace((m_fieldCentricVelocities) ? m_navx.getVelocityY() : m_navx.getRobotCentricVelocityY(), Units.MetersPerSecond);
+      m_inputs.velocityZ.mut_replace((m_fieldCentricVelocities) ? m_navx.getVelocityZ() : m_navx.getRobotCentricVelocityZ(), Units.MetersPerSecond);
     }
   }
 
@@ -242,12 +242,12 @@ public class NavX2 extends LoggableHardware implements IMU {
 
   @Override
   public LinearVelocity getVelocityX() {
-    synchronized (m_inputs) { return m_inputs.xVelocity; }
+    synchronized (m_inputs) { return m_inputs.velocityX; }
   }
 
   @Override
   public LinearVelocity getVelocityY() {
-    synchronized (m_inputs) { return m_inputs.yVelocity; }
+    synchronized (m_inputs) { return m_inputs.velocityY; }
   }
 
   @Override
@@ -259,8 +259,8 @@ public class NavX2 extends LoggableHardware implements IMU {
     if (controlCentricity.equals(ControlCentricity.FIELD_CENTRIC))
       desiredSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(desiredSpeeds, orientation);
 
-    m_inputs.xVelocity.mut_replace(desiredSpeeds.vxMetersPerSecond, Units.MetersPerSecond);
-    m_inputs.yVelocity.mut_replace(desiredSpeeds.vyMetersPerSecond, Units.MetersPerSecond);
+    m_inputs.velocityX.mut_replace(desiredSpeeds.vxMetersPerSecond, Units.MetersPerSecond);
+    m_inputs.velocityY.mut_replace(desiredSpeeds.vyMetersPerSecond, Units.MetersPerSecond);
 
     int yawDriftDirection = ThreadLocalRandom.current().nextDouble(1.0) < 0.5 ? -1 : +1;
     double angle = m_simYaw.get() + Math.toDegrees(desiredSpeeds.omegaRadiansPerSecond * randomNoise) * dt
