@@ -12,6 +12,7 @@ import org.littletonrobotics.junction.Logger;
 import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.CANcoderConfigurator;
+import com.ctre.phoenix6.signals.MagnetHealthValue;
 import com.ctre.phoenix6.sim.CANcoderSimState;
 
 import edu.wpi.first.units.Units;
@@ -150,6 +151,11 @@ public class CANcoder extends LoggableHardware {
     synchronized (m_inputs) { return m_inputs; }
   }
 
+  @Override
+  public boolean isHealthy() {
+    return getMagnetHealth().equals(MagnetHealthValue.Magnet_Green);
+  }
+
   /**
    * Get device ID
    * @return Device ID
@@ -206,6 +212,21 @@ public class CANcoder extends LoggableHardware {
    */
   public CANcoderSimState getSimState() {
     return m_canCoder.getSimState();
+  }
+
+  /**
+   * Magnet health as measured by CANcoder.
+   * <p>
+   * Red indicates too close or too far, Orange is adequate but with
+   * reduced accuracy, green is ideal. Invalid means the accuracy cannot
+   * be determined.
+   *
+   * This refreshes and returns a cached object.
+   *
+   * @return MagnetHealth Object
+   */
+  public MagnetHealthValue getMagnetHealth() {
+    return m_canCoder.getMagnetHealth().getValue();
   }
 
 	/**
