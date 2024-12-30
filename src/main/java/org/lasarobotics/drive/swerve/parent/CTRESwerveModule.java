@@ -76,7 +76,6 @@ public class CTRESwerveModule extends SwerveModule implements Sendable {
   private final Current ROTATE_MOTOR_CURRENT_LIMIT = Units.Amps.of(20.0);
 
   private static final String IS_SLIPPING_LOG_ENTRY = "/IsSlipping";
-  private static final String ODOMETER_LOG_ENTRY = "/Odometer";
   private static final String ROTATE_ERROR_LOG_ENTRY = "/RotateError";
   private static final String MAX_LINEAR_VELOCITY_LOG_ENTRY = "/MaxLinearVelocity";
   private static final double MAX_AUTO_LOCK_TIME = 10.0;
@@ -104,7 +103,6 @@ public class CTRESwerveModule extends SwerveModule implements Sendable {
   private SwerveModule.GearRatio m_gearRatio;
   private double m_driveConversionFactor;
   private double m_autoLockTime;
-  private double m_runningOdometer;
   private final boolean m_isPhoenixPro;
 
   private Instant m_autoLockTimer;
@@ -172,7 +170,6 @@ public class CTRESwerveModule extends SwerveModule implements Sendable {
     this.m_autoLockTime = MathUtil.clamp(autoLockTime.in(Units.Milliseconds), 0.0, MAX_AUTO_LOCK_TIME * 1000);
     this.m_previousRotatePosition = m_zeroOffset.plus(m_location.getLockPosition());
     this.m_autoLockTimer = Instant.now();
-    this.m_runningOdometer = 0.0;
     this.m_rotatePositionSetter = new PositionVoltage(Units.Radians.zero());
     this.m_driveVelocitySetter = new VelocityVoltage(Units.RotationsPerSecond.zero());
 
@@ -328,8 +325,8 @@ public class CTRESwerveModule extends SwerveModule implements Sendable {
    * Call this method periodically
    */
   private void periodic() {
+    super.logOutputs();
     Logger.recordOutput(m_driveMotor.getID().name + IS_SLIPPING_LOG_ENTRY, isSlipping());
-    Logger.recordOutput(m_driveMotor.getID().name + ODOMETER_LOG_ENTRY, m_runningOdometer);
     Logger.recordOutput(m_rotateMotor.getID().name + ROTATE_ERROR_LOG_ENTRY, m_desiredState.angle.minus(Rotation2d.fromRadians(m_rotateMotor.getInputs().selectedSensorPosition.in(Units.Radians))));
   }
 
@@ -498,7 +495,7 @@ public class CTRESwerveModule extends SwerveModule implements Sendable {
     m_previousRotatePosition = m_desiredState.angle;
 
     // Increment odometer
-    m_runningOdometer += Math.abs(m_desiredState.speedMetersPerSecond) * GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Seconds);
+    super.incrementOdometer(Math.abs(m_desiredState.speedMetersPerSecond) * GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Seconds));
   }
 
   @Override

@@ -13,6 +13,7 @@ import java.nio.file.Paths;
 
 import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
 import org.lasarobotics.drive.TractionControlController;
+import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -73,8 +74,11 @@ public abstract class SwerveModule implements AutoCloseable {
     }
   }
 
+  private static final String ODOMETER_LOG_ENTRY = "/Odometer";
+
   private double m_runningOdometer;
   private String m_odometerOutputPath;
+  private String m_driveMotorName;
 
   private Location m_location;
   private GearRatio m_gearRatio;
@@ -98,6 +102,7 @@ public abstract class SwerveModule implements AutoCloseable {
     this.m_driveWheel = driveWheel;
     this.m_zeroOffset = new Rotation2d(zeroOffset);
     this.m_runningOdometer = 0.0;
+    this.m_driveMotorName = driveMotorName;
     this.m_autoLock = true;
     COSINE_CORRECTION = RobotBase.isReal() ? 1 : 0;
 
@@ -261,6 +266,15 @@ public abstract class SwerveModule implements AutoCloseable {
 
     // Return corrected desired swerve module state
     return desiredState;
+  }
+
+  /**
+   * Log outputs
+   * <p>
+   * Call this in child class
+   */
+  protected void logOutputs() {
+    Logger.recordOutput(m_driveMotorName + ODOMETER_LOG_ENTRY, m_runningOdometer);
   }
 
   /**
