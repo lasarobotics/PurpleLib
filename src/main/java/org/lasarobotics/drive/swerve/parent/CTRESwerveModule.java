@@ -160,7 +160,12 @@ public class CTRESwerveModule extends SwerveModule implements Sendable {
     this.m_driveMotor = swerveHardware.driveMotor;
     this.m_rotateMotor = swerveHardware.rotateMotor;
     this.m_canCoder = swerveHardware.canCoder;
-    this.m_moduleSim = new SwerveModuleSim(DCMotor.getKrakenX60(1), driveFF, DCMotor.getKrakenX60(1), rotateFF);
+    this.m_moduleSim = new SwerveModuleSim(
+      m_isPhoenixPro ? DCMotor.getKrakenX60Foc(1) : DCMotor.getKrakenX60(1),
+      driveFF.withKA((driveFF.kA <= 0.0) ? SwerveModule.MIN_SIM_kA : driveFF.kA),
+      m_isPhoenixPro ? DCMotor.getKrakenX60Foc(1) : DCMotor.getKrakenX60(1),
+      rotateFF.withKA((rotateFF.kA <= 0.0) ? SwerveModule.MIN_SIM_kA : rotateFF.kA)
+    );
     this.m_location = location;
     this.m_gearRatio = gearRatio;
     this.m_zeroOffset = Rotation2d.fromRadians(zeroOffset.in(Units.Radians));

@@ -74,6 +74,8 @@ public abstract class SwerveModule implements AutoCloseable {
     }
   }
 
+  protected static final double MIN_SIM_kA = 1e-5;
+
   private static final String ODOMETER_LOG_ENTRY = "/Odometer";
 
   private double m_runningOdometer;

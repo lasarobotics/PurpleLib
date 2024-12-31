@@ -36,6 +36,42 @@ public class FFConstants {
     return new FFConstants(kS, kG, kV, kA);
   }
 
+  /**
+   * Get FFConstants with different gain
+   * @param kS Desired static gain
+   * @return New FFConstants object with updated value
+   */
+  public FFConstants withKS(double kS) {
+    return new FFConstants(kS, this.kG, this.kV, this.kA);
+  }
+
+  /**
+   * Get FFConstants with different gain
+   * @param kG Desired gravity gain
+   * @return New FFConstants object with updated value
+   */
+  public FFConstants withKG(double kG) {
+    return new FFConstants(this.kS, kG, this.kV, this.kA);
+  }
+
+  /**
+   * Get FFConstants with different gain
+   * @param kV Desired velocity gain
+   * @return New FFConstants object with updated value
+   */
+  public FFConstants withKV(double kV) {
+    return new FFConstants(this.kS, this.kG, kV, this.kA);
+  }
+
+  /**
+   * Get FFConstants with different gain
+   * @param kA Desired acceleration gain
+   * @return New FFConstants object with updated value
+   */
+  public FFConstants withKA(double kA) {
+    return new FFConstants(this.kS, this.kG, this.kV, kA);
+  }
+
   @Override
   public boolean equals(Object object) {
     if (object.getClass() != this.getClass()) return false;

@@ -150,7 +150,11 @@ public class REVSwerveModule extends SwerveModule implements Sendable {
 
     this.m_driveMotor = swerveHardware.driveMotor;
     this.m_rotateMotor = swerveHardware.rotateMotor;
-    this.m_moduleSim = new SwerveModuleSim(m_driveMotor.getKind().motor, driveFF, m_rotateMotor.getKind().motor, rotateFF);
+    this.m_moduleSim = new SwerveModuleSim(
+      m_driveMotor.getKind().motor,
+      driveFF.withKA((driveFF.kA <= 0.0) ? SwerveModule.MIN_SIM_kA : driveFF.kA),
+      m_rotateMotor.getKind().motor, rotateFF.withKA((rotateFF.kA <= 0.0) ? SwerveModule.MIN_SIM_kA : rotateFF.kA)
+    );
     this.m_driveFF = new SimpleMotorFeedforward(driveFF.kS, driveFF.kV, driveFF.kA);
     this.m_location = location;
     this.m_zeroOffset = Rotation2d.fromRadians(zeroOffset.in(Units.Radians));
