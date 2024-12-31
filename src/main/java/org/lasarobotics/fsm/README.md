@@ -1,8 +1,8 @@
 # State Machine template
 
 First, make sure to import the following packages so that the State Machine works as expected:
-* `import frc.robot.subsystems.StateMachine;`
-* `import frc.robot.subsystems.SystemState;`
+* `import frc.robot.fsm.StateMachine;`
+* `import frc.robot.fsm.SystemState;`
 
 Simply extend the [StateMachine](src\main\java\org\lasarobotics\fsm\StateMachine.java) and implement [AutoCloseable] for your subsystem, and call the `super()` constructor with the appropriate arguments.
 
