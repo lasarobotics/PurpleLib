@@ -62,7 +62,7 @@ Custom library for 418 Purple Haze
   * Easy-to-add states
   * Improved accessibility over solely command-based infrastucture
   * Implemented StateMachine class for additional compatability
-  * More info [here](src\main\java\org\lasarobotics\fsm\README.md)
+  * More info [here](src/main/java/org/lasarobotics/fsm/README.md)
 * Health monitoring and automatic recovery
   * Available in the hardware wrappers and for subsystems
 * Configurable input maps
