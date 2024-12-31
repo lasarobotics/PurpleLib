@@ -53,6 +53,7 @@ Custom library for 418 Purple Haze
   * Traction control
   * More info [here](src/main/java/org/lasarobotics/drive/swerve/README.md)
 * Swerve drive parent class
+  * Field centric or robot centric drive
   * High frequency, threaded odometry
   * Easy PhotonVision integration
   * Robot rotation PID
