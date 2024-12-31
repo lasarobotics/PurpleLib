@@ -58,6 +58,11 @@ Custom library for 418 Purple Haze
   * Robot rotation PID
   * Swerve second order kinematics correction
   * More info [here](src/main/java/org/lasarobotics/drive/swerve/README.md)
+* State Machine Structure
+  * Easy-to-add states
+  * Improved accessibility over solely command-based infrastucture
+  * Implemented StateMachine class for additional compatability
+  * More info [here](src\main\java\org\lasarobotics\fsm\README.md)
 * Health monitoring and automatic recovery
   * Available in the hardware wrappers and for subsystems
 * Configurable input maps
