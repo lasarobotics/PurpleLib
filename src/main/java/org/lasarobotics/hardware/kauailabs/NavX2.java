@@ -141,13 +141,11 @@ public class NavX2 extends LoggableHardware implements IMU {
       m_inputs.accelerationX.mut_replace(m_navx.getWorldLinearAccelX(), Units.Gs);
       m_inputs.accelerationY.mut_replace(m_navx.getWorldLinearAccelY(), Units.Gs);
       m_inputs.accelerationZ.mut_replace(m_navx.getWorldLinearAccelZ(), Units.Gs);
-      m_inputs.yawRate.mut_replace(m_navx.getRate(), Units.DegreesPerSecond);
-      m_inputs.rotation2d = Rotation2d.fromRadians(m_inputs.yawAngle.times(-1).in(Units.Radians));
-
-      if (RobotBase.isSimulation()) return;
       m_inputs.velocityX.mut_replace((m_fieldCentricVelocities) ? m_navx.getVelocityX() : m_navx.getRobotCentricVelocityX(), Units.MetersPerSecond);
       m_inputs.velocityY.mut_replace((m_fieldCentricVelocities) ? m_navx.getVelocityY() : m_navx.getRobotCentricVelocityY(), Units.MetersPerSecond);
       m_inputs.velocityZ.mut_replace((m_fieldCentricVelocities) ? m_navx.getVelocityZ() : m_navx.getRobotCentricVelocityZ(), Units.MetersPerSecond);
+      m_inputs.yawRate.mut_replace(m_navx.getRate(), Units.DegreesPerSecond);
+      m_inputs.rotation2d = Rotation2d.fromRadians(m_inputs.yawAngle.times(-1).in(Units.Radians));
     }
   }
 

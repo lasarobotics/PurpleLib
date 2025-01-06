@@ -77,6 +77,7 @@ public abstract class SwerveModule implements AutoCloseable {
   protected static final double MIN_SIM_kA = 1e-5;
 
   private static final String ODOMETER_LOG_ENTRY = "/Odometer";
+  private static final String IS_SLIPPING_LOG_ENTRY = "/IsSlipping";
 
   private double m_runningOdometer;
   private String m_odometerOutputPath;
@@ -277,6 +278,7 @@ public abstract class SwerveModule implements AutoCloseable {
    */
   protected void logOutputs() {
     Logger.recordOutput(m_driveMotorName + ODOMETER_LOG_ENTRY, m_runningOdometer);
+    Logger.recordOutput(m_driveMotorName + IS_SLIPPING_LOG_ENTRY, isSlipping());
   }
 
   /**

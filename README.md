@@ -77,11 +77,11 @@ Custom library for 418 Purple Haze
 ### Required dependencies
 * AdvantageKit - https://github.com/Mechanical-Advantage/AdvantageKit/blob/main/docs/INSTALLATION.md
 * URCL - https://raw.githubusercontent.com/Mechanical-Advantage/URCL/maven/URCL.json
-* NavX - https://dev.studica.com/releases/2025/Studica-2025.1.1-alpha-14.json
+* NavX - https://dev.studica.com/releases/2025/Studica-2025.0.0.json
 * REVLib - https://software-metadata.revrobotics.com/REVLib-2025.json
 * ReduxLib - https://frcsdk.reduxrobotics.com/ReduxLib_2025.json
-* CTRE Phoenix5 - https://maven.ctr-electronics.com/release/com/ctre/phoenix/Phoenix5-frc2025-beta-latest.json
-* CTRE Phoenix6 - https://maven.ctr-electronics.com/release/com/ctre/phoenix6/latest/Phoenix6-frc2025-beta-latest.json
+* CTRE Phoenix5 - https://maven.ctr-electronics.com/release/com/ctre/phoenix/Phoenix5-frc2025-latest.json
+* CTRE Phoenix6 - https://maven.ctr-electronics.com/release/com/ctre/phoenix6/latest/Phoenix6-frc2025-latest.json
 * PhotonLib - https://maven.photonvision.org/repository/internal/org/photonvision/photonlib-json/1.0/photonlib-json-1.0.json
 
 ### Online installation

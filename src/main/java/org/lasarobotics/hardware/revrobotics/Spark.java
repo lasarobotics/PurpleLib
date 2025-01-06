@@ -14,6 +14,7 @@ import org.littletonrobotics.junction.AutoLog;
 import org.littletonrobotics.junction.Logger;
 
 import com.revrobotics.REVLibError;
+import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.SparkBase;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkBase.Faults;
@@ -42,6 +43,7 @@ import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Frequency;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotBase;
+import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -123,7 +125,6 @@ public class Spark extends LoggableHardware {
 
   private static final String LOG_TAG = "Spark";
   private static final int CAN_TIMEOUT_MS = 50;
-  private static final int PID_SLOT = 0;
   private static final int MAX_ATTEMPTS = 5;
   private static final int SPARK_MAX_MEASUREMENT_PERIOD = 16;
   private static final int SPARK_FLEX_MEASUREMENT_PERIOD = 32;
@@ -140,6 +141,7 @@ public class Spark extends LoggableHardware {
   private static final String OUTPUT_CURRENT_LOG_ENTRY = "/OutputCurrent";
   private static final String HEALTH_STATUS_LOG_ENTRY = "/IsHealthy";
   private static final String TEMPERATURE_LOG_ENTRY = "/Temperature";
+  private static final ClosedLoopSlot PID_SLOT = ClosedLoopSlot.kSlot0;
 
   private SparkBase m_spark;
   private SparkSim m_sparkSim;
@@ -355,7 +357,7 @@ public class Spark extends LoggableHardware {
   private void updateInputs() {
     synchronized (m_inputs) {
       // Get sensor inputs
-      m_inputs.timestamp = Logger.getRealTimestamp();
+      m_inputs.timestamp = RobotController.getFPGATime();
       m_inputs.analogPosition = getAnalogPosition();
       m_inputs.analogVelocity = getAnalogVelocity();
       m_inputs.absoluteEncoderPosition = getAbsoluteEncoderPosition();

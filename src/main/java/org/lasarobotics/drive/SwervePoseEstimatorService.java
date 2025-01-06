@@ -36,6 +36,7 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotBase;
+import edu.wpi.first.wpilibj.RobotController;
 
 /** Swerve Odometry Service */
 public class SwervePoseEstimatorService {
@@ -145,7 +146,7 @@ public class SwervePoseEstimatorService {
     this.m_thread = new Notifier(() -> {
       // Iterate timestamp
       m_previousTimestamp = m_currentTimestamp;
-      m_currentTimestamp = Logger.getRealTimestamp();
+      m_currentTimestamp = RobotController.getFPGATime();
 
       // Check if IMU is connected
       boolean isIMUConnected = m_imu.isConnected();

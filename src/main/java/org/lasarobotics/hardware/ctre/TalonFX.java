@@ -137,7 +137,7 @@ public class TalonFX extends LoggableHardware {
    */
   public TalonFX(TalonFX.ID id, Frequency updateRate) {
     this.m_id = id;
-    this.m_talon = new com.ctre.phoenix6.hardware.TalonFX(id.deviceID);
+    this.m_talon = new com.ctre.phoenix6.hardware.TalonFX(id.deviceID, id.bus.name);
     this.m_inputs = new TalonFXInputsAutoLogged();
     this.m_inputThread = new Notifier(this::updateInputs);
 

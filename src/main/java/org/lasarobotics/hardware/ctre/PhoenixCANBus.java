@@ -10,10 +10,8 @@ public enum PhoenixCANBus {
   RIO("rio"),
   /**
    * CANivore CAN bus
-   * <p>
-   * Only a single CANivore is supported, and MUST be named "canivore"
    */
-  CANIVORE("canivore");
+  CANIVORE("*");
 
   /** CAN bus name */
   public final String name;

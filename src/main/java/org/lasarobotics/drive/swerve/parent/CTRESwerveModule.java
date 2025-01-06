@@ -75,7 +75,6 @@ public class CTRESwerveModule extends SwerveModule implements Sendable {
   private final double EPSILON = 5e-3;
   private final Current ROTATE_MOTOR_CURRENT_LIMIT = Units.Amps.of(20.0);
 
-  private static final String IS_SLIPPING_LOG_ENTRY = "/IsSlipping";
   private static final String ROTATE_ERROR_LOG_ENTRY = "/RotateError";
   private static final String MAX_LINEAR_VELOCITY_LOG_ENTRY = "/MaxLinearVelocity";
   private static final double MAX_AUTO_LOCK_TIME = 10.0;
@@ -331,7 +330,6 @@ public class CTRESwerveModule extends SwerveModule implements Sendable {
    */
   private void periodic() {
     super.logOutputs();
-    Logger.recordOutput(m_driveMotor.getID().name + IS_SLIPPING_LOG_ENTRY, isSlipping());
     Logger.recordOutput(m_rotateMotor.getID().name + ROTATE_ERROR_LOG_ENTRY, m_desiredState.angle.minus(Rotation2d.fromRadians(m_rotateMotor.getInputs().selectedSensorPosition.in(Units.Radians))));
   }
 

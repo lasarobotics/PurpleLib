@@ -72,7 +72,6 @@ public class REVSwerveModule extends SwerveModule implements Sendable {
   private final Current DRIVE_MOTOR_CURRENT_LIMIT;
   private final Current ROTATE_MOTOR_CURRENT_LIMIT = Units.Amps.of(20.0);
 
-  private static final String IS_SLIPPING_LOG_ENTRY = "/IsSlipping";
   private static final String ROTATE_ERROR_LOG_ENTRY = "/RotateError";
   private static final String MAX_LINEAR_VELOCITY_LOG_ENTRY = "/MaxLinearVelocity";
   private static final double MAX_AUTO_LOCK_TIME = 10.0;
@@ -284,7 +283,6 @@ public class REVSwerveModule extends SwerveModule implements Sendable {
    */
   private void periodic() {
     super.logOutputs();
-    Logger.recordOutput(m_driveMotor.getID().name + IS_SLIPPING_LOG_ENTRY, isSlipping());
     Logger.recordOutput(m_rotateMotor.getID().name + ROTATE_ERROR_LOG_ENTRY, m_desiredState.angle.minus(Rotation2d.fromRadians(m_rotateMotor.getInputs().absoluteEncoderPosition)));
   }
 
@@ -443,15 +441,15 @@ public class REVSwerveModule extends SwerveModule implements Sendable {
     m_rotateMotor.set(m_desiredState.angle.getRadians(), ControlType.kPosition);
 
     // Calculate drive FF
-    var driveFF = m_driveFF.calculate(
-      Units.MetersPerSecond.of(oldState.speedMetersPerSecond),
-      Units.MetersPerSecond.of(m_desiredState.speedMetersPerSecond)
+    var driveFF = m_driveFF.calculateWithVelocities(
+      oldState.speedMetersPerSecond,
+      m_desiredState.speedMetersPerSecond
     );
 
     // Set drive motor speed
     m_driveMotor.set(
       m_desiredState.speedMetersPerSecond, ControlType.kVelocity,
-      driveFF.in(Units.Volts), ArbFFUnits.kVoltage
+      driveFF, ArbFFUnits.kVoltage
     );
 
     // Save rotate position
