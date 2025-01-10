@@ -4,6 +4,8 @@
 
 package org.lasarobotics.drive.swerve.child;
 
+import java.util.Map;
+
 import org.lasarobotics.drive.swerve.DriveWheel;
 import org.lasarobotics.drive.swerve.SwerveModule;
 import org.lasarobotics.drive.swerve.parent.CTRESwerveModule;
@@ -70,7 +72,12 @@ public abstract class SwerveX2Module {
     }
   }
 
-  private static final Angle ZERO_OFFSET = Units.Radians.of(Math.PI / 4);
+  public static final Map<SwerveModule.Location, Angle> ZERO_OFFSET = Map.ofEntries(
+    Map.entry(SwerveModule.Location.LeftFront, Units.Radians.of(Math.PI / 4).times(-1)),
+    Map.entry(SwerveModule.Location.RightFront, Units.Radians.of(Math.PI / 4)),
+    Map.entry(SwerveModule.Location.LeftRear, Units.Radians.of(Math.PI / 4)),
+    Map.entry(SwerveModule.Location.RightRear, Units.Radians.of(Math.PI / 4).times(-1))
+  );
 
   /**
    * Do not allow direct instantiation
@@ -112,7 +119,7 @@ public abstract class SwerveX2Module {
                                orientation,
                                SwerveModule.MountOrientation.STANDARD,
                                gearRatio, driveWheel,
-                               ZERO_OFFSET,
+                               ZERO_OFFSET.get(location),
                                drivePID, driveFF,
                                rotatePID, rotateFF,
                                slipRatio, mass,
@@ -152,7 +159,7 @@ public abstract class SwerveX2Module {
                                 orientation,
                                 SwerveModule.MountOrientation.STANDARD,
                                 gearRatio, driveWheel,
-                                ZERO_OFFSET,
+                                ZERO_OFFSET.get(location),
                                 drivePID, driveFF,
                                 rotatePID, rotateFF,
                                 slipRatio, mass,
