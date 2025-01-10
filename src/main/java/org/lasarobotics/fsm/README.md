@@ -1,8 +1,8 @@
 # State Machine template
 
 First, make sure to import the following packages so that the State Machine works as expected:
-* `import frc.robot.fsm.StateMachine;`
-* `import frc.robot.fsm.SystemState;`
+* `import org.lasarobotics.fsm.StateMachine;`
+* `import org.lasarobotics.fsm.SystemState;`
 
 Simply extend the [StateMachine](src\main\java\org\lasarobotics\fsm\StateMachine.java) and implement [AutoCloseable] for your subsystem, and call the `super()` constructor with the appropriate arguments.
 
@@ -40,7 +40,7 @@ Additional code to provide more insight into variables used above:
   private static Trigger s_retractButton = new Trigger(() -> false);
 ```
 
-In the above example, you can see how we have defined a State enum, which is being used to create our numerous states. In the IDLE state, we have defined our `initialize()` and `nextState()` methods. In the `initialize()` method, we are simply stoping the instance, since we are in the IDLE state of the climber. When the `nextState()` method is invoked, we have coded logic when determining what state to travel to next. It is this decision making process that allows us to replicate the State Machine structure in the real world. As team, we decided that it would be best to code all of our logic (conditonals, loops, etc.) in the `nextState()` method to improve readability and code accessibility for our team members. 
+In the above example, you can see how we have defined a State enum, which is being used to create our numerous states. In the IDLE state, we have defined our `initialize()` and `nextState()` methods. In the `initialize()` method, we are simply stoping the instance, since we are in the IDLE state of the climber. When the `nextState()` method is invoked, we have coded logic when determining what state to travel to next. It is this decision making process that allows us to replicate the State Machine structure in the real world. As team, we decided that it would be best to code all of our logic (conditonals, loops, etc.) in the `nextState()` method to improve readability and code accessibility for our team members.
 
 Specifically, from the above example, we can observe the creation of two new states: RELEASING an RETRACTING. Keep in mind that these are these are the only additional states needed for the CLIMBER subsystem. For a more complicated subsystem such as the DRIVE or SHOOTER subsytem, more states would need to be created, following the logic provided above.
 
@@ -107,7 +107,7 @@ After adding this State Machine Structure, we have begun to bind our buttons to 
     s_climbButton = climbButtonTrigger;
   }
 ```
-Additionally, we are no longer using the `periodic()` function for all of our repetitive needs in the CLIMBER subsytem. It is NOW only being used for logging States and outputs in the CLIMBER subsystem, so that this process of transitioning between States can occur as needed. 
+Additionally, we are no longer using the `periodic()` function for all of our repetitive needs in the CLIMBER subsytem. It is NOW only being used for logging States and outputs in the CLIMBER subsystem, so that this process of transitioning between States can occur as needed.
 ```
   @Override
   public void periodic() {
