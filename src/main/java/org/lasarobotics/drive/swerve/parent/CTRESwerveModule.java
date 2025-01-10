@@ -74,6 +74,9 @@ public class CTRESwerveModule extends SwerveModule implements Sendable {
 
   private final double EPSILON = 5e-3;
   private final Current ROTATE_MOTOR_CURRENT_LIMIT = Units.Amps.of(20.0);
+  private final Current DRIVE_MOTOR_PEAK_SUPPLY_CURRENT_LIMIT = Units.Amps.of(90.0);
+  private final Current DRIVE_MOTOR_SUSTAINED_SUPPLY_CURRENT_LIMIT = Units.Amps.of(40.0);
+  private final Time DRIVE_MOTOR_PEAK_CURRENT_TIME = Units.Seconds.one();
 
   private static final String ROTATE_ERROR_LOG_ENTRY = "/RotateError";
   private static final String MAX_LINEAR_VELOCITY_LOG_ENTRY = "/MaxLinearVelocity";
@@ -226,6 +229,10 @@ public class CTRESwerveModule extends SwerveModule implements Sendable {
     m_rotateMotorConfig.MotorOutput.withNeutralMode(NeutralModeValue.Brake);
 
     // Set current limits
+    m_driveMotorConfig.CurrentLimits.withSupplyCurrentLimitEnable(true);
+    m_driveMotorConfig.CurrentLimits.withSupplyCurrentLimit(DRIVE_MOTOR_PEAK_SUPPLY_CURRENT_LIMIT);
+    m_driveMotorConfig.CurrentLimits.withSupplyCurrentLowerLimit(DRIVE_MOTOR_SUSTAINED_SUPPLY_CURRENT_LIMIT);
+    m_driveMotorConfig.CurrentLimits.withSupplyCurrentLowerTime(DRIVE_MOTOR_PEAK_CURRENT_TIME);
     m_driveMotorConfig.CurrentLimits.withStatorCurrentLimit(driveCurrentLimit);
     m_rotateMotorConfig.CurrentLimits.withStatorCurrentLimit(ROTATE_MOTOR_CURRENT_LIMIT);
 
