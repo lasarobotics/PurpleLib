@@ -6,6 +6,7 @@ package org.lasarobotics.drive.swerve;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
@@ -15,11 +16,15 @@ import org.lasarobotics.drive.RotatePIDController;
 import org.lasarobotics.drive.SwervePoseEstimatorService;
 import org.lasarobotics.drive.ThrottleMap;
 import org.lasarobotics.drive.swerve.AdvancedSwerveKinematics.ControlCentricity;
+import org.lasarobotics.drive.swerve.parent.CTRESwerveModule;
+import org.lasarobotics.drive.swerve.parent.REVSwerveModule;
 import org.lasarobotics.hardware.IMU;
 import org.lasarobotics.utils.CommonTriggers;
 import org.lasarobotics.utils.PIDConstants;
 import org.lasarobotics.vision.AprilTagCamera;
 import org.littletonrobotics.junction.Logger;
+
+import com.ctre.phoenix6.SignalLogger;
 
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
@@ -45,12 +50,14 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.sysid.SysIdRoutineLog;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 
 /** Swerve drive template */
 public class SwerveDrive extends SubsystemBase implements AutoCloseable {
@@ -73,6 +80,7 @@ public class SwerveDrive extends SubsystemBase implements AutoCloseable {
   private static final Angle DEFAULT_TIP_THRESHOLD = Units.Degrees.of(30.0);
   private static final double DEFAULT_BALANCED_THRESHOLD = 10.0;
   private static final double DEFAULT_AIM_VELOCITY_COMPENSATION_FUDGE_FACTOR = 0.1;
+  private static final double MIN_HEADING_TRANSLATION_DELTA = 1e-5;
   private static final Matrix<N3, N1> ODOMETRY_STDDEV = VecBuilder.fill(0.1, 0.1, Math.toRadians(1.0));
   private static final TrapezoidProfile.Constraints AIM_PID_CONSTRAINT = new TrapezoidProfile.Constraints(2160.0, 4320.0);
   private static final Angle ROTATE_TOLERANCE = Units.Degrees.of(2.5);
@@ -80,6 +88,8 @@ public class SwerveDrive extends SubsystemBase implements AutoCloseable {
 
   // Log
   private static final String POSE_LOG_ENTRY = "/Pose";
+  private static final String DRIVE_MOTOR_SYSID_STATE_LOG_ENTRY = "/DriveMotorSysIDTestState";
+  private static final String ROTATE_MOTOR_SYSID_STATE_LOG_ENTRY = "/RotateMotorSysIDTestState";
   private static final String ACTUAL_SWERVE_STATE_LOG_ENTRY = "/ActualSwerveState";
   private static final String DESIRED_SWERVE_STATE_LOG_ENTRY = "/DesiredSwerveState";
   private static final String IS_AIMED_LOG_ENTRY = "/IsAimed";
@@ -130,6 +140,8 @@ public class SwerveDrive extends SubsystemBase implements AutoCloseable {
   private Trigger m_tippingTrigger;
   private Angle m_tipThreshold;
   private List<Runnable> m_simCallbacks;
+  private Consumer<SysIdRoutineLog.State> m_driveSysIDLogConsumer;
+  private Consumer<SysIdRoutineLog.State> m_rotateSysIDLogConsumer;
 
 
   private boolean m_isTractionControlEnabled = true;
@@ -171,6 +183,14 @@ public class SwerveDrive extends SubsystemBase implements AutoCloseable {
     this.m_simCallbacks = new ArrayList<>();
     this.m_aimVelocityFudgeFactor = DEFAULT_AIM_VELOCITY_COMPENSATION_FUDGE_FACTOR;
     s_currentAlliance = Alliance.Blue;
+
+    if (m_lFrontModule instanceof CTRESwerveModule) {
+      m_driveSysIDLogConsumer = state -> SignalLogger.writeString(getName() + DRIVE_MOTOR_SYSID_STATE_LOG_ENTRY, state.toString());
+      m_rotateSysIDLogConsumer = state -> SignalLogger.writeString(getName() + ROTATE_MOTOR_SYSID_STATE_LOG_ENTRY, state.toString());
+    } else if (m_lFrontModule instanceof REVSwerveModule) {
+      m_driveSysIDLogConsumer = state -> Logger.recordOutput(getName() + DRIVE_MOTOR_SYSID_STATE_LOG_ENTRY, state.toString());
+      m_rotateSysIDLogConsumer = state -> Logger.recordOutput(getName() + ROTATE_MOTOR_SYSID_STATE_LOG_ENTRY, state.toString());
+    }
 
     // Reset IMU
     m_imu.reset();
@@ -571,7 +591,10 @@ public class SwerveDrive extends SubsystemBase implements AutoCloseable {
     // This method will be called once per scheduler run
 
     // Update current heading
-    m_currentHeading = new Rotation2d(getPose().getX() - m_previousPose.getX(), getPose().getY() - m_previousPose.getY());
+    double xDifference = getPose().getX() - m_previousPose.getX();
+    double yDifference = getPose().getY() - m_previousPose.getY();
+    if (Math.abs(xDifference) > MIN_HEADING_TRANSLATION_DELTA || Math.abs(yDifference) > MIN_HEADING_TRANSLATION_DELTA)
+      m_currentHeading = new Rotation2d(xDifference, yDifference);
 
     // Save previous pose
     m_previousPose = getPose();
@@ -670,6 +693,56 @@ public class SwerveDrive extends SubsystemBase implements AutoCloseable {
     } else {
       this.m_controlCentricity = ControlCentricity.FIELD_CENTRIC;
     }
+  }
+
+  /**
+   * Get SysID command for swerve drive motors
+   * @return SysID routine
+   */
+  public SysIdRoutine getDriveSysIdRoutine() {
+    return new SysIdRoutine(
+      new SysIdRoutine.Config(
+        null,               // Use default ramp rate (1 V/s)
+        Units.Volts.of(4),  // Reduce dynamic step voltage to 4 V to prevent brownout
+        null,               // Use default timeout (10 s)
+        m_driveSysIDLogConsumer
+      ),
+      new SysIdRoutine.Mechanism(
+        voltage -> {
+          m_lFrontModule.setDriveSysID(voltage);
+          m_rFrontModule.setDriveSysID(voltage);
+          m_lRearModule.setDriveSysID(voltage);
+          m_rRearModule.setDriveSysID(voltage);
+        },
+        null,
+        this
+      )
+    );
+  }
+
+  /**
+   * Get SysID routine for swerve rotate motors
+   * @return SysID routine
+   */
+  public SysIdRoutine getRotateSysIdRoutine() {
+    return new SysIdRoutine(
+      new SysIdRoutine.Config(
+        null,               // Use default ramp rate (1 V/s)
+        Units.Volts.of(7),  // Use dynamic voltage of 7 V
+        null,               // Use default timeout (10 s)
+        m_rotateSysIDLogConsumer
+      ),
+      new SysIdRoutine.Mechanism(
+        voltage -> {
+          m_lFrontModule.setRotateSysID(voltage);
+          m_rFrontModule.setRotateSysID(voltage);
+          m_lRearModule.setRotateSysID(voltage);
+          m_rRearModule.setRotateSysID(voltage);
+        },
+        null,
+        this
+      )
+    );
   }
 
   /**

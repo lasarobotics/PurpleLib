@@ -23,6 +23,7 @@ import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VelocityVoltage;
+import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
@@ -44,6 +45,7 @@ import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Mass;
 import edu.wpi.first.units.measure.MutDistance;
 import edu.wpi.first.units.measure.Time;
+import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.RobotBase;
@@ -103,7 +105,6 @@ public class CTRESwerveModule extends SwerveModule implements Sendable {
   private volatile SwerveModuleState m_desiredState;
 
   private SwerveModule.GearRatio m_gearRatio;
-  private double m_driveConversionFactor;
   private double m_autoLockTime;
   private final boolean m_isPhoenixPro;
 
@@ -111,6 +112,8 @@ public class CTRESwerveModule extends SwerveModule implements Sendable {
 
   private PositionVoltage m_rotatePositionSetter;
   private VelocityVoltage m_driveVelocitySetter;
+  private VoltageOut m_driveVoltageSetter;
+  private VoltageOut m_rotateVoltageSetter;
 
   /**
    * Create an instance of a CTRE swerve module
@@ -179,15 +182,14 @@ public class CTRESwerveModule extends SwerveModule implements Sendable {
     this.m_autoLockTimer = Instant.now();
     this.m_rotatePositionSetter = new PositionVoltage(Units.Radians.zero());
     this.m_driveVelocitySetter = new VelocityVoltage(Units.RotationsPerSecond.zero());
+    this.m_rotateVoltageSetter = new VoltageOut(Units.Volts.zero());
+    this.m_driveVoltageSetter = new VoltageOut(Units.Volts.zero());
 
     Logger.recordOutput(m_driveMotor.getID().name + MAX_LINEAR_VELOCITY_LOG_ENTRY, DRIVE_MAX_LINEAR_SPEED);
 
     m_driveMotorConfig = new TalonFXConfiguration();
     m_rotateMotorConfig = new TalonFXConfiguration();
     m_canCoderConfig = new CANcoderConfiguration();
-
-    // Set drive conversion factor
-    m_driveConversionFactor = driveWheel.diameter.in(Units.Meters) * Math.PI / m_gearRatio.getDriveRatio();
 
     // Set rotate encoder config
     m_canCoder.getConfigurator()
@@ -277,8 +279,8 @@ public class CTRESwerveModule extends SwerveModule implements Sendable {
       m_driveMotor.getInputs().selectedSensorPosition.mut_replace(distanceToAngle(m_simDrivePosition));
       m_driveMotor.getInputs().selectedSensorVelocity.mut_replace(linearToAngularVelocity(Units.MetersPerSecond.of(m_desiredState.speedMetersPerSecond)));
       synchronized (m_rotateMotor.getInputs()) {
-        m_rotateMotor.getInputs().selectedSensorPosition.mut_replace(m_desiredState.angle.getRadians(), Units.Radians);
-        m_canCoder.getInputs().absolutePosition.mut_replace(m_desiredState.angle.getRadians(), Units.Radians);
+        m_rotateMotor.getInputs().selectedSensorPosition.mut_replace(m_desiredState.angle.getMeasure());
+        m_canCoder.getInputs().absolutePosition.mut_replace(m_desiredState.angle.getMeasure());
         m_simModulePosition = new SwerveModulePosition(m_simDrivePosition, m_desiredState.angle);
       }
     }
@@ -350,7 +352,7 @@ public class CTRESwerveModule extends SwerveModule implements Sendable {
     m_rotateMotor.getSimState().setSupplyVoltage(vbus);
     m_canCoder.getSimState().setSupplyVoltage(vbus);
 
-    m_driveMotor.getSimState().setRotorVelocity(m_moduleSim.getDriveMotorVelocity().times(m_driveConversionFactor));
+    m_driveMotor.getSimState().setRotorVelocity(m_moduleSim.getDriveMotorVelocity());
     m_rotateMotor.getSimState().setRotorVelocity(m_moduleSim.getRotateMotorVelocity());
 
     m_moduleSim.update(
@@ -470,6 +472,17 @@ public class CTRESwerveModule extends SwerveModule implements Sendable {
   @Override
   public void enableBrakeMode(boolean enable) {
     m_driveMotorConfig.MotorOutput.withNeutralMode((enable) ? NeutralModeValue.Brake : NeutralModeValue.Coast);
+  }
+
+  @Override
+  public void setDriveSysID(Voltage volts) {
+    m_rotateMotor.setControl(m_rotatePositionSetter.withPosition(m_zeroOffset.getMeasure()));
+    m_driveMotor.setControl(m_driveVoltageSetter.withOutput(volts));
+  }
+
+  @Override
+  public void setRotateSysID(Voltage volts) {
+    m_rotateMotor.setControl(m_rotateVoltageSetter.withOutput(volts));
   }
 
   /**

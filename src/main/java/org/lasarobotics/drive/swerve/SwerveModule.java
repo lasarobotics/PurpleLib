@@ -24,6 +24,7 @@ import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
+import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
@@ -358,7 +359,7 @@ public abstract class SwerveModule implements AutoCloseable {
    * Reset swerve module to 0 degrees
    */
   public void reset() {
-    set(new SwerveModuleState(0.0, m_zeroOffset.unaryMinus()));
+    set(new SwerveModuleState(0.0, m_zeroOffset));
   }
 
   /**
@@ -446,6 +447,18 @@ public abstract class SwerveModule implements AutoCloseable {
   public void disableAutoLock() {
     m_autoLock = false;
   }
+
+  /**
+   * Set drive motor voltage for SysID
+   * @param volts Voltage to apply
+   */
+  public abstract void setDriveSysID(Voltage volts);
+
+  /**
+   * Set rotate motor voltage for SysID
+   * @param volts Voltage to apply
+   */
+  public abstract void setRotateSysID(Voltage volts);
 
   /**
    * Set swerve module direction and speed

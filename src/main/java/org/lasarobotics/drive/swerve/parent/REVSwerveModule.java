@@ -42,6 +42,7 @@ import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Mass;
 import edu.wpi.first.units.measure.Time;
+import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.RobotBase;
@@ -414,6 +415,17 @@ public class REVSwerveModule extends SwerveModule implements Sendable {
   @Override
   public void enableBrakeMode(boolean enable) {
     m_driveMotor.setIdleMode((enable) ? IdleMode.kBrake : IdleMode.kCoast);
+  }
+
+  @Override
+  public void setDriveSysID(Voltage volts) {
+    m_rotateMotor.set(m_zeroOffset.getRadians(), ControlType.kPosition);
+    m_driveMotor.set(volts.in(Units.Volts), ControlType.kVoltage);
+  }
+
+  @Override
+  public void setRotateSysID(Voltage volts) {
+    m_rotateMotor.set(volts.in(Units.Volts), ControlType.kVoltage);
   }
 
   @Override
