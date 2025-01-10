@@ -238,7 +238,7 @@ public class REVSwerveModuleTest {
 
     // Verify that motors are being driven with expected values
     verify(m_lFrontDriveMotor, times(1)).set(AdditionalMatchers.eq(-2.0, DELTA), ArgumentMatchers.eq(ControlType.kVelocity), ArgumentMatchers.anyDouble(), ArgumentMatchers.eq(ArbFFUnits.kVoltage));
-    verify(m_lFrontRotateMotor, times(1)).set(AdditionalMatchers.eq(+Math.PI / 2, DELTA), ArgumentMatchers.eq(ControlType.kPosition));
+    verify(m_lFrontRotateMotor, times(1)).set(AdditionalMatchers.eq(-Math.PI / 2, DELTA), ArgumentMatchers.eq(ControlType.kPosition));
     verify(m_rFrontDriveMotor, times(1)).set(AdditionalMatchers.eq(+2.0, DELTA), ArgumentMatchers.eq(ControlType.kVelocity), ArgumentMatchers.anyDouble(), ArgumentMatchers.eq(ArbFFUnits.kVoltage));
     verify(m_rFrontRotateMotor, times(1)).set(AdditionalMatchers.eq(+Math.PI, DELTA), ArgumentMatchers.eq(ControlType.kPosition));
     verify(m_lRearDriveMotor, times(1)).set(AdditionalMatchers.eq(+2.0, DELTA), ArgumentMatchers.eq(ControlType.kVelocity), ArgumentMatchers.anyDouble(), ArgumentMatchers.eq(ArbFFUnits.kVoltage));
@@ -305,9 +305,9 @@ public class REVSwerveModuleTest {
     // Verify module reports expected position
     assertEquals(
       new SwerveModulePosition(
-        -desiredState.speedMetersPerSecond * GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Seconds),
+        desiredState.speedMetersPerSecond * GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Seconds),
         desiredState.angle.minus(
-          Rotation2d.fromRadians(MAXSwerveModule.ZERO_OFFSET.get(SwerveModule.Location.LeftFront).in(Units.Radians))
+          Rotation2d.fromRadians(MAXSwerveModule.ZERO_OFFSET.get(SwerveModule.Location.LeftFront).in(Units.Radians)).unaryMinus()
       )),
       m_lFrontModule.getPosition()
     );
@@ -348,6 +348,6 @@ public class REVSwerveModuleTest {
 
     // Verify that motors are being driven with expected values
     verify(m_lFrontDriveMotor).set(AdditionalMatchers.leq(NEO_MAX_LINEAR_SPEED.in(Units.MetersPerSecond)), ArgumentMatchers.eq(ControlType.kVelocity), ArgumentMatchers.anyDouble(), ArgumentMatchers.eq(ArbFFUnits.kVoltage));
-    verify(m_lFrontRotateMotor).set(AdditionalMatchers.eq(+Math.PI / 2, DELTA), ArgumentMatchers.eq(ControlType.kPosition));
+    verify(m_lFrontRotateMotor).set(AdditionalMatchers.eq(-Math.PI / 2, DELTA), ArgumentMatchers.eq(ControlType.kPosition));
   }
 }

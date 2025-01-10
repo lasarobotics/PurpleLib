@@ -64,10 +64,10 @@ public abstract class MAXSwerveModule {
   }
 
   public static final Map<SwerveModule.Location, Angle> ZERO_OFFSET = Map.ofEntries(
-    Map.entry(SwerveModule.Location.LeftFront, Units.Radians.of(Math.PI / 2)),
+    Map.entry(SwerveModule.Location.LeftFront, Units.Radians.of(-Math.PI / 2)),
     Map.entry(SwerveModule.Location.RightFront, Units.Radians.zero()),
-    Map.entry(SwerveModule.Location.LeftRear, Units.Radians.of(Math.PI)),
-    Map.entry(SwerveModule.Location.RightRear, Units.Radians.of(Math.PI / 2))
+    Map.entry(SwerveModule.Location.LeftRear, Units.Radians.of(+Math.PI)),
+    Map.entry(SwerveModule.Location.RightRear, Units.Radians.of(+Math.PI / 2))
   );
 
   /**
