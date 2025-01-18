@@ -731,7 +731,7 @@ public class Spark extends LoggableHardware {
    *
    * <p>Following anything other than a CAN-enabled SPARK is not officially supported.
    *
-   * @param leaderCanId The CAN ID of the device to follow.
+   * @param leader The motor controller to follow.
    * @return {@link REVLibError#kOk} if successful
    */
   public REVLibError follow(Spark leader) {
