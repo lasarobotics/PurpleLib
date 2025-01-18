@@ -697,6 +697,60 @@ public class Spark extends LoggableHardware {
   }
 
   /**
+   * Common interface for inverting direction of a speed controller.
+   *
+   * <p>This call has no effect if the controller is a follower. To invert a follower, see the
+   * follow() method.
+   *
+   * @param inverted True for inverted
+   * @return {@link REVLibError#kOk} if successful
+   */
+  public REVLibError setInverted(boolean inverted) {
+    if (getKind().equals(MotorKind.NEO_VORTEX)) {
+      return configure(
+        new SparkFlexConfig().inverted(inverted),
+        SparkBase.ResetMode.kNoResetSafeParameters,
+        SparkBase.PersistMode.kNoPersistParameters
+      );
+    } else {
+      return configure(
+        new SparkMaxConfig().inverted(inverted),
+        SparkBase.ResetMode.kNoResetSafeParameters,
+        SparkBase.PersistMode.kNoPersistParameters
+      );
+    }
+  }
+
+  /**
+   * Causes this controller's output to mirror the provided leader.
+   *
+   * <p>Only voltage output is mirrored. Settings changed on the leader do not affect the follower.
+   *
+   * <p>The motor will spin in the same direction as the leader. This can be changed by passing a
+   * true constant after the deviceID parameter.
+   *
+   * <p>Following anything other than a CAN-enabled SPARK is not officially supported.
+   *
+   * @param leaderCanId The CAN ID of the device to follow.
+   * @return {@link REVLibError#kOk} if successful
+   */
+  public REVLibError follow(Spark leader) {
+    if (getKind().equals(MotorKind.NEO_VORTEX)) {
+      return configure(
+        new SparkFlexConfig().follow(leader.getID().deviceID),
+        SparkBase.ResetMode.kNoResetSafeParameters,
+        SparkBase.PersistMode.kNoPersistParameters
+      );
+    } else {
+      return configure(
+        new SparkMaxConfig().follow(leader.getID().deviceID),
+        SparkBase.ResetMode.kNoResetSafeParameters,
+        SparkBase.PersistMode.kNoPersistParameters
+      );
+    }
+  }
+
+  /**
    * Spark approximate input current
    * @return
    */
