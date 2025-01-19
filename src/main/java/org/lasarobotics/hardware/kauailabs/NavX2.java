@@ -25,6 +25,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Frequency;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.MutAngle;
 import edu.wpi.first.units.measure.MutAngularVelocity;
@@ -72,7 +73,6 @@ public class NavX2 extends LoggableHardware implements IMU {
   private static final AngularVelocity NAVX2_YAW_DRIFT_RATE = Units.DegreesPerSecond.of(0.5 / 60);
 
   private AHRS m_navx;
-  private Notifier m_inputThread;
   private ChassisSpeeds m_previousSpeeds;
   private Instant m_lastUpdateTime;
 
@@ -96,7 +96,6 @@ public class NavX2 extends LoggableHardware implements IMU {
     this.m_name = id.name;
     this.m_navx = new AHRS(NavXComType.kMXP_SPI, NavXUpdateRate.k200Hz);
     this.m_inputs = new NavX2InputsAutoLogged();
-    this.m_inputThread = new Notifier(this::updateInputs);
     this.m_fieldCentricVelocities = false;
 
     SimDeviceSim simNavX2 = new SimDeviceSim("navX-Sensor", m_navx.getPort());
@@ -114,9 +113,6 @@ public class NavX2 extends LoggableHardware implements IMU {
     // Update inputs on init
     updateInputs();
 
-    // Start input thread
-    m_inputThread.startPeriodic(1.0 / NavXUpdateRate.k200Hz.getValue());
-
     // Register device with manager
     PurpleManager.add(this);
   }
@@ -132,7 +128,7 @@ public class NavX2 extends LoggableHardware implements IMU {
   /**
    * Update NavX input readings
    */
-  private void updateInputs() {
+  protected void updateInputs() {
     synchronized (m_inputs) {
       m_inputs.isConnected = m_navx.isConnected();
       m_inputs.rollAngle.mut_replace(m_navx.getRoll(), Units.Degrees);
@@ -155,6 +151,11 @@ public class NavX2 extends LoggableHardware implements IMU {
   @Override
   protected void periodic() {
     synchronized (m_inputs) { Logger.processInputs(m_name, m_inputs); }
+  }
+
+  @Override
+  public Frequency getUpdateRate() {
+    return Units.Hertz.of(1.0 / NavXUpdateRate.k200Hz.getValue());
   }
 
   /**

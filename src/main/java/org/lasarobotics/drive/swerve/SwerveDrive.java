@@ -250,6 +250,9 @@ public class SwerveDrive extends SubsystemBase implements AutoCloseable {
     // Initialise field
     m_field = new Field2d();
     SmartDashboard.putData(m_field);
+
+    // Disable traction control in simulation
+    if (RobotBase.isSimulation()) disableTractionControl();
   }
 
   /**

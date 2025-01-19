@@ -41,7 +41,6 @@ import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Frequency;
-import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.Timer;
@@ -149,7 +148,7 @@ public class Spark extends LoggableHardware {
 
   private ID m_id;
   private MotorKind m_kind;
-  private Notifier m_inputThread;
+  private Frequency m_updateRate;
 
   private LinkedHashSet<Supplier<REVLibError>> m_configChain;
   private Runnable m_invertedRunner;
@@ -178,10 +177,10 @@ public class Spark extends LoggableHardware {
     }
     this.m_sparkSim = new SparkSim(m_spark, kind.motor);
     this.m_id = id;
+    this.m_updateRate = updateRate;
     this.m_kind = kind;
     this.m_output = new SparkOutput(0.0, ControlType.kDutyCycle, 0.0, ArbFFUnits.kVoltage);
     this.m_inputs = new SparkInputsAutoLogged();
-    this.m_inputThread = new Notifier(this::updateInputs);
     this.m_configChain = new LinkedHashSet<>();
     this.m_invertedRunner = () -> {};
     this.m_forwardLimitSwitchTrigger = new Trigger(() -> getInputs().forwardLimitSwitch);
@@ -210,10 +209,6 @@ public class Spark extends LoggableHardware {
     // Register device with monitor and manager
     SparkMonitor.getInstance().add(this);
     PurpleManager.add(this);
-
-    // Start sensor input thread
-    m_inputThread.setName(m_id.name);
-    if (!Logger.hasReplaySource()) m_inputThread.startPeriodic(updateRate.asPeriod().in(Units.Seconds));
   }
 
   /**
@@ -354,7 +349,7 @@ public class Spark extends LoggableHardware {
   /**
    * Update sensor input readings
    */
-  private void updateInputs() {
+  protected void updateInputs() {
     synchronized (m_inputs) {
       // Get sensor inputs
       m_inputs.timestamp = RobotController.getFPGATime();
@@ -383,6 +378,11 @@ public class Spark extends LoggableHardware {
 
     if (getMotorType() == MotorType.kBrushed) return;
     Logger.recordOutput(m_id.name + TEMPERATURE_LOG_ENTRY, m_spark.getMotorTemperature());
+  }
+
+  @Override
+  public Frequency getUpdateRate() {
+    return m_updateRate;
   }
 
   @Override

@@ -103,7 +103,7 @@ public class Compressor extends LoggableHardware {
   /**
    * Update sensor input readings
    */
-  private void updateInputs() {
+  protected void updateInputs() {
     m_inputs.isEnabled = isEnabled();
     m_inputs.digitalPressure = getPressureSwitchValue();
     m_inputs.analogPressure = getPressure();

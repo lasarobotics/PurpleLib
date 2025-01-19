@@ -7,7 +7,12 @@ package org.lasarobotics.hardware;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.function.Supplier;
 
 import org.lasarobotics.battery.BatteryTracker;
@@ -29,6 +34,7 @@ import com.ctre.phoenix6.SignalLogger;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.units.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.PowerDistribution;
@@ -38,12 +44,13 @@ import edu.wpi.first.wpilibj.Timer;
 /** PurpleLib Hardware Logging Manager */
 public class PurpleManager {
   private static double GARBAGE_COLLECTION_SEC = 5.0;
-  private static List<LoggableHardware> m_hardware = new ArrayList<>();
+  private static Map<LoggableHardware, ScheduledFuture<?>> m_hardware = new HashMap<>();
   private static List<Monitorable> m_monitored = new ArrayList<>();
   private static List<Runnable> m_callbacks = new ArrayList<>();
   private static List<Runnable> m_simCallbacks = new ArrayList<>();
   private static VisionSystemSim m_visionSim = new VisionSystemSim("PurpleManager");
   private static Supplier<Pose2d> m_poseSupplier = null;
+  private static ScheduledExecutorService m_inputUpdater = Executors.newSingleThreadScheduledExecutor();
   private static Timer m_garbageTimer = new Timer();
 
   /**
@@ -194,8 +201,18 @@ public class PurpleManager {
    * @param devices Devices to add
    */
   public static void add(LoggableHardware... devices) {
-    m_hardware.addAll(Arrays.asList(devices));
-    m_monitored.addAll(Arrays.asList(devices));
+    Arrays.asList(devices).stream().forEach((device) -> {
+      var inputUpdateTaskHandle = m_inputUpdater.scheduleAtFixedRate(
+        device::updateInputs,
+        0,
+        RobotBase.isSimulation()
+          ? (long)GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Microseconds)
+          : (long)device.getUpdateRate().asPeriod().in(Units.Microseconds),
+        java.util.concurrent.TimeUnit.MICROSECONDS
+      );
+      m_hardware.put(device, inputUpdateTaskHandle);
+      m_monitored.add(device);
+    });
   }
 
   /**
@@ -213,8 +230,11 @@ public class PurpleManager {
    * @param devices Devices to remove
    */
   public static void remove(LoggableHardware... devices) {
-    m_hardware.removeAll(Arrays.asList(devices));
-    m_monitored.removeAll(Arrays.asList(devices));
+    Arrays.asList(devices).stream().forEach((device) -> {
+      m_hardware.get(device).cancel(true);
+      m_hardware.remove(device);
+      m_monitored.remove(device);
+    });
   }
 
   /**
@@ -254,7 +274,7 @@ public class PurpleManager {
 
     // Monitor health and run periodic logic
     monitorHealth();
-    m_hardware.stream().forEach((device) -> device.periodic());
+    m_hardware.keySet().stream().forEach((device) -> device.periodic());
     m_callbacks.stream().forEach(Runnable::run);
 
     // If not real robot, run simulation logic
@@ -301,7 +321,7 @@ public class PurpleManager {
    * Remove all hardware devices and callbacks from logging manager
    */
   public static void clear() {
-    m_hardware.stream().forEach((device) -> device.close());
+    remove(m_hardware.entrySet().toArray(new LoggableHardware[0]));
     m_hardware.clear();
     m_callbacks.clear();
     m_simCallbacks.clear();

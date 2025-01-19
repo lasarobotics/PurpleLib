@@ -11,6 +11,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Frequency;
 import edu.wpi.first.units.measure.LinearVelocity;
 
 public interface IMU extends AutoCloseable {
@@ -22,6 +23,12 @@ public interface IMU extends AutoCloseable {
   public default boolean isConnected() {
     return true;
   }
+
+  /**
+   * Get update rate for IMU
+   * @return Update rate
+   */
+  public Frequency getUpdateRate();
 
   /**
    * Reset yaw angle

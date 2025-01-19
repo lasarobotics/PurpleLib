@@ -18,6 +18,9 @@ public class ThriftyNova extends LoggableHardware {
   }
 
   @Override
+  protected void updateInputs() {}
+
+  @Override
   protected void periodic() {
     // TODO Auto-generated method stub
     throw new UnsupportedOperationException("Unimplemented method 'periodic'");

@@ -4,9 +4,13 @@
 
 package org.lasarobotics.hardware;
 
+import org.lasarobotics.utils.GlobalConstants;
 import org.littletonrobotics.junction.inputs.LoggableInputs;
 
+import edu.wpi.first.units.measure.Frequency;
+
 public abstract class LoggableHardware extends Monitorable implements AutoCloseable {
+  protected abstract void updateInputs();
   /**
    * Call this method periodically
    */
@@ -22,4 +26,14 @@ public abstract class LoggableHardware extends Monitorable implements AutoClosea
    * Closes the hardware device
    */
   public abstract void close();
+
+  /**
+   * Get update rate for device
+   * <p>
+   * Defaults to {@link GlobalConstants#ROBOT_LOOP_HZ}
+   * @return Desired update rate for this device
+   */
+  public Frequency getUpdateRate() {
+    return GlobalConstants.ROBOT_LOOP_HZ;
+  }
 }

@@ -64,6 +64,9 @@ public class Servo extends LoggableHardware {
   }
 
   @Override
+  protected void updateInputs() {}
+
+  @Override
   public void periodic() {}
 
   @Override

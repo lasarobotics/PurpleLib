@@ -141,6 +141,9 @@ public class Canandgyro extends LoggableHardware implements IMU {
   }
 
   @Override
+  protected void updateInputs() {}
+
+  @Override
   protected void periodic() {
     Logger.processInputs(m_name, m_inputs);
   }

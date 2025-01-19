@@ -5,6 +5,9 @@
 package org.lasarobotics.vision;
 
 import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.lasarobotics.hardware.PurpleManager;
@@ -29,7 +32,6 @@ import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Distance;
-import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotState;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -71,13 +73,15 @@ public class AprilTagCamera implements AutoCloseable {
     }
   }
 
+  private static final ScheduledExecutorService APRILTAG_CAMERA_EXECUTOR = Executors.newSingleThreadScheduledExecutor();
+
   private PhotonCamera m_camera;
   private PhotonCameraSim m_cameraSim;
   private PhotonPoseEstimator m_poseEstimator;
   private Transform3d m_transform;
   private AprilTagFieldLayout m_fieldLayout;
-  private Notifier m_thread;
   private AtomicReference<AprilTagCamera.Result> m_latestResult;
+  private ScheduledFuture<?> m_taskHandle;
 
   /**
    * Create VisionCamera
@@ -109,8 +113,12 @@ public class AprilTagCamera implements AutoCloseable {
     PurpleManager.addCameraSim(m_cameraSim, m_transform);
 
     // Start camera thread
-    this.m_thread = new Notifier(this::run);
-    m_thread.startPeriodic(GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Seconds));
+    m_taskHandle = APRILTAG_CAMERA_EXECUTOR.scheduleAtFixedRate(
+      this::run,
+      0,
+      (long)GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Microseconds),
+      java.util.concurrent.TimeUnit.MICROSECONDS
+    );
   }
 
   /**
@@ -256,7 +264,7 @@ public class AprilTagCamera implements AutoCloseable {
 
   @Override
   public void close() {
-    m_thread.close();
+    m_taskHandle.cancel(true);
     m_camera.close();
   }
 }

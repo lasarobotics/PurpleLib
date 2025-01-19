@@ -110,7 +110,7 @@ public class TalonSRX extends LoggableHardware {
   /**
    * Update sensor input readings
    */
-  private void updateInputs() {
+  protected void updateInputs() {
     m_inputs.selectedSensorPosition = getSelectedSensorPosition();
     m_inputs.selectedSensorVelocity = getSelectedSensorVelocity();
   }

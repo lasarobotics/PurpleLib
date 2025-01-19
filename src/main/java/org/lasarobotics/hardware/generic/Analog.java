@@ -10,6 +10,7 @@ import org.littletonrobotics.junction.AutoLog;
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.units.Units;
+import edu.wpi.first.units.measure.Frequency;
 import edu.wpi.first.units.measure.MutVoltage;
 import edu.wpi.first.wpilibj.AnalogInput;
 
@@ -44,14 +45,16 @@ public class Analog extends LoggableHardware {
   private AnalogInput m_analogInput;
 
   private ID m_id;
+  private Frequency m_updateRate;
   private AnalogInputsAutoLogged m_inputs;
 
   /**
    * Create an Analog object
    * @param id Analog ID
    */
-  public Analog(Analog.ID id) {
+  public Analog(Analog.ID id, Frequency updateRate) {
     this.m_id = id;
+    this.m_updateRate = updateRate;
     this.m_analogInput = new AnalogInput(id.port);
     this.m_inputs = new AnalogInputsAutoLogged();
 
@@ -65,8 +68,13 @@ public class Analog extends LoggableHardware {
   /**
    * Update sensor input readings
    */
-  private void updateInputs() {
+  protected void updateInputs() {
     m_inputs.voltage.mut_replace(Units.Volts.of(m_analogInput.getVoltage()));
+  }
+
+  @Override
+  public Frequency getUpdateRate() {
+    return m_updateRate;
   }
 
   /**

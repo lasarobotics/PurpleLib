@@ -70,7 +70,8 @@ public class CTRESwerveModule extends SwerveModule implements Sendable {
     }
   }
 
-  public static final Frequency DEFAULT_SIGNAL_HZ = Units.Hertz.of(100);
+  private static final Frequency UPDATE_RATE = Units.Hertz.of(200.0);
+  public static final Frequency DEFAULT_SIGNAL_HZ = Units.Hertz.of(200.0);
   public static final Frequency ALTERNATE_SIGNAL_PERIOD = Units.Hertz.of(0.1);
   public static final double DRIVETRAIN_EFFICIENCY = 0.90;
 
@@ -467,6 +468,11 @@ public class CTRESwerveModule extends SwerveModule implements Sendable {
         m_rotateMotor.applyConfigs(m_rotateMotorConfig);
       }
     );
+  }
+
+  @Override
+  public Frequency getUpdateRate() {
+    return UPDATE_RATE;
   }
 
   @Override

@@ -122,11 +122,9 @@ public class CANcoder extends LoggableHardware {
   }
 
   /**
-   * Gets the velocity of the sensor.
-   * The units are determined by the internal coefficient, default is rotations.
-   * @return The Velocity of the sensor.
+   * Update sensor input readings
    */
-  private void updateInputs() {
+  protected void updateInputs() {
     synchronized (m_inputs) {
       m_inputs.absolutePosition.mut_replace(getAbsolutePosition());
       m_inputs.relativePosition.mut_replace(getRelativePosition());

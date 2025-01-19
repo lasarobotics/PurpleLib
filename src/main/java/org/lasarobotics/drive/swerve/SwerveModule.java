@@ -23,6 +23,7 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Distance;
+import edu.wpi.first.units.measure.Frequency;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.RobotBase;
@@ -466,6 +467,13 @@ public abstract class SwerveModule implements AutoCloseable {
    */
   public abstract void set(SwerveModuleState state);
 
+  /**
+   * Get update rate of swerve module devices
+   * <p>
+   * Used to determine frequency of pose estimator thread task
+   * @return Update rate
+   */
+  public abstract Frequency getUpdateRate();
 
   /**
    * Enable brake mode on drive mtor

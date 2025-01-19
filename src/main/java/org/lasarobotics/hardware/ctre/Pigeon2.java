@@ -27,7 +27,6 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Frequency;
 import edu.wpi.first.units.measure.MutAngle;
 import edu.wpi.first.units.measure.MutAngularVelocity;
-import edu.wpi.first.wpilibj.Notifier;
 
 /** CTRE Pigeon 2.0 */
 public class Pigeon2 extends LoggableHardware implements IMU {
@@ -66,7 +65,7 @@ public class Pigeon2 extends LoggableHardware implements IMU {
 
   private static final AngularVelocity PIGEON2_YAW_DRIFT_RATE = Units.DegreesPerSecond.of(0.25 / 60);
 
-  private Notifier m_inputThread;
+  private Frequency m_updateRate;
   private Instant m_lastUpdateTime;
 
   private com.ctre.phoenix6.hardware.Pigeon2 m_pigeon;
@@ -93,16 +92,13 @@ public class Pigeon2 extends LoggableHardware implements IMU {
   public Pigeon2(ID id, Frequency updateRate) {
     this.m_id = id;
     this.m_pigeon = new com.ctre.phoenix6.hardware.Pigeon2(id.deviceID, id.bus.name);
+    this.m_updateRate = updateRate;
     this.m_inputs = new Pigeon2InputsAutoLogged();
-    this.m_inputThread = new Notifier(this::updateInputs);
     this.m_lastUpdateTime = Instant.now();
 
     m_pigeon.getRoll().setUpdateFrequency(updateRate);
     m_pigeon.getPitch().setUpdateFrequency(updateRate);
     m_pigeon.getYaw().setUpdateFrequency(updateRate);
-
-    // Start input thread
-    m_inputThread.startPeriodic(updateRate.asPeriod().in(Units.Seconds));
 
     // Update inputs on init
     periodic();
@@ -114,7 +110,7 @@ public class Pigeon2 extends LoggableHardware implements IMU {
   /**
    * Update Pidgeon input readings
    */
-  private void updateInputs() {
+  protected void updateInputs() {
     synchronized (m_inputs) {
       m_inputs.pitchAngle.mut_replace(m_pigeon.getPitch().getValue());
       m_inputs.yawAngle.mut_replace(m_pigeon.getYaw().getValue());
@@ -130,6 +126,11 @@ public class Pigeon2 extends LoggableHardware implements IMU {
   @Override
   protected void periodic() {
     synchronized (m_inputs) { Logger.processInputs(m_id.name, m_inputs); }
+  }
+
+  @Override
+  public Frequency getUpdateRate() {
+    return m_updateRate;
   }
 
   /**

@@ -39,6 +39,7 @@ import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Dimensionless;
 import edu.wpi.first.units.measure.Distance;
+import edu.wpi.first.units.measure.Frequency;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Mass;
 import edu.wpi.first.units.measure.Time;
@@ -65,6 +66,7 @@ public class REVSwerveModule extends SwerveModule implements Sendable {
     }
   }
 
+  private static final Frequency UPDATE_RATE = Units.Hertz.of(100.0);
   public static final Time DEFAULT_SIGNAL_PERIOD = Units.Milliseconds.of(10.0);
   public static final Time SLOW_SIGNAL_PERIOD = Units.Seconds.of(10.0);
   public static final double DRIVETRAIN_EFFICIENCY = 0.90;
@@ -410,6 +412,11 @@ public class REVSwerveModule extends SwerveModule implements Sendable {
         m_rotateMotor.configure(m_rotateMotorConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
       }
     );
+  }
+
+  @Override
+  public Frequency getUpdateRate() {
+    return UPDATE_RATE;
   }
 
   @Override

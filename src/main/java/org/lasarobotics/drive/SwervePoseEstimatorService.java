@@ -9,6 +9,8 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -34,7 +36,6 @@ import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Time;
-import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.RobotController;
 
@@ -46,8 +47,8 @@ public class SwervePoseEstimatorService {
     Pose2d currentPose = new Pose2d();
   }
 
+  private static final ScheduledExecutorService POSE_ESTIMATION_EXECUTOR = Executors.newSingleThreadScheduledExecutor();
   private static final Matrix<N3,N1> VISION_STDDEV = VecBuilder.fill(1.0, 1.0, Math.toRadians(3.0));
-  private static final Time DEFAULT_THREAD_PERIOD = Units.Milliseconds.of(10.0);
   private static final AngularVelocity VISION_ANGULAR_VELOCITY_THRESHOLD = Units.DegreesPerSecond.of(720.0);
   private static final String NAME = "SwervePoseEstimatorService";
   private static final String VISIBLE_TAGS_LOG_ENTRY = "/Vision/VisibleTags";
@@ -62,7 +63,7 @@ public class SwervePoseEstimatorService {
   private List<AprilTagCamera> m_cameras;
   private Time m_threadPeriod;
   private Instant m_lastVisionUpdateTime;
-  private Notifier m_thread;
+  private Runnable m_task;
 
   private volatile double m_currentTimestamp;
   private volatile double m_previousTimestamp;
@@ -118,6 +119,12 @@ public class SwervePoseEstimatorService {
       rRearModule.get().getModuleCoordinate()
     );
 
+    // Get update rate
+    var updateRate = moduleList.stream()
+      .min((module1, module2) -> Double.compare(module1.getUpdateRate().in(Units.Hertz), module2.getUpdateRate().in(Units.Hertz)))
+      .get().getUpdateRate();
+    updateRate = Units.Hertz.of(Math.min(updateRate.in(Units.Hertz), imu.getUpdateRate().in(Units.Hertz)));
+
     // Register callback with PurpleManager
     PurpleManager.addCallback(() -> periodic());
 
@@ -143,7 +150,7 @@ public class SwervePoseEstimatorService {
     this.m_visionEstimatedPoses = new ArrayList<Pose2d>();
 
     // Initialise pose estimator thread
-    this.m_thread = new Notifier(() -> {
+    this.m_task = () -> {
       // Iterate timestamp
       m_previousTimestamp = m_currentTimestamp;
       m_currentTimestamp = RobotController.getFPGATime();
@@ -210,8 +217,7 @@ public class SwervePoseEstimatorService {
         m_visibleTagPoses = new ArrayList<Pose3d>();
         m_visionEstimatedPoses = new ArrayList<Pose2d>();
       }
-    });
-    m_thread.setName(NAME);
+    };
 
     // Remember how to reset pose
     this.m_poseResetMethod = pose -> m_poseEstimator.resetPosition(m_imu.getRotation2d(), m_swerveModulePositionSupplier.get(), pose);
@@ -220,7 +226,7 @@ public class SwervePoseEstimatorService {
     PurpleManager.setPoseSupplier(this::getPose);
 
     // Set thread period to default
-    this.m_threadPeriod = DEFAULT_THREAD_PERIOD;
+    this.m_threadPeriod = updateRate.asPeriod();
 
     // Set last vision update time
     this.m_lastVisionUpdateTime = Instant.now();
@@ -241,7 +247,7 @@ public class SwervePoseEstimatorService {
   /**
    * Set how frequently the pose estimator should update
    * <p>
-   * Defaults to 10ms if not set (100Hz), 20ms for simulation (50Hz)
+   * Defaults to minimum update rate of swerve modules and IMU
    * @param period Period between pose estimator updates
    */
   public void setPeriod(Time period) {
@@ -265,7 +271,7 @@ public class SwervePoseEstimatorService {
   public void start() {
     m_running = true;
     if (Logger.hasReplaySource()) return;
-    m_thread.startPeriodic(m_threadPeriod.in(Units.Seconds));
+    POSE_ESTIMATION_EXECUTOR.scheduleAtFixedRate(m_task, 0, (long)m_threadPeriod.in(Units.Microseconds), java.util.concurrent.TimeUnit.MICROSECONDS);
   }
 
   /**
@@ -274,7 +280,7 @@ public class SwervePoseEstimatorService {
   public void stop() {
     m_running = false;
     if (Logger.hasReplaySource()) return;
-    m_thread.stop();
+    POSE_ESTIMATION_EXECUTOR.shutdownNow();
   }
 
   /**

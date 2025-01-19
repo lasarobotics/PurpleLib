@@ -66,6 +66,9 @@ public class VictorSPX extends LoggableHardware {
   }
 
   @Override
+  protected void updateInputs() {}
+
+  @Override
   protected void periodic() {}
 
   @Override

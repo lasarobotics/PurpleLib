@@ -9,6 +9,7 @@ import org.lasarobotics.hardware.PurpleManager;
 import org.littletonrobotics.junction.AutoLog;
 import org.littletonrobotics.junction.Logger;
 
+import edu.wpi.first.units.measure.Frequency;
 import edu.wpi.first.wpilibj.DigitalInput;
 
 /** Limit switch */
@@ -59,16 +60,19 @@ public class LimitSwitch extends LoggableHardware {
 
   private ID m_id;
   private SwitchPolarity m_switchPolarity;
+  private Frequency m_updateRate;
   private LimitSwitchInputsAutoLogged m_inputs;
 
   /**
    * Create a limit switch object with built-in logging
    * @param id Limit switch ID
    * @param switchPolarity Switch polarity
+   * @param updateRate Update rate of input from limit switch
    */
-  public LimitSwitch(LimitSwitch.ID id, SwitchPolarity switchPolarity) {
+  public LimitSwitch(LimitSwitch.ID id, SwitchPolarity switchPolarity, Frequency updateRate) {
     this.m_id = id;
     this.m_switchPolarity = switchPolarity;
+    this.m_updateRate = updateRate;
     this.m_limitSwitch = new DigitalInput(m_id.port);
     this.m_inputs = new LimitSwitchInputsAutoLogged();
 
@@ -82,7 +86,7 @@ public class LimitSwitch extends LoggableHardware {
   /**
    * Update sensor input readings
    */
-  private void updateInputs() {
+  protected void updateInputs() {
     m_inputs.value = m_switchPolarity.getValue(m_limitSwitch.get());
   }
 
@@ -93,6 +97,11 @@ public class LimitSwitch extends LoggableHardware {
   protected void periodic() {
     updateInputs();
     Logger.processInputs(m_id.name, m_inputs);
+  }
+
+  @Override
+  public Frequency getUpdateRate() {
+    return m_updateRate;
   }
 
   /**

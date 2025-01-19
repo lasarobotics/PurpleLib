@@ -82,7 +82,6 @@ import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Frequency;
 import edu.wpi.first.units.measure.MutAngle;
 import edu.wpi.first.units.measure.MutAngularVelocity;
-import edu.wpi.first.wpilibj.Notifier;
 
 
 /** TalonFX */
@@ -126,7 +125,7 @@ public class TalonFX extends LoggableHardware {
   private com.ctre.phoenix6.hardware.TalonFX m_talon;
 
   private ID m_id;
-  private Notifier m_inputThread;
+  private Frequency m_updateRate;
   private volatile TalonFXInputsAutoLogged m_inputs;
 
 
@@ -138,8 +137,8 @@ public class TalonFX extends LoggableHardware {
   public TalonFX(TalonFX.ID id, Frequency updateRate) {
     this.m_id = id;
     this.m_talon = new com.ctre.phoenix6.hardware.TalonFX(id.deviceID, id.bus.name);
+    this.m_updateRate = updateRate;
     this.m_inputs = new TalonFXInputsAutoLogged();
-    this.m_inputThread = new Notifier(this::updateInputs);
 
     // Disable motor safety
     m_talon.setSafetyEnabled(false);
@@ -158,10 +157,6 @@ public class TalonFX extends LoggableHardware {
 
     // Register device with manager
     PurpleManager.add(this);
-
-    // Start sensor input thread
-    m_inputThread.setName(m_id.name);
-    if (!Logger.hasReplaySource()) m_inputThread.startPeriodic(updateRate.asPeriod().in(Units.Seconds));
   }
 
   /**
@@ -178,7 +173,7 @@ public class TalonFX extends LoggableHardware {
   /**
    * Update sensor input readings
    */
-  private void updateInputs() {
+  protected void updateInputs() {
     synchronized (m_inputs) {
       m_inputs.rotorPosition.mut_replace(m_talon.getRotorPosition().getValue());
       m_inputs.rotorVelocity.mut_replace(m_talon.getRotorVelocity().getValue());
@@ -193,6 +188,11 @@ public class TalonFX extends LoggableHardware {
 
     Logger.recordOutput(m_id.name + SUPPLY_CURRENT_LOG_ENTRY, m_talon.getSupplyCurrent().getValueAsDouble());
     Logger.recordOutput(m_id.name + STATOR_CURRENT_LOG_ENTRY, m_talon.getStatorCurrent().getValueAsDouble());
+  }
+
+  @Override
+  public Frequency getUpdateRate() {
+    return m_updateRate;
   }
 
   /**
