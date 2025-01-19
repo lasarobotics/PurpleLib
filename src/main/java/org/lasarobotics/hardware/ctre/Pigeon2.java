@@ -61,7 +61,7 @@ public class Pigeon2 extends LoggableHardware implements IMU {
     public Rotation2d rotation2d = Rotation2d.kZero;
   }
 
-  private static final Frequency DEFAULT_UPDATE_FREQUENCY = Units.Hertz.of(100);
+  private static final Frequency DEFAULT_UPDATE_FREQUENCY = Units.Hertz.of(200.0);
 
   private static final AngularVelocity PIGEON2_YAW_DRIFT_RATE = Units.DegreesPerSecond.of(0.25 / 60);
 
@@ -77,7 +77,7 @@ public class Pigeon2 extends LoggableHardware implements IMU {
   /**
    * Create a Pigeon 2.0 object with built-in logging
    * <p>
-   * Input thread period of 100Hz
+   * Input thread period of 200Hz
    * @param id Pigeon 2.0 ID
    */
   public Pigeon2(ID id) {
