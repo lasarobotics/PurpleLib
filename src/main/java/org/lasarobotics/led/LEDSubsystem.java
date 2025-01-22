@@ -11,6 +11,7 @@ import java.util.Set;
 import org.lasarobotics.led.LEDStrip.Pattern;
 import org.lasarobotics.led.LEDStrip.Section;
 
+import edu.wpi.first.wpilibj.AddressableLED;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 /** LED Subsystem */
@@ -19,11 +20,11 @@ public class LEDSubsystem extends SubsystemBase implements AutoCloseable {
 
   private static LEDSubsystem m_subsystem;
 
-  private Set<LEDStrip> m_ledStrips;
+  private LEDStrip m_ledStrips;
 
   /** Creates a new LEDSubsystem. */
   private LEDSubsystem() {
-    m_ledStrips = new HashSet<LEDStrip>();
+    setDefaultCommand(m_ledStrips.runAnimation());
   }
 
   public static LEDSubsystem getInstance() {
@@ -31,22 +32,18 @@ public class LEDSubsystem extends SubsystemBase implements AutoCloseable {
     return m_subsystem;
   }
 
-  private void setLEDs() {
-    for (LEDStrip ledStrip : m_ledStrips) ledStrip.update();
-  }
-
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
-    setLEDs();
+    
   }
 
   /**
    * Add LED strips
    * @param ledStrips LED strips to add
    */
-  public void add(LEDStrip... ledStrips) {
-    m_ledStrips.addAll(Arrays.asList(ledStrips));
+  public void add(LEDStrip ledStrips) {
+    m_ledStrips = ledStrips;
   }
 
   /**
@@ -55,10 +52,8 @@ public class LEDSubsystem extends SubsystemBase implements AutoCloseable {
    */
   public void startOverride(Pattern pattern) {
     m_overridePattern = pattern;
-    for (LEDStrip ledStrip : m_ledStrips) {
-      ledStrip.startOverride();
-      ledStrip.set(m_overridePattern, Section.FULL);
-    }
+    m_ledStrips.startOverride();
+    m_ledStrips.set(m_overridePattern, Section.FULL);
   }
 
   /**
@@ -66,11 +61,12 @@ public class LEDSubsystem extends SubsystemBase implements AutoCloseable {
    */
   public void endOverride() {
     m_overridePattern = Pattern.TEAM_COLOR_SOLID;
-    for (LEDStrip ledStrip : m_ledStrips) ledStrip.endOverride();
+    m_ledStrips.endOverride();
   }
 
   @Override
   public void close() {
-    for (LEDStrip ledStrip : m_ledStrips) ledStrip.close();
+    m_ledStrips.close();
   }
 }
+

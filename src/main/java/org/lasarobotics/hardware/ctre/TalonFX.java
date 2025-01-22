@@ -4,8 +4,6 @@
 
 
 package org.lasarobotics.hardware.ctre;
-
-
 import org.lasarobotics.hardware.LoggableHardware;
 import org.lasarobotics.hardware.PurpleManager;
 import org.littletonrobotics.junction.AutoLog;

@@ -11,8 +11,11 @@ import java.util.HashMap;
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.wpilibj.AddressableLEDBuffer;
-import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.AddressableLEDBufferView;
+import edu.wpi.first.wpilibj.LEDPattern;
 import edu.wpi.first.wpilibj.util.Color;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 
 /** LED Strip */
 public class LEDStrip implements AutoCloseable {
@@ -224,6 +227,14 @@ public class LEDStrip implements AutoCloseable {
   public static class AddressableLED extends edu.wpi.first.wpilibj.AddressableLED {
     private final String m_name;
     private final int m_length;
+    private AddressableLEDBuffer m_ledBuffer;
+    private AddressableLEDBufferView m_startLeds;
+    private AddressableLEDBufferView m_middleLeds;
+    private AddressableLEDBufferView m_endLeds;
+    private LEDPattern m_startAnimation;
+    private LEDPattern m_middleAnimation;
+    private LEDPattern m_endAnimation;
+
 
     /**
      * Addressable LED strip
@@ -233,8 +244,17 @@ public class LEDStrip implements AutoCloseable {
      */
     public AddressableLED(String name, int port, int length) {
       super(port);
+      this.m_ledBuffer = new AddressableLEDBuffer(length);
+      this.m_startLeds = m_ledBuffer.createView(0, 9);
+      this.m_middleLeds = m_ledBuffer.createView(10, length-10);
+      this.m_endLeds = m_ledBuffer.createView(length-9, length);
       this.m_name = name;
       this.m_length = length;
+      this.m_startAnimation = LEDPattern.solid(TEAM_COLOR);
+      this.m_middleAnimation = LEDPattern.solid(TEAM_COLOR);
+      this.m_endAnimation = LEDPattern.solid(TEAM_COLOR);
+
+
 
       if (length < Section.SMALL_SECTION_LENGTH * 2 + 1)
         throw new IllegalArgumentException("Length is too short, must be at least " + Section.SMALL_SECTION_LENGTH * 2 + 1);
@@ -258,6 +278,7 @@ public class LEDStrip implements AutoCloseable {
   private AddressableLED m_leds;
   private AddressableLEDBuffer m_buffer;
   private HashMap<Section[], Pattern> m_sectionLEDPatterns, m_tempLEDPatterns;
+
 
   private static final double STROBE_DURATION = 0.2;
   private static final double BREATHE_DURATION = 4.0;
@@ -293,115 +314,28 @@ public class LEDStrip implements AutoCloseable {
     return ledStripHardware;
   }
 
-  /**
-   * Set LED strip section to solid color
-   * @param sections Section of LED strip
-   * @param color Color to set
-   */
-  private void solid(Color color, Section... sections) {
-    for (int i = Section.start(m_buffer, sections); i < Section.end(m_buffer, sections); i++) {
-      if (Section.contains(i, m_buffer, sections)) m_buffer.setLED(i, color);
-    }
+  public Command runAnimation() {
+    return Commands.run(() -> {
+      m_leds.m_startAnimation.applyTo(m_leds.m_startLeds);
+      m_leds.m_middleAnimation.applyTo(m_leds.m_middleLeds);
+      m_leds.m_endAnimation.applyTo(m_leds.m_endLeds);
+    });
   }
 
-  /**
-   * Set LED strip section to strobe pattern
-   * @param sections Section of LED strip
-   * @param color Color for pattern
-   */
-  private void strobe(Color color, Section... sections) {
-    boolean on = ((Timer.getFPGATimestamp() % STROBE_DURATION) / STROBE_DURATION) > 0.5;
-    solid(on ? color : Color.kBlack, sections);
-  }
-
-  /**
-   * Set LED strip section to breathe pattern
-   * @param sections Section of LED strip
-   * @param color Color for pattern
-   */
-  private void breathe(Color color, Section... sections) {
-    double x = ((Timer.getFPGATimestamp() % BREATHE_DURATION) / BREATHE_DURATION) * 2.0 * Math.PI;
-    double ratio = (Math.sin(x) + 1.0) / 2.0;
-    double red = (color.red * (1 - ratio));
-    double green = (color.green * (1 - ratio));
-    double blue = (color.blue * (1 - ratio));
-    solid(new Color(red, green, blue), sections);
-  }
-
-  /**
-   * Set LED strip section to wave pattern
-   * @param section Section of LED strip
-   * @param color Color for pattern
-   */
-  private void wave(Color color, Section... sections) {
-    double x = (1 - ((Timer.getFPGATimestamp() % WAVE_DURATION) / WAVE_DURATION)) * 2.0 * Math.PI;
-    double xDiffPerLed = (2.0 * Math.PI) / WAVE_CYCLE_LENGTH;
-    for (int i = 0; i < Section.end(m_buffer, sections); i++) {
-      x += xDiffPerLed;
-      if (i >= Section.start(m_buffer, sections)) {
-        double ratio = (Math.pow(Math.sin(x), WAVE_EXPONENT) + 1.0) / 2.0;
-        if (Double.isNaN(ratio)) ratio = (-Math.pow(Math.sin(x + Math.PI), WAVE_EXPONENT) + 1.0) / 2.0;
-        if (Double.isNaN(ratio)) ratio = 0.5;
-        double red = (color.red * (1 - ratio));
-        double green = (color.green * (1 - ratio));
-        double blue = (color.blue * (1 - ratio));
-        if (Section.contains(i, m_buffer, sections)) m_buffer.setLED(i, new Color(red, green, blue));
-      }
-    }
-  }
-
-  /**
-   * Set LED strip section to rainbow
-   * @param sections Section of LED strip
-   */
-  private void rainbow(Section... sections) {
-    double x = (1 - ((Timer.getFPGATimestamp() / RAINBOW_DURATION) % 1.0)) * 180.0;
-    double xDiffPerLed = 180.0 / RAINBOW_CYCLE_LENGTH;
-    for (int i = 0; i < Section.end(m_buffer, sections); i++) {
-      x += xDiffPerLed;
-      x %= 180.0;
-      if (Section.contains(i, m_buffer, sections)) m_buffer.setHSV(i, (int)x, 255, 255);
-    }
-  }
-
-  /**
-   * Set pattern of LED strip section
-   * @param section LED strip ection to set
-   * @param pattern Desired pattern
-   * @param color Desired color
-   */
-  private void setPattern(Pattern pattern, Section... sections) {
-    switch (pattern.type) {
-      case SOLID:
-        solid(pattern.color, sections);
-        break;
-      case STROBE:
-        strobe(pattern.color, sections);
-        break;
-      case BREATHE:
-        breathe(pattern.color, sections);
-        break;
-      case WAVE:
-        wave(pattern.color, sections);
-        break;
-      case RAINBOW:
-        rainbow(sections);
-        break;
+public void setAnimation(LEDPattern animation, Section... sections){
+  for(Section i : sections){
+    switch (i) {
+      case START:
+        m_leds.m_startAnimation = animation;
+      case MIDDLE:
+        m_leds.m_middleAnimation = animation;
+      case END:
+        m_leds.m_endAnimation = animation;
       default:
-        off(sections);
-        break;
+        continue;
     }
   }
-
-  /**
-   * Update LED strip pattern
-   */
-  protected void update() {
-    m_sectionLEDPatterns.forEach(
-      (sections, pattern) -> setPattern(pattern, sections)
-    );
-    m_leds.setData(m_buffer);
-  }
+}
 
   /**
    * Prepare for LED override
