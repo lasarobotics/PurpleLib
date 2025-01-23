@@ -140,6 +140,9 @@ public class LEDStrip implements AutoCloseable {
     return ledStripHardware;
   }
 
+  /**
+   * Run animation on LED strip
+   */
   void runAnimation() {
     m_sectionLEDPatterns.entrySet().stream().forEach(entry -> {
       for (var section : entry.getKey()) entry.getValue().applyTo(SECTION_MAP.get(section));
@@ -210,7 +213,7 @@ public class LEDStrip implements AutoCloseable {
    * Get latest LED buffer
    * @return Addressable LED buffer
    */
-  public AddressableLEDBuffer getBuffer() {
+  AddressableLEDBuffer getBuffer() {
     return m_ledBuffer;
   }
 

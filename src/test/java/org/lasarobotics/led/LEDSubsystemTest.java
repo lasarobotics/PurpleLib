@@ -27,7 +27,6 @@ public class LEDSubsystemTest {
   private final int LENGTH = 31;
   private final int MIDDLE_START = 11;
   private final int MIDDLE_END = 21;
-  private LEDSubsystem m_ledSubsystem;
 
   private LEDStrip m_ledStrip1;
 
@@ -46,17 +45,13 @@ public class LEDSubsystemTest {
     // Create LED strip objects
     m_ledStrip1 = new LEDStrip(new LEDStrip.Hardware(m_leds1));
 
-    // Create LEDSubsystem object
-    m_ledSubsystem = LEDSubsystem.getInstance();
-
     // Set LED strip for subsystem
-    m_ledSubsystem.setLEDStrip(m_ledStrip1);
+    LEDSubsystem.getInstance().setLEDStrip(m_ledStrip1);
   }
 
   @AfterEach
   public void close() {
-    m_ledSubsystem.close();
-    m_ledSubsystem = null;
+    LEDSubsystem.getInstance().close();
   }
 
   @Test
@@ -64,10 +59,10 @@ public class LEDSubsystemTest {
   @DisplayName("Test if robot can set LED strip to single static solid color")
   public void solidFull() {
     // Set LED pattern
-    m_ledSubsystem.set(LEDPattern.solid(LEDStrip.TEAM_COLOR), LEDStrip.Section.FULL);
+    LEDSubsystem.getInstance().set(LEDPattern.solid(LEDStrip.TEAM_COLOR), LEDStrip.Section.FULL);
 
     // Run LED subsystem loop
-    m_ledSubsystem.getDefaultCommand().execute();
+    LEDSubsystem.getInstance().getDefaultCommand().execute();
 
     Color ledBuffer[] = new Color[LENGTH];
     for (int i = 0; i < ledBuffer.length; i++) ledBuffer[i] = m_ledStrip1.getBuffer().getLED(i);
@@ -82,11 +77,11 @@ public class LEDSubsystemTest {
   @DisplayName("Test if robot can set LED strip start section independently")
   public void startSection() {
     // Set LED pattern
-    m_ledSubsystem.set(LEDPattern.solid(Color.kRed), Section.START);
-    m_ledSubsystem.set(LEDPattern.solid(LEDStrip.TEAM_COLOR), Section.MIDDLE, Section.END);
+    LEDSubsystem.getInstance().set(LEDPattern.solid(Color.kRed), Section.START);
+    LEDSubsystem.getInstance().set(LEDPattern.solid(LEDStrip.TEAM_COLOR), Section.MIDDLE, Section.END);
 
     // Run LED subsystem loop
-    m_ledSubsystem.getDefaultCommand().execute();
+    LEDSubsystem.getInstance().getDefaultCommand().execute();
 
     // Verify LED pattern
     for (int i = 0; i < MIDDLE_START; i++)
@@ -100,11 +95,11 @@ public class LEDSubsystemTest {
   @DisplayName("Test if robot can set LED strip middle section independently")
   public void middleSection() {
     // Set LED pattern
-    m_ledSubsystem.set(LEDPattern.solid(Color.kRed), Section.MIDDLE);
-    m_ledSubsystem.set(LEDPattern.solid(LEDStrip.TEAM_COLOR), Section.START, Section.END);
+    LEDSubsystem.getInstance().set(LEDPattern.solid(Color.kRed), Section.MIDDLE);
+    LEDSubsystem.getInstance().set(LEDPattern.solid(LEDStrip.TEAM_COLOR), Section.START, Section.END);
 
     // Run LED subsystem loop
-    m_ledSubsystem.getDefaultCommand().execute();
+    LEDSubsystem.getInstance().getDefaultCommand().execute();
 
     Color ledBuffer[] = new Color[LENGTH];
     for (int i = 0; i < ledBuffer.length; i++) ledBuffer[i] = m_ledStrip1.getBuffer().getLED(i);
@@ -123,11 +118,11 @@ public class LEDSubsystemTest {
   @DisplayName("Test if robot can set LED strip end section independently")
   public void endSection() {
     // Set LED pattern
-    m_ledSubsystem.set(LEDPattern.solid(Color.kRed), Section.END);
-    m_ledSubsystem.set(LEDPattern.solid(LEDStrip.TEAM_COLOR), Section.START, Section.MIDDLE);
+    LEDSubsystem.getInstance().set(LEDPattern.solid(Color.kRed), Section.END);
+    LEDSubsystem.getInstance().set(LEDPattern.solid(LEDStrip.TEAM_COLOR), Section.START, Section.MIDDLE);
 
     // Run LED subsystem loop
-    m_ledSubsystem.getDefaultCommand().execute();
+    LEDSubsystem.getInstance().getDefaultCommand().execute();
 
     // Verify LED pattern
     for (int i = 0; i < MIDDLE_END; i++)
@@ -141,13 +136,13 @@ public class LEDSubsystemTest {
   @DisplayName("Test if robot can override subsystem LED control")
   public void ledOverride() {
     // Set LED pattern
-    m_ledSubsystem.set(LEDPattern.solid(Color.kBlue), Section.FULL);
+    LEDSubsystem.getInstance().set(LEDPattern.solid(Color.kBlue), Section.FULL);
 
     // Request LED override
-    m_ledSubsystem.startOverride(LEDPattern.solid(LEDStrip.TEAM_COLOR));
+    LEDSubsystem.getInstance().startOverride(LEDPattern.solid(LEDStrip.TEAM_COLOR));
 
     // Run LED subsystem loop
-    m_ledSubsystem.getDefaultCommand().execute();
+    LEDSubsystem.getInstance().getDefaultCommand().execute();
 
     // Verify LED pattern
     for (int i = 0; i < LENGTH; i++)
@@ -156,10 +151,10 @@ public class LEDSubsystemTest {
       assertEquals(LEDStrip.TEAM_COLOR, m_ledStrip1.getBuffer().getLED(i));
 
     // End LED override
-    m_ledSubsystem.endOverride();
+    LEDSubsystem.getInstance().endOverride();
 
     // Run LED subsystem loop
-    m_ledSubsystem.getDefaultCommand().execute();
+    LEDSubsystem.getInstance().getDefaultCommand().execute();
 
     // Verify LED pattern
     for (int i = 0; i < LENGTH; i++)
