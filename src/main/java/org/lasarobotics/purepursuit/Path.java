@@ -23,6 +23,10 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.units.Units;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Distance;
+import edu.wpi.first.units.measure.LinearVelocity;
 
 /**
 * This class represents a pure pursuit path. It is used to store a path's waypoints, and do all the
@@ -324,8 +328,9 @@ public class Path extends ArrayList<Waypoint> {
         // This should never happen.
         throw new IllegalStateException("Path has lost integrity.");
     }
-    // Adjust speeds.
-    adjustSpeedsWithProfile(chassisSpeeds, bestIntersection, currentPose.getTranslation());
+
+    adjustSpeedsWithProfile(chassisSpeeds, bestIntersection, currentPose);
+
     // Return the motor powers.
     return chassisSpeeds;
   }
@@ -511,53 +516,50 @@ public class Path extends ArrayList<Waypoint> {
   * 3. Continue to the next waypoint as normal.
   *
   * @param intersection Intersection to approach.
-  * @param robotPos     Robot's current position/rotation.
+  * @param currentPose  Robot's current pose
   * @return Final motor speeds.
   */
-  private double[] handlePointTurnIntersection(TaggedIntersection intersection, Pose2d robotPos) {
+  private ChassisSpeeds handlePointTurnIntersection(TaggedIntersection intersection, Pose2d currentPose) {
     /**
-    * Point turn intersections are handled very differently than general intersections. Instead of "curving" around
-    * the point, the robot will decelerate and perform a point turn.
-    */
+     * Point turn intersections are handled very differently than general intersections. Instead of "curving" around
+     * the point, the robot will decelerate and perform a point turn.
+     */
     PointTurnWaypoint waypoint = (PointTurnWaypoint)intersection.taggedPoint;
-    // Get necessary values.
-    double cx = robotPos.getTranslation().getX();
-    double cy = robotPos.getTranslation().getY();
-    double ca = robotPos.getRotation().getRadians();
-    double tx = intersection.intersection.getX();
-    double ty = intersection.intersection.getY();
-    double ta;
-    double[] motorPowers;
-    if (!waypoint.hasTraversed() && PurePursuitUtil.positionEqualsWithBuffer(robotPos.getTranslation(), waypoint.getTranslation(), waypoint.getPositionBuffer())) {
+    Angle targetAngle;
+    var speeds = new ChassisSpeeds();
+
+    if (!waypoint.hasTraversed() && Units.Meters.of(currentPose.getTranslation().getDistance(waypoint.getTranslation())).lt(waypoint.getPositionBuffer())) {
       // If the robot has not reached the point.
-      if (((GeneralWaypoint) get(intersection.waypointIndex + 1)).usingPreferredAngle()) {
-        if (PurePursuitUtil.rotationEqualsWithBuffer(robotPos.getRotation().getRadians(), ((GeneralWaypoint) get(intersection.waypointIndex + 1)).getPreferredAngle(), waypoint.getRotationBuffer()))
+      if (((GeneralWaypoint)get(intersection.waypointIndex + 1)).usingPreferredAngle()) {
+        if (currentPose.getRotation().getMeasure().isNear(((GeneralWaypoint)get(intersection.waypointIndex + 1)).getPreferredAngle(), waypoint.getRotationBuffer()))
         // If the robot has reached the point and is at the preferredAngle, then the point is traversed.
         waypoint.setTraversed();
         // Set the target angle.
-        ta = ((GeneralWaypoint)get(intersection.waypointIndex + 1)).getPreferredAngle();
+        targetAngle = ((GeneralWaypoint)get(intersection.waypointIndex + 1)).getPreferredAngle();
       } else {
-        double tempTy = ((GeneralWaypoint) get(intersection.waypointIndex + 1)).getPose().getTranslation().getY();
-        double tempTx = ((GeneralWaypoint) get(intersection.waypointIndex + 1)).getPose().getTranslation().getX();
+        double tempTy = ((GeneralWaypoint)get(intersection.waypointIndex + 1)).getPose().getTranslation().getY();
+        double tempTx = ((GeneralWaypoint)get(intersection.waypointIndex + 1)).getPose().getTranslation().getX();
         // Calculate the target angle.
-        ta = Math.atan2(tempTy - cy, tempTx - cx);
-        if (PurePursuitUtil.rotationEqualsWithBuffer(robotPos.getRotation().getRadians(), ta, waypoint.getRotationBuffer()))
+        targetAngle = Units.Radians.of(Math.atan2(tempTy - currentPose.getY(), tempTx - currentPose.getX()));
+        if (currentPose.getRotation().getMeasure().isNear(targetAngle, waypoint.getRotationBuffer()))
         // If the robot has reached the point and is at the target angle, then the point is traversed.
         waypoint.setTraversed();
       }
-      motorPowers = PurePursuitUtil.moveToPosition(cx, cy, ca, tx, ty, ta, true);
+      var targetPose = new Pose2d(intersection.intersection.getMeasureX(), intersection.intersection.getMeasureY(), Rotation2d.fromRadians(targetAngle.in(Units.Radians)));
+      speeds = moveToPosition(currentPose, targetPose, true);
     } else {
       // If this waypoint has a preferred angle, use it instead of the calculated angle.
-      if (waypoint.usingPreferredAngle()) {
-        ta = (waypoint.getPreferredAngle());
-      } else {
-        // Calculate the target angle.
-        ta = Math.atan2(ty - cy, tx - cx);
-      }
-      motorPowers = PurePursuitUtil.moveToPosition(cx, cy, ca, tx, ty, ta, false);
+      if (waypoint.usingPreferredAngle())
+        targetAngle = (waypoint.getPreferredAngle());
+      else
+        targetAngle = Units.Radians.of(Math.atan2(intersection.intersection.getY() - currentPose.getY(), intersection.intersection.getX() - currentPose.getX()));
+
+      var targetPose = new Pose2d(intersection.intersection.getMeasureX(), intersection.intersection.getMeasureY(), Rotation2d.fromRadians(targetAngle.in(Units.Radians)));
+      speeds = moveToPosition(currentPose, targetPose, false);
     }
+
     // Return motor speeds.
-    return motorPowers;
+    return speeds;
   }
 
   /**
@@ -569,69 +571,67 @@ public class Path extends ArrayList<Waypoint> {
   * 3. Continue to the next waypoint as normal.
   *
   * @param intersection Intersection to approach.
-  * @param robotPos     Robot's current position/rotation.
+  * @param currentPose     Robot's current position/rotation.
   * @return Final motor speeds.
   */
-  private double[] handleInterruptIntersection(TaggedIntersection intersection, Pose2d robotPos) {
+  private ChassisSpeeds handleInterruptIntersection(TaggedIntersection intersection, Pose2d currentPose) {
     /**
-    * Interrupt intersections are handled similarly to point turn intersections. Instead of continuing directly
-    * after it has turned, the robot will stop and perform the interrupt actions.
-    */
+     * Interrupt intersections are handled similarly to point turn intersections. Instead of continuing directly
+     * after it has turned, the robot will stop and perform the interrupt actions.
+     */
     InterruptWaypoint waypoint = (InterruptWaypoint) intersection.taggedPoint;
-    // Get necessary values.
-    double cx = robotPos.getTranslation().getX();
-    double cy = robotPos.getTranslation().getY();
-    double ca = robotPos.getRotation().getRadians();
-    double tx = intersection.intersection.getX();
-    double ty = intersection.intersection.getY();
-    double ta;
-    double[] motorPowers;
-    if (!waypoint.hasTraversed() && PurePursuitUtil.positionEqualsWithBuffer(robotPos.getTranslation(), waypoint.getTranslation(), waypoint.getPositionBuffer())) {
+    Angle targetAngle;
+    var speeds = new ChassisSpeeds();
+
+    if (!waypoint.hasTraversed() && Units.Meters.of(currentPose.getTranslation().getDistance(waypoint.getTranslation())).lt(waypoint.getPositionBuffer())) {
       // If the robot has not reached the point.
       if (waypoint.getType() == Waypoint.Type.END) {
-        if (waypoint.usingPreferredAngle() && !PurePursuitUtil.rotationEqualsWithBuffer(robotPos.getRotation().getRadians(), waypoint.getPreferredAngle(), waypoint.getRotationBuffer()))
-        ta = waypoint.getPreferredAngle();
+        if (waypoint.usingPreferredAngle() && !currentPose.getRotation().getMeasure().isNear(waypoint.getPreferredAngle(), waypoint.getRotationBuffer()))
+        targetAngle = waypoint.getPreferredAngle();
         else {
           ((EndWaypoint)waypoint).setTraversed();
-          return new double[]{0, 0, 0};
+          return speeds;
         }
       } else if (((GeneralWaypoint)get(intersection.waypointIndex + 1)).usingPreferredAngle()) {
-        if (PurePursuitUtil.rotationEqualsWithBuffer(robotPos.getRotation().getRadians(), ((GeneralWaypoint)get(intersection.waypointIndex + 1)).getPreferredAngle(), waypoint.getRotationBuffer())) {
+        if (currentPose.getRotation().getMeasure().isNear(((GeneralWaypoint)get(intersection.waypointIndex + 1)).getPreferredAngle(), waypoint.getRotationBuffer())) {
           // If the robot has reached the point and is at the preferredAngle, then the point is traversed.
           waypoint.setTraversed();
           // Queue the action.
           interruptActionQueue.add(waypoint);
           // Stop the robot while it does the action.
-          return new double[]{0, 0, 0};
+          return speeds;
         }
         // Set the target angle.
-        ta = ((GeneralWaypoint) get(intersection.waypointIndex + 1)).getPreferredAngle();
+        targetAngle = ((GeneralWaypoint)get(intersection.waypointIndex + 1)).getPreferredAngle();
       } else {
         double tempTy = ((GeneralWaypoint)get(intersection.waypointIndex + 1)).getPose().getTranslation().getY();
         double tempTx = ((GeneralWaypoint)get(intersection.waypointIndex + 1)).getPose().getTranslation().getX();
         // Calculate the target angle.
-        ta = Math.atan2(tempTy - cy, tempTx - cx);
-        if (PurePursuitUtil.rotationEqualsWithBuffer(robotPos.getRotation().getRadians(), ta, waypoint.getRotationBuffer())) {
+        targetAngle = Units.Radians.of(Math.atan2(tempTy - currentPose.getY(), tempTx - currentPose.getX()));
+        if (currentPose.getRotation().getMeasure().isNear(targetAngle, waypoint.getRotationBuffer())) {
           // If the robot has reached the point and is at the target angle, then the point is traversed.
           waypoint.setTraversed();
           // Queue the action.
           interruptActionQueue.add(waypoint);
           // Stop the robot while it does the action.
-          return new double[]{0, 0, 0};
+          return speeds;
         }
       }
-      motorPowers = PurePursuitUtil.moveToPosition(cx, cy, ca, tx, ty, ta, true);
+      var targetPose = new Pose2d(intersection.intersection.getMeasureX(), intersection.intersection.getMeasureY(), Rotation2d.fromRadians(targetAngle.in(Units.Radians)));
+      speeds = moveToPosition(currentPose, targetPose, true);
     } else {
-      if (waypoint.usingPreferredAngle())
       // If this waypoint has a preferred angle, use it instead of the calculated angle.
-      ta = (waypoint.getPreferredAngle());
+      if (waypoint.usingPreferredAngle())
+        targetAngle = (waypoint.getPreferredAngle());
       else
-      // Calculate the target angle.
-      ta = Math.atan2(ty - cy, tx - cx);
-      motorPowers = PurePursuitUtil.moveToPosition(cx, cy, ca, tx, ty, ta, false);
+        targetAngle = Units.Radians.of(Math.atan2(intersection.intersection.getY() - currentPose.getY(), intersection.intersection.getX() - currentPose.getX()));
+
+      var targetPose = new Pose2d(intersection.intersection.getMeasureX(), intersection.intersection.getMeasureY(), Rotation2d.fromRadians(targetAngle.in(Units.Radians)));
+      speeds = moveToPosition(currentPose, targetPose, false);
     }
+
     // Return motor speeds.
-    return motorPowers;
+    return speeds;
   }
 
   /**
@@ -645,7 +645,7 @@ public class Path extends ArrayList<Waypoint> {
   * @param robotPos     Robot's current position/rotation.
   * @return Final motor speeds.
   */
-  private double[] handleEndIntersection(TaggedIntersection intersection, Pose2d robotPos) {
+  private ChassisSpeeds handleEndIntersection(TaggedIntersection intersection, Pose2d robotPos) {
     /**
     * End intersections are handled the same way as interrupt intersections.
     */
@@ -895,7 +895,7 @@ public class Path extends ArrayList<Waypoint> {
   * @param speeds       Speeds to be adjusted.
   * @param intersection The tagged intersection.
   */
-  private void adjustSpeedsWithProfile(ChassisSpeeds speeds, TaggedIntersection intersection, Translation2d robotPos) {
+  private void adjustSpeedsWithProfile(ChassisSpeeds speeds, TaggedIntersection intersection, Pose2d currentPose) {
     // Get closest away and to points.
     Translation2d awayPoint = null;
     for (int i = intersection.waypointIndex - 1; i >= 0; i--) {
@@ -909,18 +909,21 @@ public class Path extends ArrayList<Waypoint> {
     if (awayPoint == null)
       throw new IllegalStateException("Path has lost integrity.");
     Translation2d toPoint = intersection.taggedPoint.getPose().getTranslation();
-    // Get delta values.
-    double adx = robotPos.getX() - awayPoint.getX();
-    double ady = robotPos.getY() - awayPoint.getY();
-    double tdx = toPoint.getX() - robotPos.getX();
-    double tdy = toPoint.getY() - robotPos.getY();
-    double ad = Math.hypot(adx, ady);
-    double td = Math.hypot(tdx, tdy);
     // If the intersection is closer to the away point.
-    if (ad < td) {
-      motionProfile.processAccelerate(speeds, ad, ((GeneralWaypoint)intersection.taggedPoint).getMovementVelocity(), ((GeneralWaypoint)intersection.taggedPoint).getRotateVelocity());
+    if (currentPose.getTranslation().getDistance(awayPoint) < currentPose.getTranslation().getDistance(toPoint)) {
+      motionProfile.processAccelerate(
+        speeds,
+        Units.Meters.of(currentPose.getTranslation().getDistance(awayPoint)),
+        ((GeneralWaypoint)intersection.taggedPoint).getMovementVelocity(),
+        ((GeneralWaypoint)intersection.taggedPoint).getRotateVelocity()
+      );
     } else { // If the intersection is closer to the to point.
-      motionProfile.processDecelerate(speeds, td, ((GeneralWaypoint)intersection.taggedPoint).getMovementVelocity(), ((GeneralWaypoint)intersection.taggedPoint).getRotateVelocity());
+      motionProfile.processDecelerate(
+        speeds,
+        Units.Meters.of(currentPose.getTranslation().getDistance(toPoint)),
+        ((GeneralWaypoint)intersection.taggedPoint).getMovementVelocity(),
+        ((GeneralWaypoint)intersection.taggedPoint).getRotateVelocity()
+      );
     }
   }
 
@@ -937,28 +940,28 @@ public class Path extends ArrayList<Waypoint> {
     // The default profile is a messy trapezoid(ish) curve.
     return new PathMotionProfile() {
       @Override
-      public void decelerate(ChassisSpeeds speeds, double distanceToTarget, double speed, double configuredMovementSpeed, double configuredTurnSpeed) {
-        if (distanceToTarget < 0.15) {
-          speeds.vxMetersPerSecond *= configuredMovementSpeed * ((distanceToTarget * 10) + 0.1);
-          speeds.vyMetersPerSecond *= configuredMovementSpeed * ((distanceToTarget * 10) + 0.1);
-          speeds.omegaRadiansPerSecond *= configuredTurnSpeed;
+      public void decelerate(ChassisSpeeds speeds, Distance distanceToTarget, LinearVelocity speed, LinearVelocity configuredMovementSpeed, AngularVelocity configuredTurnSpeed) {
+        if (distanceToTarget.lt(Units.Meters.of(0.15))) {
+          speeds.vxMetersPerSecond *= configuredMovementSpeed.times((distanceToTarget.in(Units.Meters) * 10) + 0.1).in(Units.MetersPerSecond);
+          speeds.vyMetersPerSecond *= configuredMovementSpeed.times((distanceToTarget.in(Units.Meters) * 10) + 0.1).in(Units.MetersPerSecond);
+          speeds.omegaRadiansPerSecond *= configuredTurnSpeed.in(Units.RadiansPerSecond);
         } else {
-          speeds.vxMetersPerSecond *= configuredMovementSpeed;
-          speeds.vyMetersPerSecond *= configuredMovementSpeed;
-          speeds.omegaRadiansPerSecond *= configuredTurnSpeed;
+          speeds.vxMetersPerSecond *= configuredMovementSpeed.in(Units.MetersPerSecond);
+          speeds.vyMetersPerSecond *= configuredMovementSpeed.in(Units.MetersPerSecond);
+          speeds.omegaRadiansPerSecond *= configuredTurnSpeed.in(Units.RadiansPerSecond);
         }
       }
 
       @Override
-      public void accelerate(ChassisSpeeds speeds, double distanceFromTarget, double speed, double configuredMovementSpeed, double configuredTurnSpeed) {
-        if (distanceFromTarget < 0.15) {
-          speeds.vxMetersPerSecond *= configuredMovementSpeed * ((distanceFromTarget * 10) + 0.1);
-          speeds.vyMetersPerSecond *= configuredMovementSpeed * ((distanceFromTarget * 10) + 0.1);
-          speeds.omegaRadiansPerSecond *= configuredTurnSpeed;
+      public void accelerate(ChassisSpeeds speeds, Distance distanceFromTarget, LinearVelocity speed, LinearVelocity configuredMovementSpeed, AngularVelocity configuredTurnSpeed) {
+        if (distanceFromTarget.lt(Units.Meters.of(0.15))) {
+          speeds.vxMetersPerSecond *= configuredMovementSpeed.times((distanceFromTarget.in(Units.Meters) * 10) + 0.1).in(Units.MetersPerSecond);
+          speeds.vyMetersPerSecond *= configuredMovementSpeed.times((distanceFromTarget.in(Units.Meters) * 10) + 0.1).in(Units.MetersPerSecond);
+          speeds.omegaRadiansPerSecond *= configuredTurnSpeed.in(Units.RadiansPerSecond);
         } else {
-          speeds.vxMetersPerSecond *= configuredMovementSpeed;
-          speeds.vyMetersPerSecond *= configuredMovementSpeed;
-          speeds.omegaRadiansPerSecond *= configuredTurnSpeed;
+          speeds.vxMetersPerSecond *= configuredMovementSpeed.in(Units.MetersPerSecond);
+          speeds.vyMetersPerSecond *= configuredMovementSpeed.in(Units.MetersPerSecond);
+          speeds.omegaRadiansPerSecond *= configuredTurnSpeed.in(Units.RadiansPerSecond);
         }
       }
     };

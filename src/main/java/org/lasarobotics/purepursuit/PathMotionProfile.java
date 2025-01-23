@@ -32,7 +32,7 @@ public abstract class PathMotionProfile {
   */
   public PathMotionProfile() {
     lastCallTimeStamp = -1;
-    lastDistanceToTarget = -1;
+    lastDistanceToTarget = Units.Meters.zero();
     lastCallType = true;
   }
 
@@ -46,9 +46,15 @@ public abstract class PathMotionProfile {
   * @param configuredTurnSpeed     Configured turn speed.
   */
   public void processDecelerate(ChassisSpeeds speeds, Distance distanceToTarget, LinearVelocity configuredMovementSpeed, AngularVelocity configuredTurnSpeed) {
-    if (lastCallType == true) // Call decelerate().
-      decelerate(speeds, distanceToTarget, (lastDistanceToTarget.minus(distanceToTarget).in(Units.Meters)) / ((System.nanoTime() - lastCallTimeStamp) * 1e9), configuredMovementSpeed, configuredTurnSpeed);
-    else { // If the last call was not a decelerate, then skip the first call.
+    if (lastCallType == true) { // Call decelerate().
+      decelerate(
+        speeds,
+        distanceToTarget,
+        Units.MetersPerSecond.of((lastDistanceToTarget.minus(distanceToTarget).in(Units.Meters)) / ((System.nanoTime() - lastCallTimeStamp) * 1e9)),
+        configuredMovementSpeed,
+        configuredTurnSpeed
+      );
+    } else { // If the last call was not a decelerate, then skip the first call.
       lastCallType = true;
       // Update fields.
       lastDistanceToTarget = distanceToTarget;
@@ -66,9 +72,15 @@ public abstract class PathMotionProfile {
   * @param configuredTurnSpeed     Configured turn speed.
   */
   public void processAccelerate(ChassisSpeeds speeds, Distance distanceFromTarget, LinearVelocity configuredMovementSpeed, AngularVelocity configuredTurnSpeed) {
-    if (lastCallType == false) // Call accelerate().
-      accelerate(speeds, distanceFromTarget, (distanceFromTarget.minus(lastDistanceToTarget).in(Units.Meters)) / ((System.nanoTime() - lastCallTimeStamp) * 1e9), configuredMovementSpeed, configuredTurnSpeed);
-    else {
+    if (lastCallType == false) {// Call accelerate().
+      accelerate(
+        speeds,
+        distanceFromTarget,
+        Units.MetersPerSecond.of((distanceFromTarget.minus(lastDistanceToTarget).in(Units.Meters)) / ((System.nanoTime() - lastCallTimeStamp) * 1e9)),
+        configuredMovementSpeed,
+        configuredTurnSpeed
+      );
+    } else {
       // If the last call was not a decelerate, then skip the first call.
       lastCallType = false;
       // Update fields.
@@ -86,7 +98,7 @@ public abstract class PathMotionProfile {
   * @param configuredMovementSpeed Configured movement speed.
   * @param configuredTurnSpeed     Configured turn speed.
   */
-  public abstract void decelerate(ChassisSpeeds speeds, double distanceToTarget, double speed, double configuredMovementSpeed, double configuredTurnSpeed);
+  public abstract void decelerate(ChassisSpeeds speeds, Distance distanceToTarget, LinearVelocity speed, LinearVelocity configuredMovementSpeed, AngularVelocity configuredTurnSpeed);
 
   /**
   * Accelerates the motor speeds. This is used to speed the robot up when it approaches a target point.
@@ -97,5 +109,5 @@ public abstract class PathMotionProfile {
   * @param configuredMovementSpeed Configured movement speed.
   * @param configuredTurnSpeed     Configured turn speed.
   */
-  public abstract void accelerate(ChassisSpeeds speeds, double distanceFromTarget, double speed, double configuredMovementSpeed, double configuredTurnSpeed);
+  public abstract void accelerate(ChassisSpeeds speeds, Distance distanceFromTarget, LinearVelocity speed, LinearVelocity configuredMovementSpeed, AngularVelocity configuredTurnSpeed);
 }

@@ -7,6 +7,9 @@ package org.lasarobotics.purepursuit.waypoints;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.units.Units;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.Distance;
 
 /**
 * A point turn waypoint is a special type of waypoint where instead of "curving" around it, the
@@ -18,8 +21,8 @@ import edu.wpi.first.math.geometry.Translation2d;
 public class PointTurnWaypoint extends GeneralWaypoint {
 
   // The expected level of error, the robot will consider itself at the waypoint when it is within the buffer. The buffers must be > 0.
-  private double positionBuffer;
-  private double rotationBuffer;
+  private Distance positionBuffer;
+  private Angle rotationBuffer;
 
   // True if the robot has already "passed" this waypoint.
   private boolean traversed;
@@ -28,8 +31,8 @@ public class PointTurnWaypoint extends GeneralWaypoint {
   * Constructs a PointTurnWaypoint. All values are set to their default.
   */
   public PointTurnWaypoint() {
-    positionBuffer = 0;
-    rotationBuffer = 0;
+    positionBuffer = Units.Meters.zero();
+    rotationBuffer = Units.Radians.zero();
     traversed = false;
   }
 
@@ -110,7 +113,7 @@ public class PointTurnWaypoint extends GeneralWaypoint {
   *
   * @return this waypoint's position buffer.
   */
-  public double getPositionBuffer() {
+  public Distance getPositionBuffer() {
     return positionBuffer;
   }
 
@@ -119,7 +122,7 @@ public class PointTurnWaypoint extends GeneralWaypoint {
   *
   * @return this waypoint's rotation buffer.
   */
-  public double getRotationBuffer() {
+  public Angle getRotationBuffer() {
     return rotationBuffer;
   }
 
@@ -169,7 +172,7 @@ public class PointTurnWaypoint extends GeneralWaypoint {
   */
   private double verifyBuffer(double buffer) {
     if (buffer <= 0)
-    throw new IllegalArgumentException("The buffer must be > 0");
+      throw new IllegalArgumentException("The buffer must be > 0");
     return buffer;
   }
 
