@@ -4,38 +4,26 @@
 
 package org.lasarobotics.led;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
-
-import org.lasarobotics.led.LEDStrip.Pattern;
 import org.lasarobotics.led.LEDStrip.Section;
 
-import edu.wpi.first.wpilibj.AddressableLED;
+import edu.wpi.first.wpilibj.LEDPattern;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 /** LED Subsystem */
 public class LEDSubsystem extends SubsystemBase implements AutoCloseable {
-  private static Pattern m_overridePattern = Pattern.TEAM_COLOR_SOLID;
+  private static LEDPattern m_overridePattern = LEDPattern.solid(LEDStrip.TEAM_COLOR);
 
-  private static LEDSubsystem m_subsystem;
-
-  private LEDStrip m_ledStrips;
+  private LEDStrip m_ledStrip;
 
   /** Creates a new LEDSubsystem. */
-  private LEDSubsystem() {
-    setDefaultCommand(m_ledStrips.runAnimation());
-  }
-
-  public static LEDSubsystem getInstance() {
-    if (m_subsystem == null) m_subsystem = new LEDSubsystem();
-    return m_subsystem;
+  public LEDSubsystem(LEDStrip ledStrip) {
+    this.m_ledStrip = ledStrip;
+    setDefaultCommand(run(m_ledStrip.runAnimation()));
   }
 
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
-    
   }
 
   /**
@@ -43,30 +31,30 @@ public class LEDSubsystem extends SubsystemBase implements AutoCloseable {
    * @param ledStrips LED strips to add
    */
   public void add(LEDStrip ledStrips) {
-    m_ledStrips = ledStrips;
+    m_ledStrip = ledStrips;
   }
 
   /**
    * Start override of all LEDs
    * @param pattern Pattern to override with
    */
-  public void startOverride(Pattern pattern) {
+  public void startOverride(LEDPattern pattern) {
     m_overridePattern = pattern;
-    m_ledStrips.startOverride();
-    m_ledStrips.set(m_overridePattern, Section.FULL);
+    m_ledStrip.startOverride();
+    m_ledStrip.set(m_overridePattern, Section.FULL);
   }
 
   /**
    * End override of LEDs, resume previous patterns
    */
   public void endOverride() {
-    m_overridePattern = Pattern.TEAM_COLOR_SOLID;
-    m_ledStrips.endOverride();
+    m_overridePattern = LEDPattern.solid(LEDStrip.TEAM_COLOR);
+    m_ledStrip.endOverride();
   }
 
   @Override
   public void close() {
-    m_ledStrips.close();
+    m_ledStrip.close();
   }
 }
 
