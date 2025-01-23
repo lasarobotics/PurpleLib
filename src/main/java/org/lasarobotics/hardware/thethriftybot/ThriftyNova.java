@@ -4,11 +4,13 @@ import java.util.List;
 
 import org.lasarobotics.hardware.LoggableHardware;
 import org.lasarobotics.hardware.PurpleManager;
+import org.lasarobotics.utils.GlobalConstants;
 import org.littletonrobotics.junction.AutoLog;
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Current;
+import edu.wpi.first.units.measure.Frequency;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.units.measure.Voltage;
 
@@ -39,24 +41,42 @@ public class ThriftyNova extends LoggableHardware {
     public double position = 0.0;
     public double velocity = 0.0;
   }
-  
+
   private com.thethriftybot.ThriftyNova m_thrifty;
   private static final String VALUE_LOG_ENTRY = "/OutputValue";
   private static final String MODE_LOG_ENTRY = "/OutputMode";
   private static final String CURRENT_LOG_ENTRY = "/Current";
 
-
   private ID m_id;
   private ThriftyNovaInputsAutoLogged m_inputs;
+  private Frequency m_updateRate;
 
-  public ThriftyNova(ID id) {
+  /**
+   * Create a ThriftyNova object with built-in logging
+   * @param id ThriftyNova ID
+   * @param updateRate Update rate of ThriftyNova inputs
+   */
+  public ThriftyNova(ID id, Frequency updateRate) {
     this.m_id = id;
     this.m_thrifty = new com.thethriftybot.ThriftyNova(id.deviceID);
     this.m_inputs = new ThriftyNovaInputsAutoLogged();
+    this.m_updateRate = updateRate;
 
-    periodic();
+    // Update inputs on init
+    updateInputs();
 
+    // Register device with manager
     PurpleManager.add(this);
+  }
+
+  /**
+   * Create a ThriftyNova object with built-in logging
+   * <p>
+   * Update rate is set to {@link GlobalConstants#ROBOT_LOOP_HZ}
+   * @param id ThriftyNova ID
+   */
+  public ThriftyNova(ID id) {
+    this(id, GlobalConstants.ROBOT_LOOP_HZ);
   }
 
   /**
@@ -78,7 +98,7 @@ public class ThriftyNova extends LoggableHardware {
   private double getPosition() {
     return m_thrifty.getPosition();
   }
-  
+
   /**
    * Sets position of PID controller
    * @param targetPosition
@@ -111,7 +131,6 @@ public class ThriftyNova extends LoggableHardware {
     com.thethriftybot.ThriftyNova.updateStatusNTGlobal();
   }
 
-
   /**
    * Get the selected sensor velocity.
    *
@@ -125,18 +144,20 @@ public class ThriftyNova extends LoggableHardware {
   /**
    * Update sensor input readings
    */
-  private void updateInputs() {
+   @Override
+  protected void updateInputs() {
     m_inputs.position = getPosition();
     m_inputs.velocity = getVelocity();
   }
 
   @Override
-  protected void updateInputs() {}
+  protected void periodic() {
+    synchronized (m_inputs) { Logger.processInputs(m_id.name, m_inputs); }
+  }
 
   @Override
-  protected void periodic() {
-    updateInputs();
-    Logger.processInputs(m_id.name, m_inputs);
+  public Frequency getUpdateRate() {
+    return m_updateRate;
   }
 
   /**
@@ -161,14 +182,14 @@ public class ThriftyNova extends LoggableHardware {
    *
    * @param speed The speed to set. Value should be between -1.0 and 1.0.
    *                   Value is also saved for Get().
-   * 
+   *
    */
   public void setVelocity(double speed) {
     m_thrifty.setVelocity(speed);
     logOutputs(speed, ControlType.VELOCITY);
   }
 
-  
+
 
     /**
    * Sets the appropriate output on the talon, depending on the mode.
@@ -197,8 +218,6 @@ public class ThriftyNova extends LoggableHardware {
     return m_thrifty.getClosedLoopError();
   }
 
-
-
   /**
    * sets percent output form between 1.0 (full forward) to -1.0 (full backward), 0.0 = full stop
    * @param percentOutput
@@ -208,9 +227,8 @@ public class ThriftyNova extends LoggableHardware {
     logOutputs(percentOutput, ControlType.PERCENT);
   }
 
-
   /**
-   * 
+   *
    * @param value the maximum forward output, always between 0.0 and 1.0
    */
   public void setMaxOutput(double value) {
@@ -219,7 +237,7 @@ public class ThriftyNova extends LoggableHardware {
   }
 
   /**
-   * 
+   *
    * @param fwdValue maximum forward output (range of 0.0 to 1.0)
    * @param bwdValue maximum backward output (range of -1.0 to 1.0)
    */
@@ -230,16 +248,16 @@ public class ThriftyNova extends LoggableHardware {
   }
 
   /**
-   * 
+   *
    * @return an int that denotes Stator current which is the output current of the motor
    *            measured in amps
-   */           
+   */
   public Current getStatorCurrent() {
     return Units.Amps.of(m_thrifty.getStatorCurrent());
   }
 
   /**
-   * 
+   *
    * @return an int that denotes the amount of current moving from supply
    *        measured in amps
    */
@@ -248,7 +266,7 @@ public class ThriftyNova extends LoggableHardware {
   }
 
   /**
-   * 
+   *
    * @param encoderType encoder type to use
    *                consult Thriftybot documentation for additional information on encoder types
    */
@@ -270,8 +288,8 @@ public class ThriftyNova extends LoggableHardware {
    */
   public void setRampUp(Time rampUpTime) {
     m_thrifty.setRampUp(rampUpTime.in(Units.Seconds));
-   
   }
+
   /**
    * @param pidSlot Sets the pidslot to use for feedback control
    */
@@ -311,15 +329,13 @@ public class ThriftyNova extends LoggableHardware {
     return Units.Volts.of(m_thrifty.getVoltage());
   }
 
-
-
   /**
    * Configure the peak allowable current (when current limit is enabled).
    * @param value
    *            value to limit.
    */
   public void configPeakCurrentLimit(com.thethriftybot.ThriftyNova.CurrentType currentType, Current value) {
-    m_thrifty.setMaxCurrent(currentType, value.in(Units.Amps)); 
+    m_thrifty.setMaxCurrent(currentType, value.in(Units.Amps));
   }
 
   /**
@@ -377,7 +393,7 @@ public class ThriftyNova extends LoggableHardware {
 
   /**
    * gets max forward output
-   * 
+   *
    */
   public double getMaxForwardOutput() {
     return m_thrifty.getMaxForwardOutput();
@@ -461,7 +477,7 @@ public class ThriftyNova extends LoggableHardware {
 
   /**
    * Sets the absolute encoder offset.
-   * @param offset integer that specifies the amount of offset 
+   * @param offset integer that specifies the amount of offset
    */
   public void setAbsOffset(int offset) {
     m_thrifty.setAbsOffset(offset);
@@ -496,7 +512,7 @@ public class ThriftyNova extends LoggableHardware {
   public boolean getTemptThrottleEnable() {
     return m_thrifty.getTempThrottleEnable();
   }
-  
+
   /**
    * gets temperature of motor controller
    * @return integer that specifies temperature of motor controller
@@ -504,8 +520,6 @@ public class ThriftyNova extends LoggableHardware {
   public int getTemperature() {
     return m_thrifty.getTemperature();
   }
-
-
 
   /**
    * sets motor type
@@ -522,8 +536,6 @@ public class ThriftyNova extends LoggableHardware {
   public double getSetPoint() {
     return m_thrifty.getSetPoint();
   }
-
-
 
   /**
    * gets motor type
@@ -555,7 +567,7 @@ public class ThriftyNova extends LoggableHardware {
   public void setExternalEncoder(com.thethriftybot.ThriftyNova.ExternalEncoder external) {
     m_thrifty.setExternalEncoder(external);
   }
-  
+
   /**
    * sets encoder position
    * @param position
@@ -581,9 +593,6 @@ public class ThriftyNova extends LoggableHardware {
     m_thrifty.setNTLogging(enable);
   }
 
-
-
-
   /**
    * Closes the ThriftyNova motor controller
    */
@@ -591,6 +600,4 @@ public class ThriftyNova extends LoggableHardware {
   public void close() {
     PurpleManager.remove(this);
   }
-
-  
 }
