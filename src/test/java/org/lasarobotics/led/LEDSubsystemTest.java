@@ -47,7 +47,10 @@ public class LEDSubsystemTest {
     m_ledStrip1 = new LEDStrip(new LEDStrip.Hardware(m_leds1));
 
     // Create LEDSubsystem object
-    m_ledSubsystem = new LEDSubsystem(m_ledStrip1);
+    m_ledSubsystem = LEDSubsystem.getInstance();
+
+    // Set LED strip for subsystem
+    m_ledSubsystem.setLEDStrip(m_ledStrip1);
   }
 
   @AfterEach
@@ -61,7 +64,7 @@ public class LEDSubsystemTest {
   @DisplayName("Test if robot can set LED strip to single static solid color")
   public void solidFull() {
     // Set LED pattern
-    m_ledStrip1.set(LEDPattern.solid(LEDStrip.TEAM_COLOR), LEDStrip.Section.FULL);
+    m_ledSubsystem.set(LEDPattern.solid(LEDStrip.TEAM_COLOR), LEDStrip.Section.FULL);
 
     // Run LED subsystem loop
     m_ledSubsystem.getDefaultCommand().execute();
@@ -79,8 +82,8 @@ public class LEDSubsystemTest {
   @DisplayName("Test if robot can set LED strip start section independently")
   public void startSection() {
     // Set LED pattern
-    m_ledStrip1.set(LEDPattern.solid(Color.kRed), Section.START);
-    m_ledStrip1.set(LEDPattern.solid(LEDStrip.TEAM_COLOR), Section.MIDDLE, Section.END);
+    m_ledSubsystem.set(LEDPattern.solid(Color.kRed), Section.START);
+    m_ledSubsystem.set(LEDPattern.solid(LEDStrip.TEAM_COLOR), Section.MIDDLE, Section.END);
 
     // Run LED subsystem loop
     m_ledSubsystem.getDefaultCommand().execute();
@@ -97,8 +100,8 @@ public class LEDSubsystemTest {
   @DisplayName("Test if robot can set LED strip middle section independently")
   public void middleSection() {
     // Set LED pattern
-    m_ledStrip1.set(LEDPattern.solid(Color.kRed), Section.MIDDLE);
-    m_ledStrip1.set(LEDPattern.solid(LEDStrip.TEAM_COLOR), Section.START, Section.END);
+    m_ledSubsystem.set(LEDPattern.solid(Color.kRed), Section.MIDDLE);
+    m_ledSubsystem.set(LEDPattern.solid(LEDStrip.TEAM_COLOR), Section.START, Section.END);
 
     // Run LED subsystem loop
     m_ledSubsystem.getDefaultCommand().execute();
@@ -120,8 +123,8 @@ public class LEDSubsystemTest {
   @DisplayName("Test if robot can set LED strip end section independently")
   public void endSection() {
     // Set LED pattern
-    m_ledStrip1.set(LEDPattern.solid(Color.kRed), Section.END);
-    m_ledStrip1.set(LEDPattern.solid(LEDStrip.TEAM_COLOR), Section.START, Section.MIDDLE);
+    m_ledSubsystem.set(LEDPattern.solid(Color.kRed), Section.END);
+    m_ledSubsystem.set(LEDPattern.solid(LEDStrip.TEAM_COLOR), Section.START, Section.MIDDLE);
 
     // Run LED subsystem loop
     m_ledSubsystem.getDefaultCommand().execute();
@@ -138,7 +141,7 @@ public class LEDSubsystemTest {
   @DisplayName("Test if robot can override subsystem LED control")
   public void ledOverride() {
     // Set LED pattern
-    m_ledStrip1.set(LEDPattern.solid(Color.kBlue), Section.FULL);
+    m_ledSubsystem.set(LEDPattern.solid(Color.kBlue), Section.FULL);
 
     // Request LED override
     m_ledSubsystem.startOverride(LEDPattern.solid(LEDStrip.TEAM_COLOR));

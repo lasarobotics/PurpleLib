@@ -140,19 +140,17 @@ public class LEDStrip implements AutoCloseable {
     return ledStripHardware;
   }
 
-  Runnable runAnimation() {
-    return () -> {
-      m_sectionLEDPatterns.entrySet().stream().forEach(entry -> {
-        for (var section : entry.getKey()) entry.getValue().applyTo(SECTION_MAP.get(section));
-      });
-      m_leds.setData(m_ledBuffer);
-    };
+  void runAnimation() {
+    m_sectionLEDPatterns.entrySet().stream().forEach(entry -> {
+      for (var section : entry.getKey()) entry.getValue().applyTo(SECTION_MAP.get(section));
+    });
+    m_leds.setData(m_ledBuffer);
   }
 
   /**
    * Prepare for LED override
    */
-  protected void startOverride() {
+  void startOverride() {
     // Save LED patterns
     m_tempLEDPatterns.clear();
     m_tempLEDPatterns.putAll(m_sectionLEDPatterns);
@@ -161,24 +159,16 @@ public class LEDStrip implements AutoCloseable {
   /**
    * Restore LED patterns after override
    */
-  protected void endOverride() {
+  void endOverride() {
     m_sectionLEDPatterns.clear();
     m_sectionLEDPatterns.putAll(m_tempLEDPatterns);
-  }
-
-  /**
-   * Get latest LED buffer
-   * @return Addressable LED buffer
-   */
-  public AddressableLEDBuffer getBuffer() {
-    return m_ledBuffer;
   }
 
   /**
    * Set pattern and color of LED strip
    * @param pattern Desired pattern
    */
-  public void set(LEDPattern pattern) {
+  void set(LEDPattern pattern) {
     set(pattern, Section.FULL);
   }
 
@@ -187,7 +177,7 @@ public class LEDStrip implements AutoCloseable {
    * @param pattern Desired pattern
    * @param sections LED strip sections to set
    */
-  public void set(LEDPattern pattern, Section... sections) {
+  void set(LEDPattern pattern, Section... sections) {
     // Remove all conflicting scheduled LED patterns
     m_sectionLEDPatterns.entrySet().removeIf(
       (entry) -> !Collections.disjoint(Arrays.asList(entry.getKey()), Arrays.asList(sections))
@@ -202,18 +192,26 @@ public class LEDStrip implements AutoCloseable {
   }
 
   /**
+   * Turn off LED strip sections
+   * @param sections LED strip sections
+   */
+  void off(Section... sections) {
+    set(LEDPattern.kOff, sections);
+  }
+
+  /**
    * Turn off LED strip
    */
-  public void off() {
+  void off() {
     set(LEDPattern.kOff, Section.FULL);
   }
 
   /**
-   * Turn off LED strip sections
-   * @param sections LED strip sections
+   * Get latest LED buffer
+   * @return Addressable LED buffer
    */
-  public void off(Section... sections) {
-    set(LEDPattern.kOff, sections);
+  public AddressableLEDBuffer getBuffer() {
+    return m_ledBuffer;
   }
 
   @Override
