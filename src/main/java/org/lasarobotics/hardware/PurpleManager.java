@@ -57,7 +57,7 @@ public class PurpleManager {
    * Monitor health of components
    */
   private static void monitorHealth() {
-    for (Monitorable component : m_monitored) {
+    for (var component : m_monitored) {
       // If healthy, reset error count and continue...
       if (component.isHealthy()) {
         component.setErrorCount(0);
