@@ -170,61 +170,64 @@ public class AprilTagCamera implements AutoCloseable {
     // Return if camera is not connected
     if (!m_camera.isConnected()) return;
 
-    // Update and log inputs
-    var pipelineResult = m_camera.getLatestResult();
+    // Get all unread results
+    var pipelineResults = m_camera.getAllUnreadResults();
 
-    // Return if result is non-existent or invalid
-    if (!pipelineResult.hasTargets()) {
-      m_latestResult.set(null);
-      return;
-    }
-    if (pipelineResult.targets.size() == 1
-        && pipelineResult.targets.get(0).getPoseAmbiguity() > APRILTAG_POSE_AMBIGUITY_THRESHOLD) {
-      m_latestResult.set(null);
-      return;
-    }
-
-    // Update pose estimate
-    m_poseEstimator.update(pipelineResult).ifPresent(estimatedRobotPose -> {
-      // Make sure the measurement is valid
-      if (!isPoseValid(estimatedRobotPose.estimatedPose)) {
+    // Iterate through all results
+    for (var pipelineResult : pipelineResults) {
+      // Return if result is non-existent or invalid
+      if (!pipelineResult.hasTargets()) {
         m_latestResult.set(null);
-        return;
+        continue;
       }
-
-      // Get distance to closest tag
-      var closestTagDistance = Units.Meters.of(100.0);
-      // Number of tags in range
-      int numOfTagsInRange = 0;
-      // Loop through all targets used for this estimate
-      for (var target : estimatedRobotPose.targetsUsed) {
-        // Get distance to tag
-        var tagDistance = Units.Meters.of(target.getBestCameraToTarget().getTranslation().getNorm());
-        // Check if tag distance is closest yet
-        if (tagDistance.lte(closestTagDistance)) closestTagDistance = tagDistance;
-        // Increment number of tags in range if applicable
-        if (tagDistance.lte(MAX_TAG_DISTANCE)) numOfTagsInRange++;
-      }
-
-      // Ignore if tags are too far
-      if (numOfTagsInRange < 2 && estimatedRobotPose.targetsUsed.size() > 1) {
+      if (pipelineResult.targets.size() == 1
+          && pipelineResult.targets.get(0).getPoseAmbiguity() > APRILTAG_POSE_AMBIGUITY_THRESHOLD) {
         m_latestResult.set(null);
-        return;
+        continue;
       }
 
-      // Calculate standard deviation
-      double xyStdDev = getStandardDeviation(closestTagDistance, estimatedRobotPose.targetsUsed.size());
-      double thetaStdDev = RobotState.isDisabled()
-        ? xyStdDev
-        : Double.MAX_VALUE;
+      // Update pose estimate
+      m_poseEstimator.update(pipelineResult).ifPresent(estimatedRobotPose -> {
+        // Make sure the measurement is valid
+        if (!isPoseValid(estimatedRobotPose.estimatedPose)) {
+          m_latestResult.set(null);
+          return;
+        }
 
-      // Set result
-      var result = new AprilTagCamera.Result(
-        estimatedRobotPose,
-        VecBuilder.fill(xyStdDev, xyStdDev, thetaStdDev)
-      );
-      m_latestResult.set(result);
-    });
+        // Get distance to closest tag
+        var closestTagDistance = Units.Meters.of(100.0);
+        // Number of tags in range
+        int numOfTagsInRange = 0;
+        // Loop through all targets used for this estimate
+        for (var target : estimatedRobotPose.targetsUsed) {
+          // Get distance to tag
+          var tagDistance = Units.Meters.of(target.getBestCameraToTarget().getTranslation().getNorm());
+          // Check if tag distance is closest yet
+          if (tagDistance.lte(closestTagDistance)) closestTagDistance = tagDistance;
+          // Increment number of tags in range if applicable
+          if (tagDistance.lte(MAX_TAG_DISTANCE)) numOfTagsInRange++;
+        }
+
+        // Ignore if tags are too far
+        if (numOfTagsInRange < 2 && estimatedRobotPose.targetsUsed.size() > 1) {
+          m_latestResult.set(null);
+          return;
+        }
+
+        // Calculate standard deviation
+        double xyStdDev = getStandardDeviation(closestTagDistance, estimatedRobotPose.targetsUsed.size());
+        double thetaStdDev = RobotState.isDisabled()
+          ? xyStdDev
+          : Double.MAX_VALUE;
+
+        // Set result
+        var result = new AprilTagCamera.Result(
+          estimatedRobotPose,
+          VecBuilder.fill(xyStdDev, xyStdDev, thetaStdDev)
+        );
+        m_latestResult.set(result);
+      });
+    }
   }
 
   /**
