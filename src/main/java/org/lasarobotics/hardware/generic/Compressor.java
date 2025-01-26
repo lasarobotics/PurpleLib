@@ -7,6 +7,7 @@ package org.lasarobotics.hardware.generic;
 import org.lasarobotics.hardware.LoggableHardware;
 import org.lasarobotics.hardware.PurpleManager;
 import org.littletonrobotics.junction.AutoLog;
+import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 
@@ -41,7 +42,7 @@ public class Compressor extends LoggableHardware {
   private edu.wpi.first.wpilibj.Compressor m_compressor;
 
   private ID m_id;
-  private CompressorInputsAutoLogged m_inputs;
+  private volatile CompressorInputsAutoLogged m_inputs;
 
   /**
    * Create a Compressor object with built-in logging
@@ -67,6 +68,13 @@ public class Compressor extends LoggableHardware {
   public Compressor(Compressor.ID id) {
     this.m_id = id;
     this.m_compressor = new edu.wpi.first.wpilibj.Compressor(m_id.moduleType);
+
+    // Update inputs on init
+    updateInputs();
+    periodic();
+
+    // Register device with manager
+    PurpleManager.add(this);
   }
 
   /**
@@ -114,7 +122,7 @@ public class Compressor extends LoggableHardware {
    */
   @Override
   protected void periodic() {
-    updateInputs();
+    Logger.processInputs(m_id.name, m_inputs);
   }
 
   /**
@@ -123,7 +131,7 @@ public class Compressor extends LoggableHardware {
    */
   @Override
   public CompressorInputsAutoLogged getInputs() {
-    return m_inputs;
+    synchronized (m_inputs) { return m_inputs; }
   }
 
   /**

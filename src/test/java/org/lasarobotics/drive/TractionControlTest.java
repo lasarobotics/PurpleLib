@@ -45,7 +45,7 @@ public class TractionControlTest {
     var outputSpeed = Units.MetersPerSecond.of(100.0);
     for (int i = 0; i < GlobalConstants.ROBOT_LOOP_HZ.times(2).in(Units.Hertz); i++) {
       Timer.delay(GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Seconds));
-      outputSpeed = m_tractionControlController.calculate(MAX_LINEAR_SPEED, Units.MetersPerSecond.of(0.0), MAX_LINEAR_SPEED.divide(2));
+      outputSpeed = m_tractionControlController.calculate(MAX_LINEAR_SPEED, Units.MetersPerSecond.of(0.0), MAX_LINEAR_SPEED.div(2));
     }
 
     // Verify behavior
@@ -86,7 +86,7 @@ public class TractionControlTest {
     m_tractionControlController.disableTractionControl();
 
     // Simulate scenario
-    var outputSpeed = m_tractionControlController.calculate(MAX_LINEAR_SPEED, Units.MetersPerSecond.of(0.0), MAX_LINEAR_SPEED.divide(2));
+    var outputSpeed = m_tractionControlController.calculate(MAX_LINEAR_SPEED, Units.MetersPerSecond.of(0.0), MAX_LINEAR_SPEED.div(2));
 
     // Verify behavior
     assertFalse(m_tractionControlController.isSlipping());

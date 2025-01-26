@@ -174,7 +174,7 @@ public class SwervePoseEstimatorService {
       m_yawAngle = (isIMUConnected) ? m_imu.getRotation2d() :
         m_yawAngle.plus(new Rotation2d(m_kinematics.toTwist2d(moduleDeltas).dtheta));
       var yawRate = (isIMUConnected) ? m_imu.getYawRate() :
-        Units.Radians.of(m_yawAngle.minus(previousYawAngle).getRadians()).divide(Units.Microseconds.of(m_currentTimestamp - m_previousTimestamp));
+        Units.Radians.of(m_yawAngle.minus(previousYawAngle).getRadians()).div(Units.Microseconds.of(m_currentTimestamp - m_previousTimestamp));
 
       // If no cameras or yaw rate is too high, just update pose based on odometry and exit
       if (m_cameras.isEmpty() || yawRate.gte(VISION_ANGULAR_VELOCITY_THRESHOLD)) {

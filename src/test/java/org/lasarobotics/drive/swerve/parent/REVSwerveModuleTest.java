@@ -204,10 +204,10 @@ public class REVSwerveModuleTest {
   @DisplayName("Test if module location is set correctly")
   public void moduleLocation() {
     // Check if all module locations are set
-    assertEquals(new Translation2d(WHEELBASE.divide(+2), TRACK_WIDTH.divide(+2)), m_lFrontModule.getModuleCoordinate());
-    assertEquals(new Translation2d(WHEELBASE.divide(+2), TRACK_WIDTH.divide(-2)), m_rFrontModule.getModuleCoordinate());
-    assertEquals(new Translation2d(WHEELBASE.divide(-2), TRACK_WIDTH.divide(+2)), m_lRearModule.getModuleCoordinate());
-    assertEquals(new Translation2d(WHEELBASE.divide(-2), TRACK_WIDTH.divide(-2)), m_rRearModule.getModuleCoordinate());
+    assertEquals(new Translation2d(WHEELBASE.div(+2), TRACK_WIDTH.div(+2)), m_lFrontModule.getModuleCoordinate());
+    assertEquals(new Translation2d(WHEELBASE.div(+2), TRACK_WIDTH.div(-2)), m_rFrontModule.getModuleCoordinate());
+    assertEquals(new Translation2d(WHEELBASE.div(-2), TRACK_WIDTH.div(+2)), m_lRearModule.getModuleCoordinate());
+    assertEquals(new Translation2d(WHEELBASE.div(-2), TRACK_WIDTH.div(-2)), m_rRearModule.getModuleCoordinate());
   }
 
   @Test

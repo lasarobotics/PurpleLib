@@ -410,8 +410,8 @@ public class SwerveDrive extends SubsystemBase implements AutoCloseable {
     // Drive to counter tipping motion
     drive(
       ControlCentricity.ROBOT_CENTRIC,
-      DRIVE_MAX_LINEAR_SPEED.divide(4).times(Math.cos(direction)),
-      DRIVE_MAX_LINEAR_SPEED.divide(4).times(Math.sin(direction)),
+      DRIVE_MAX_LINEAR_SPEED.div(4).times(Math.cos(direction)),
+      DRIVE_MAX_LINEAR_SPEED.div(4).times(Math.sin(direction)),
       Units.DegreesPerSecond.of(0.0)
     );
   }

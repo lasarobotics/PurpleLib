@@ -61,7 +61,7 @@ public class LimitSwitch extends LoggableHardware {
   private ID m_id;
   private SwitchPolarity m_switchPolarity;
   private Frequency m_updateRate;
-  private LimitSwitchInputsAutoLogged m_inputs;
+  private volatile LimitSwitchInputsAutoLogged m_inputs;
 
   /**
    * Create a limit switch object with built-in logging
@@ -77,6 +77,7 @@ public class LimitSwitch extends LoggableHardware {
     this.m_inputs = new LimitSwitchInputsAutoLogged();
 
     // Update inputs on init
+    updateInputs();
     periodic();
 
     // Register device with manager
@@ -95,7 +96,6 @@ public class LimitSwitch extends LoggableHardware {
    */
   @Override
   protected void periodic() {
-    updateInputs();
     Logger.processInputs(m_id.name, m_inputs);
   }
 
@@ -110,7 +110,7 @@ public class LimitSwitch extends LoggableHardware {
    */
   @Override
   public LimitSwitchInputsAutoLogged getInputs() {
-    return m_inputs;
+    synchronized (m_inputs) { return m_inputs; }
   }
 
   @Override

@@ -15,7 +15,7 @@ public class DriveWheel {
   public final Dimensionless dynamicCoF;
 
   private DriveWheel(Distance diameter, Dimensionless staticCoF, Dimensionless dynamicCoF) {
-    this.radius = diameter.divide(2);
+    this.radius = diameter.div(2);
     this.diameter = diameter;
     this.staticCoF = staticCoF;
     this.dynamicCoF = dynamicCoF;

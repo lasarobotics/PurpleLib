@@ -46,7 +46,7 @@ public class Analog extends LoggableHardware {
 
   private ID m_id;
   private Frequency m_updateRate;
-  private AnalogInputsAutoLogged m_inputs;
+  private volatile AnalogInputsAutoLogged m_inputs;
 
   /**
    * Create an Analog object
@@ -59,6 +59,7 @@ public class Analog extends LoggableHardware {
     this.m_inputs = new AnalogInputsAutoLogged();
 
     // Update inputs on init
+    updateInputs();
     periodic();
 
     // Register device with manager
@@ -82,7 +83,6 @@ public class Analog extends LoggableHardware {
    */
   @Override
   protected void periodic() {
-    updateInputs();
     Logger.processInputs(m_id.name, m_inputs);
   }
 
@@ -92,7 +92,7 @@ public class Analog extends LoggableHardware {
    */
   @Override
   public AnalogInputsAutoLogged getInputs() {
-    return m_inputs;
+    synchronized (m_inputs) { return m_inputs; }
   }
 
   @Override

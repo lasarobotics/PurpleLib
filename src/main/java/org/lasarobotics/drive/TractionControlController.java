@@ -93,7 +93,7 @@ public class TractionControlController {
     this.m_staticCoF = staticCoF.in(Units.Value);
     this.m_dynamicCoF = dynamicCoF.in(Units.Value);
     this.m_optimalSlipRatio = MathUtil.clamp(optimalSlipRatio.in(Units.Value), MIN_SLIP_RATIO, MAX_SLIP_RATIO);
-    this.m_mass = mass.divide(4).in(Units.Kilograms);
+    this.m_mass = mass.div(4).in(Units.Kilograms);
     this.m_maxLinearVelocity = Math.floor(maxLinearSpeed.in(Units.MetersPerSecond) * 1000) / 1000;
     this.m_maxAcceleration = m_staticCoF * Units.Gs.one().in(Units.MetersPerSecondPerSecond);
     this.m_maxPredictedSlipRatio = (m_maxAcceleration * GlobalConstants.ROBOT_LOOP_HZ.in(Units.Hertz))
@@ -154,7 +154,7 @@ public class TractionControlController {
 
     // Get desired acceleration
     var desiredAcceleration = velocityRequest.minus(inertialVelocity.times(oppositeDirection ? -1 : +1))
-      .divide(GlobalConstants.ROBOT_LOOP_HZ.asPeriod());
+      .div(GlobalConstants.ROBOT_LOOP_HZ.asPeriod());
 
     // Get sigmoid value
     double sigmoid = 1 / (1 + Math.exp(-SIGMOID_K * MathUtil.clamp(2 * (currentSlipRatio - m_optimalSlipRatio) - 1, -1.0, +1.0)));
