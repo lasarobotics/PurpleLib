@@ -31,31 +31,21 @@ public class StartWaypoint extends Pose2d implements Waypoint {
   }
 
   /**
-  * Construct a StartWaypoint located at the provided translation.
-  *
-  * @param translation Position (x, y) of this waypoint.
-  */
+   * Construct a StartWaypoint located at the provided translation.
+   *
+   * @param translation Position (x, y) of this waypoint.
+   */
   public StartWaypoint(Translation2d translation) {
-    super(translation, new Rotation2d(0));
+    super(translation, Rotation2d.kZero);
   }
 
   /**
-  * Construct a StartWaypoint located at the provided pose.
-  *
-  * @param pose Position (x, y) of this waypoint.
-  */
+   * Construct a StartWaypoint located at the provided pose.
+   *
+   * @param pose Position (x, y) of this waypoint.
+   */
   public StartWaypoint(Pose2d pose) {
     super(pose.getTranslation(), pose.getRotation());
-  }
-
-  /**
-  * Construct a StartWaypoint located at the provided coordinate.
-  *
-  * @param x X Position of this waypoint.
-  * @param y Y Position of this waypoint.
-  */
-  public StartWaypoint(double x, double y) {
-    super(x, y, new Rotation2d(0));
   }
 
   @Override

@@ -6,6 +6,7 @@ package org.lasarobotics.drive.swerve;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
@@ -135,7 +136,7 @@ public class SwerveDrive extends SubsystemBase implements AutoCloseable {
   private ChassisSpeeds m_desiredChassisSpeeds;
   private Rotation2d m_allianceCorrection;
   private Pose2d m_previousPose;
-  private Rotation2d m_currentHeading;
+  private Optional<Rotation2d> m_currentHeading;
   private Field2d m_field;
   private Trigger m_tippingTrigger;
   private Angle m_tipThreshold;
@@ -241,7 +242,7 @@ public class SwerveDrive extends SubsystemBase implements AutoCloseable {
 
     // Initialise other variables
     m_previousPose = new Pose2d();
-    m_currentHeading = new Rotation2d();
+    m_currentHeading = Optional.empty();
 
     // Set alliance triggers
     CommonTriggers.isDSAttached().onTrue(SET_ALLIANCE_COMMAND);
@@ -431,6 +432,8 @@ public class SwerveDrive extends SubsystemBase implements AutoCloseable {
     double moveDirection = Math.atan2(yRequest, xRequest);
     var velocityOutput = m_throttleMap.throttleLookup(moveRequest).unaryMinus();
 
+    var currentHeading = m_currentHeading.orElseGet(() -> Rotation2d.kZero);
+
     // Drive normally and return if invalid point
     if (point == null) {
       var rotateOutput = m_rotatePIDController.calculate(getAngle(), getRotateRate(), rotateRequest).unaryMinus();
@@ -458,7 +461,7 @@ public class SwerveDrive extends SubsystemBase implements AutoCloseable {
     // Angle to target point
     Rotation2d targetAngle = new Rotation2d(point.getX() - currentPose.getX(), point.getY() - currentPose.getY());
     // Movement vector of robot
-    Vector2D robotVector = new Vector2D(velocityOutput.times(m_currentHeading.getCos()).in(Units.MetersPerSecond), velocityOutput.times(m_currentHeading.getSin()).in(Units.MetersPerSecond));
+    Vector2D robotVector = new Vector2D(velocityOutput.times(currentHeading.getCos()).in(Units.MetersPerSecond), velocityOutput.times(currentHeading.getSin()).in(Units.MetersPerSecond));
     // Aim point
     Translation2d aimPoint = point.minus(new Translation2d(robotVector.getX(), robotVector.getY()));
     // Vector from robot to target
@@ -597,7 +600,8 @@ public class SwerveDrive extends SubsystemBase implements AutoCloseable {
     double xDifference = getPose().getX() - m_previousPose.getX();
     double yDifference = getPose().getY() - m_previousPose.getY();
     if (Math.abs(xDifference) > MIN_HEADING_TRANSLATION_DELTA || Math.abs(yDifference) > MIN_HEADING_TRANSLATION_DELTA)
-      m_currentHeading = new Rotation2d(xDifference, yDifference);
+      m_currentHeading = Optional.of(new Rotation2d(xDifference, yDifference));
+    else m_currentHeading = Optional.empty();
 
     // Save previous pose
     m_previousPose = getPose();
@@ -962,6 +966,14 @@ public class SwerveDrive extends SubsystemBase implements AutoCloseable {
    */
   public ChassisSpeeds getDesiredChassisSpeeds() {
     return m_desiredChassisSpeeds;
+  }
+
+  /**
+   * Get current heading of the robot (direction of travel)
+   * @return Direction of travel
+   */
+  public Optional<Rotation2d> getCurrentHeading() {
+    return m_currentHeading;
   }
 
   /**

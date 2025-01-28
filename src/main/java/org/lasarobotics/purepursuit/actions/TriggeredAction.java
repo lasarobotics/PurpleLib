@@ -46,8 +46,6 @@ public abstract class TriggeredAction {
 
   /**
    * Perform the triggered action. Automatically called when the trigger condition is met.
-   *
-   * @param m_alreadyPerformed True if the action has already been performed, false otherwise.
    */
   public abstract void doAction();
 

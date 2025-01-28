@@ -9,6 +9,10 @@ import org.lasarobotics.purepursuit.actions.InterruptAction;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Distance;
+import edu.wpi.first.units.measure.LinearVelocity;
 
 /**
 * An InterruptWaypoint is a PointTurnWaypoint. After the robot stops at this waypoint, it will turn
@@ -51,7 +55,14 @@ public class InterruptWaypoint extends PointTurnWaypoint {
   * @param rotationBuffer The expected level of error (in radians), the robot will consider itself at the waypoint when it is within the buffer. The buffer must be > 0.
   * @param action         The action the robot performs at this point.
   */
-  public InterruptWaypoint(Translation2d translation, Rotation2d rotation, double movementSpeed, double turnSpeed, double followRadius, double positionBuffer, double rotationBuffer, InterruptAction action) {
+  public InterruptWaypoint(Translation2d translation,
+                           Rotation2d rotation,
+                           LinearVelocity movementSpeed,
+                           AngularVelocity turnSpeed,
+                           Distance followRadius,
+                           Distance positionBuffer,
+                           Angle rotationBuffer,
+                           InterruptAction action) {
     super(translation, rotation, movementSpeed, turnSpeed, followRadius, positionBuffer, rotationBuffer);
     this.action = action;
     actionPerformed = false;
@@ -68,45 +79,14 @@ public class InterruptWaypoint extends PointTurnWaypoint {
   * @param rotationBuffer The expected level of error (in radians), the robot will consider itself at the waypoint when it is within the buffer. The buffer must be > 0.
   * @param action         The action the robot performs at this point.
   */
-  public InterruptWaypoint(Pose2d pose, double movementSpeed, double turnSpeed, double followRadius, double positionBuffer, double rotationBuffer, InterruptAction action) {
+  public InterruptWaypoint(Pose2d pose,
+                           LinearVelocity movementSpeed,
+                           AngularVelocity turnSpeed,
+                           Distance followRadius,
+                           Distance positionBuffer,
+                           Angle rotationBuffer,
+                           InterruptAction action) {
     super(pose, movementSpeed, turnSpeed, followRadius, positionBuffer, rotationBuffer);
-    this.action = action;
-    actionPerformed = false;
-  }
-
-  /**
-  * Constructs an InterruptWaypoint with the provided values.
-  *
-  * @param x               The x position of this waypoint.
-  * @param y               The y position of this waypoint.
-  * @param rotationRadians The rotation (preferred angle) of this waypoint (in radians).
-  * @param movementSpeed   The speed in which the robot moves at while traversing this waypoint, in the range [0, 1].
-  * @param turnSpeed       The speed in which the robot turns at while traversing this waypoint, in the range [0, 1].
-  * @param followRadius    The distance in which the robot traverses this waypoint. Please see guides to learn more about this value.
-  * @param positionBuffer  The expected level of error, the robot will consider itself at the waypoint when it is within the buffer. The buffer must be > 0.
-  * @param rotationBuffer  The expected level of error (in radians), the robot will consider itself at the waypoint when it is within the buffer. The buffer must be > 0.
-  * @param action          The action the robot performs at this point.
-  */
-  public InterruptWaypoint(double x, double y, double rotationRadians, double movementSpeed, double turnSpeed, double followRadius, double positionBuffer, double rotationBuffer, InterruptAction action) {
-    super(x, y, rotationRadians, movementSpeed, turnSpeed, followRadius, positionBuffer, rotationBuffer);
-    this.action = action;
-    actionPerformed = false;
-  }
-
-  /**
-  * Constructs an InterruptWaypoint with the provided values.
-  *
-  * @param x              The x position of this waypoint.
-  * @param y              The y position of this waypoint.
-  * @param movementSpeed  The speed in which the robot moves at while traversing this waypoint, in the range [0, 1].
-  * @param turnSpeed      The speed in which the robot turns at while traversing this waypoint, in the range [0, 1].
-  * @param followRadius   The distance in which the robot traverses this waypoint. Please see guides to learn more about this value.
-  * @param positionBuffer The expected level of error, the robot will consider itself at the waypoint when it is within the buffer. The buffer must be > 0.
-  * @param rotationBuffer The expected level of error (in radians), the robot will consider itself at the waypoint when it is within the buffer. The buffer must be > 0.
-  * @param action         The action the robot performs at this point.
-  */
-  public InterruptWaypoint(double x, double y, double movementSpeed, double turnSpeed, double followRadius, double positionBuffer, double rotationBuffer, InterruptAction action) {
-    super(x, y, movementSpeed, turnSpeed, followRadius, positionBuffer, rotationBuffer);
     this.action = action;
     actionPerformed = false;
   }

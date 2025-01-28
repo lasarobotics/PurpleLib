@@ -10,7 +10,6 @@ import edu.wpi.first.units.measure.Distance;
 /**
  * A pure pursuit Waypoint is a point in which the robot traverses. Using Waypoints
  * one can construct a pure pursuit path for their robot to follow.
- * @see {@link GeneralWaypoint}, {@link PointTurnWaypoint}, {@link InterruptWaypoint}, {@link StartWaypoint}, {@link EndWaypoint}
  */
 public interface Waypoint {
 

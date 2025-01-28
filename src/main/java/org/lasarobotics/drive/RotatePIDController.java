@@ -97,6 +97,10 @@ public class RotatePIDController {
     return Units.DegreesPerSecond.of(m_pidController.calculate(currentAngle.in(Units.Degrees)));
   }
 
+  public AngularVelocity calculate(Angle currentAngle, Angle targetAngle) {
+    return Units.DegreesPerSecond.of(m_pidController.calculate(currentAngle.in(Units.Degrees), targetAngle.in(Units.Degrees)));
+  }
+
   /**
    * Set the tolerable error
    * @param positionTolerance Position error that is tolerable

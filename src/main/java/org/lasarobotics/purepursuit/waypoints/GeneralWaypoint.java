@@ -30,17 +30,17 @@ public class GeneralWaypoint extends Pose2d implements Waypoint {
   private long m_timeoutMiliseconds;
 
   // Speed at which the robot moves
-  private MutLinearVelocity m_movementVelocity;
+  private MutLinearVelocity m_movementVelocity = Units.MetersPerSecond.mutable(0.0);
 
   // Speed at which the robot rotates
-  private MutAngularVelocity m_rotateVelocity;
+  private MutAngularVelocity m_rotateVelocity = Units.RadiansPerSecond.mutable(0.0);
 
   // The pure pursuit follow radius.
-  private MutDistance m_followRadius;
+  private MutDistance m_followRadius = Units.Meters.mutable(0.0);
 
   // True if this waypoint uses a preferred angle.
   private boolean usePreferredAngle;
-  private MutAngle preferredAngle;
+  private MutAngle preferredAngle = Units.Radians.mutable(0.0);
 
   // True if this waypoint is to inherit the previous node's configuration.
   private boolean copyMode;
@@ -77,8 +77,8 @@ public class GeneralWaypoint extends Pose2d implements Waypoint {
     this.m_rotateVelocity.mut_replace(rotateVelocity);
     this.m_followRadius.mut_replace(followRadius);
     m_timeoutMiliseconds = -1;
-    usePreferredAngle = false;
-    preferredAngle.mut_replace(Units.Radians.zero());
+    usePreferredAngle = true;
+    preferredAngle.mut_replace(pose.getRotation().getMeasure());
     copyMode = false;
   }
 
@@ -144,7 +144,7 @@ public class GeneralWaypoint extends Pose2d implements Waypoint {
   /**
   * Sets the turn speed of this waypoint.
   *
-  * @param rotateSpeed Speed to be set.
+  * @param rotateVelocity Speed to be set.
   * @return This GeneralWaypoint, used for chaining methods.
   */
   public GeneralWaypoint setRotateSpeed(AngularVelocity rotateVelocity) {

@@ -5,8 +5,10 @@
 package org.lasarobotics.purepursuit;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Queue;
 
 import org.lasarobotics.drive.swerve.SwerveDrive;
@@ -16,17 +18,22 @@ import org.lasarobotics.purepursuit.waypoints.GeneralWaypoint;
 import org.lasarobotics.purepursuit.waypoints.InterruptWaypoint;
 import org.lasarobotics.purepursuit.waypoints.PointTurnWaypoint;
 import org.lasarobotics.purepursuit.waypoints.Waypoint;
+import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 
 /**
 * This class represents a pure pursuit path. It is used to store a path's waypoints, and do all the
@@ -50,14 +57,8 @@ public class Path extends ArrayList<Waypoint> {
     WAYPOINT_ORDERING_CONTROLLED,
   }
 
-  // The default motion profile.
-  private static PathMotionProfile defaultMotionProfile = null;
-
   // This path's type (Heading controlled or waypoint ordering controlled).
   private Type m_type;
-
-  // Motion profile.
-  private PathMotionProfile motionProfile;
 
   // Timeout fields.
   private long timeoutMiliseconds;
@@ -77,6 +78,7 @@ public class Path extends ArrayList<Waypoint> {
   private double retraceMovementSpeed;
   private double retraceTurnSpeed;
   private Translation2d lastKnownIntersection;
+  private ProfiledPIDController rotatePIDController;
 
   // Action lists
   private List<TriggeredAction> triggeredActions;
@@ -95,8 +97,7 @@ public class Path extends ArrayList<Waypoint> {
   * @param waypoints Waypoints in this path.
   */
   public Path(Waypoint... waypoints) {
-    for (Waypoint waypoint : waypoints)
-    add(waypoint);
+    addAll(Arrays.asList(waypoints));
     m_type = Path.Type.WAYPOINT_ORDERING_CONTROLLED;
     timeoutMiliseconds = -1;
     timeSinceStart = -1;
@@ -108,17 +109,8 @@ public class Path extends ArrayList<Waypoint> {
     timedOut = false;
     triggeredActions = new ArrayList<TriggeredAction>();
     interruptActionQueue = new LinkedList<InterruptWaypoint>();
-    motionProfile = getDefaultMotionProfile();
     lastWaypoint = null;
-  }
-
-  /**
-   * Sets the default motion profile.
-   *
-   * @param profile Motion profile to be set.
-   */
-  public static void setDefaultMotionProfile(PathMotionProfile profile) {
-    defaultMotionProfile = profile;
+    rotatePIDController = new ProfiledPIDController(5.0, 0.0, 0.0, new TrapezoidProfile.Constraints(2160.0, 4320.0));
   }
 
   /**
@@ -184,35 +176,29 @@ public class Path extends ArrayList<Waypoint> {
   * Initiates the automatic path following feature. The robot will follow the path and perform actions as configured.
   *
   * @param drivetrain The robot's drive base. Only mecanum drives are supported currently.
-  * @param odometry     The robot's odometry.
-  * @return True if the path completed successfully, false if the path did not (timed out, lost path, etc.).
   * @throws IllegalStateException If automatic mode is disabled/not configured or the init has not been ran.
   */
-  public boolean followPath(SwerveDrive drivetrain) {
+  public Command followPath(SwerveDrive drivetrain) {
     // Make sure arguments are not null.
     if (drivetrain == null)
       throw new IllegalStateException("Path initiation failed. Drivetrain is not set.");
-    // Init the path.
-    init();
-    // Next, begin the loop.
-    while (!isFinished()) {
-      // Get the robot's current position using the odometry.
-      var currentPose = drivetrain.getPose();
-      // Call the loop function to get the motor powers.
-      var speeds = loop(currentPose);
-      // Update motor speeds.
-      drivetrain.autoDrive(speeds);
-      if (!isFinished()) {
-        boolean pathAborted = true;
-        // If the has stopped, then the path has timed out or lost the path.
-        if (speeds.vxMetersPerSecond != 0.0 && speeds.vyMetersPerSecond != 0.0 && speeds.omegaRadiansPerSecond != 0.0)
-          pathAborted = false;
-        if (pathAborted) return false;
-      }
-    }
-    // After the path is completed, turn off motors and return false;
-    //drivetrain.stop();
-    return true;
+
+    return new FunctionalCommand(
+      this::init,
+      () -> {
+        var speeds = loop(drivetrain);
+        drivetrain.autoDrive(speeds);
+        // if (!isFinished()) {
+        //   boolean pathAborted = true;
+        //   // If the has stopped, then the path has timed out or lost the path.
+        //   if (speeds.vxMetersPerSecond != 0.0 && speeds.vyMetersPerSecond != 0.0 && speeds.omegaRadiansPerSecond != 0.0)
+        //     pathAborted = false;
+        //   if (pathAborted) return false;
+        // }
+      },
+      (interupted) -> {},
+      this::isFinished,
+      drivetrain).andThen(drivetrain.stopCommand());
   }
 
   /**
@@ -222,27 +208,29 @@ public class Path extends ArrayList<Waypoint> {
   * returns zero motor speeds {0, 0, 0} that means the path has either (1) timed out, (2) lost the path and
   * retrace was disabled, or (3) reached the destination. Use isFinished() and timedOut() to troubleshoot.
   *
-  * @param vPosition Robot's current vertical position.
-  * @param hPosition Robot's current horizontal position.
-  * @param rotation  Robot's current rotation.
+  * @param drivetrain Robot's swerve drivetrain
   * @return A double array containing the motor powers. a[0] is the x power, a[1] is the y power, and a[2] is the turn power.
   */
-  public ChassisSpeeds loop(Pose2d currentPose) {
+  public ChassisSpeeds loop(SwerveDrive drivetrain) {
+    var speeds = new ChassisSpeeds();
     // First, make sure the init has been called. While this does not guarantee the program will run without errors, it is better than nothing.
     if (!initComplete)
-    throw new IllegalStateException("You must call the init() function before calling loop()");
-    if (timedOut)
-    // If this path has timed out, return no motor speeds.
-    return new ChassisSpeeds();
-    if (timeoutMiliseconds != -1)
-    // If this path has a timeout.
-    if (timeSinceStart == -1)
-    timeSinceStart = System.currentTimeMillis();
-    else if (timeSinceStart + timeoutMiliseconds < System.currentTimeMillis()) {
-      timedOut = true;
-      // If the path has timed out, return no speeds.
-      return new ChassisSpeeds();
+      throw new IllegalStateException("You must call the init() function before calling loop()");
+
+    if (timedOut) return speeds;
+
+    if (timeoutMiliseconds != -1) {
+      // If this path has a timeout.
+      if (timeSinceStart == -1) timeSinceStart = System.currentTimeMillis();
+      else if (timeSinceStart + timeoutMiliseconds < System.currentTimeMillis()) {
+        timedOut = true;
+        // If the path has timed out, return no speeds.
+        return speeds;
+      }
     }
+
+    var currentPose = drivetrain.getPose();
+
     // Next, loop triggered and perform interrupted actions.
     loopTriggeredActions();
     runQueuedInterruptActions();
@@ -255,8 +243,7 @@ public class Path extends ArrayList<Waypoint> {
       var radius = get(i).getFollowDistance();
       List<Translation2d> points = PurePursuitUtil.lineCircleIntersection(currentPose.getTranslation(), radius, linePoint1, linePoint2);
       for (Translation2d point : points)
-      // Add results to list.
-      intersections.add(new TaggedIntersection(point, get(i), i));
+        intersections.add(new TaggedIntersection(point, get(i), i));
       if (get(i) instanceof PointTurnWaypoint) {
         // If the second waypoint is a point turn waypoint, decrease the follow radius so the next point is always found.
         double dx = linePoint2.getX() - currentPose.getX();
@@ -269,30 +256,31 @@ public class Path extends ArrayList<Waypoint> {
       }
       // Now all intersections are recorded.
     }
+
     // If there are no intersections found, the path is lost.
     if (intersections.size() == 0) {
       if (retracing)
-      return retrace(currentPose);
+        return retrace(currentPose, drivetrain.getCurrentHeading());
       // If retrace is enabled, we can try to re-find the path.
       if (retraceEnabled) {
         if (lastKnownIntersection == null)
         lastKnownIntersection = get(0).getPose().getTranslation();
         retracing = true;
-        return retrace(currentPose);
-      } else
-      return new ChassisSpeeds();
-    } else
-    retracing = false;
+        return retrace(currentPose, drivetrain.getCurrentHeading());
+      } else return speeds;
+    } else retracing = false;
+
     // The intersections are handled differently depending on the path type.
     TaggedIntersection bestIntersection = intersections.get(0);
     switch (m_type) {
       case HEADING_CONTROLLED:
-      bestIntersection = selectHeadingControlledIntersection(intersections, currentPose);
-      break;
+        bestIntersection = selectHeadingControlledIntersection(intersections, currentPose);
+        break;
       case WAYPOINT_ORDERING_CONTROLLED:
-      bestIntersection = selectWaypointOrderingControlledIntersection(intersections);
-      break;
+        bestIntersection = selectWaypointOrderingControlledIntersection(intersections);
+        break;
     }
+
     if (retraceEnabled)
       // If retrace is enabled, store the intersection.
       lastKnownIntersection = bestIntersection.intersection;
@@ -301,38 +289,38 @@ public class Path extends ArrayList<Waypoint> {
       lastWaypoint = bestIntersection.taggedPoint;
       lastWaypointTimeStamp = System.currentTimeMillis();
     }
+
     if (bestIntersection.taggedPoint.getTimeout() != -1) {
       // If this waypoint has a timeout, make sure it hasn't timed out.
       if (System.currentTimeMillis() > lastWaypointTimeStamp + bestIntersection.taggedPoint.getTimeout()) {
         timedOut = true;
         // If it has, return no motor speeds.
-        return new ChassisSpeeds();
+        return speeds;
       }
     }
+
     // After the best intersection is found, the robot behaves differently depending on the type of waypoint.
-    var chassisSpeeds = new ChassisSpeeds();
+    var currentHeading = drivetrain.getCurrentHeading();
     switch (bestIntersection.taggedPoint.getType()) {
       case GENERAL:
-        chassisSpeeds = handleGeneralIntersection(bestIntersection, currentPose);
+        speeds = handleGeneralIntersection(currentPose, currentHeading, bestIntersection);
       break;
       case POINT_TURN:
-        chassisSpeeds = handlePointTurnIntersection(bestIntersection, currentPose);
+        speeds = handlePointTurnIntersection(currentPose, currentHeading, bestIntersection);
       break;
       case INTERRUPT:
-        chassisSpeeds = handleInterruptIntersection(bestIntersection, currentPose);
+        speeds = handleInterruptIntersection(currentPose, currentHeading, bestIntersection);
       break;
       case END:
-        chassisSpeeds = handleEndIntersection(bestIntersection, currentPose);
+        speeds = handleEndIntersection(currentPose, currentHeading, bestIntersection);
       break;
       case START:
         // This should never happen.
         throw new IllegalStateException("Path has lost integrity.");
     }
 
-    adjustSpeedsWithProfile(chassisSpeeds, bestIntersection, currentPose);
-
     // Return the motor powers.
-    return chassisSpeeds;
+    return speeds;
   }
 
   /**
@@ -343,16 +331,18 @@ public class Path extends ArrayList<Waypoint> {
   * @param rotation  Robot's rotation.
   * @return A double array containing the motor powers. a[0] is the x power, a[1] is the y power, and a[2] is the turn power.
   */
-  private ChassisSpeeds retrace(Pose2d currentPose) {
+  private ChassisSpeeds retrace(Pose2d currentPose, Optional<Rotation2d> currentHeading) {
     // Move towards the last known intersection.
-    var speeds = moveToPosition(
+    var speeds = moveToPosition2(
       currentPose,
       new Pose2d(lastKnownIntersection.getX(), lastKnownIntersection.getY(), currentPose.getRotation()),
+      currentHeading,
       false
     );
-    speeds.vxMetersPerSecond *= retraceMovementSpeed;
-    speeds.vyMetersPerSecond *= retraceMovementSpeed;
-    speeds.omegaRadiansPerSecond *= retraceTurnSpeed;
+    // speeds.vxMetersPerSecond *= retraceMovementSpeed;
+    // speeds.vyMetersPerSecond *= retraceMovementSpeed;
+    // speeds.omegaRadiansPerSecond *= retraceTurnSpeed;
+
     return speeds;
   }
 
@@ -472,13 +462,13 @@ public class Path extends ArrayList<Waypoint> {
   *
   * @param intersection Intersection to approach
   * @param currentPose     Robot's current pose
-  * @return Final motor speeds
+  * @return Target pose to drive toward
   */
-  private ChassisSpeeds handleGeneralIntersection(TaggedIntersection intersection, Pose2d currentPose) {
+  private ChassisSpeeds handleGeneralIntersection(Pose2d currentPose, Optional<Rotation2d> currentHeading, TaggedIntersection intersection) {
     /**
      * General intersections are handled like normal pure pursuit intersections. The robot simply moves towards them.
      */
-    GeneralWaypoint waypoint = (GeneralWaypoint) intersection.taggedPoint;
+    var waypoint = (GeneralWaypoint)intersection.taggedPoint;
     // Get necessary values.
     Pose2d targetPose;
     // If this waypoint has a preferred angle, use it instead of the calculated angle.
@@ -486,7 +476,7 @@ public class Path extends ArrayList<Waypoint> {
       targetPose = new Pose2d(
         intersection.intersection.getMeasureX(),
         intersection.intersection.getMeasureY(),
-        Rotation2d.fromRadians(waypoint.getPreferredAngle().in(Units.Radians))
+        new Rotation2d(waypoint.getPreferredAngle())
       );
     }
     else {
@@ -501,11 +491,8 @@ public class Path extends ArrayList<Waypoint> {
         )
       );
     }
-    // Get raw motor powers.
-    var chassisSpeeds = moveToPosition(currentPose, targetPose, false);
 
-    // Return motor speeds.
-    return chassisSpeeds;
+    return moveToPosition2(currentPose, targetPose, currentHeading, false);
   }
 
   /**
@@ -517,9 +504,9 @@ public class Path extends ArrayList<Waypoint> {
   *
   * @param intersection Intersection to approach.
   * @param currentPose  Robot's current pose
-  * @return Final motor speeds.
+  * @return Target pose to drive towards
   */
-  private ChassisSpeeds handlePointTurnIntersection(TaggedIntersection intersection, Pose2d currentPose) {
+  private ChassisSpeeds handlePointTurnIntersection(Pose2d currentPose, Optional<Rotation2d> currentHeading, TaggedIntersection intersection) {
     /**
      * Point turn intersections are handled very differently than general intersections. Instead of "curving" around
      * the point, the robot will decelerate and perform a point turn.
@@ -527,6 +514,7 @@ public class Path extends ArrayList<Waypoint> {
     PointTurnWaypoint waypoint = (PointTurnWaypoint)intersection.taggedPoint;
     Angle targetAngle;
     var speeds = new ChassisSpeeds();
+    var targetPose = new Pose2d();
 
     if (!waypoint.hasTraversed() && Units.Meters.of(currentPose.getTranslation().getDistance(waypoint.getTranslation())).lt(waypoint.getPositionBuffer())) {
       // If the robot has not reached the point.
@@ -545,8 +533,8 @@ public class Path extends ArrayList<Waypoint> {
         // If the robot has reached the point and is at the target angle, then the point is traversed.
         waypoint.setTraversed();
       }
-      var targetPose = new Pose2d(intersection.intersection.getMeasureX(), intersection.intersection.getMeasureY(), Rotation2d.fromRadians(targetAngle.in(Units.Radians)));
-      speeds = moveToPosition(currentPose, targetPose, true);
+      targetPose = new Pose2d(intersection.intersection.getMeasureX(), intersection.intersection.getMeasureY(), Rotation2d.fromRadians(targetAngle.in(Units.Radians)));
+      speeds = moveToPosition2(currentPose, targetPose, currentHeading, true);
     } else {
       // If this waypoint has a preferred angle, use it instead of the calculated angle.
       if (waypoint.usingPreferredAngle())
@@ -554,11 +542,10 @@ public class Path extends ArrayList<Waypoint> {
       else
         targetAngle = Units.Radians.of(Math.atan2(intersection.intersection.getY() - currentPose.getY(), intersection.intersection.getX() - currentPose.getX()));
 
-      var targetPose = new Pose2d(intersection.intersection.getMeasureX(), intersection.intersection.getMeasureY(), Rotation2d.fromRadians(targetAngle.in(Units.Radians)));
-      speeds = moveToPosition(currentPose, targetPose, false);
+      targetPose = new Pose2d(intersection.intersection.getMeasureX(), intersection.intersection.getMeasureY(), Rotation2d.fromRadians(targetAngle.in(Units.Radians)));
+      speeds = moveToPosition2(currentPose, targetPose, currentHeading, false);
     }
 
-    // Return motor speeds.
     return speeds;
   }
 
@@ -572,9 +559,9 @@ public class Path extends ArrayList<Waypoint> {
   *
   * @param intersection Intersection to approach.
   * @param currentPose     Robot's current position/rotation.
-  * @return Final motor speeds.
+  * @return Target pose to drive towards
   */
-  private ChassisSpeeds handleInterruptIntersection(TaggedIntersection intersection, Pose2d currentPose) {
+  private ChassisSpeeds handleInterruptIntersection(Pose2d currentPose, Optional<Rotation2d> currentHeading, TaggedIntersection intersection) {
     /**
      * Interrupt intersections are handled similarly to point turn intersections. Instead of continuing directly
      * after it has turned, the robot will stop and perform the interrupt actions.
@@ -582,12 +569,13 @@ public class Path extends ArrayList<Waypoint> {
     InterruptWaypoint waypoint = (InterruptWaypoint) intersection.taggedPoint;
     Angle targetAngle;
     var speeds = new ChassisSpeeds();
+    var targetPose = new Pose2d();
 
     if (!waypoint.hasTraversed() && Units.Meters.of(currentPose.getTranslation().getDistance(waypoint.getTranslation())).lt(waypoint.getPositionBuffer())) {
       // If the robot has not reached the point.
       if (waypoint.getType() == Waypoint.Type.END) {
         if (waypoint.usingPreferredAngle() && !currentPose.getRotation().getMeasure().isNear(waypoint.getPreferredAngle(), waypoint.getRotationBuffer()))
-        targetAngle = waypoint.getPreferredAngle();
+          targetAngle = waypoint.getPreferredAngle();
         else {
           ((EndWaypoint)waypoint).setTraversed();
           return speeds;
@@ -617,8 +605,8 @@ public class Path extends ArrayList<Waypoint> {
           return speeds;
         }
       }
-      var targetPose = new Pose2d(intersection.intersection.getMeasureX(), intersection.intersection.getMeasureY(), Rotation2d.fromRadians(targetAngle.in(Units.Radians)));
-      speeds = moveToPosition(currentPose, targetPose, true);
+      targetPose = new Pose2d(intersection.intersection.getMeasureX(), intersection.intersection.getMeasureY(), Rotation2d.fromRadians(targetAngle.in(Units.Radians)));
+      speeds = moveToPosition2(currentPose, targetPose, currentHeading, true);
     } else {
       // If this waypoint has a preferred angle, use it instead of the calculated angle.
       if (waypoint.usingPreferredAngle())
@@ -626,11 +614,10 @@ public class Path extends ArrayList<Waypoint> {
       else
         targetAngle = Units.Radians.of(Math.atan2(intersection.intersection.getY() - currentPose.getY(), intersection.intersection.getX() - currentPose.getX()));
 
-      var targetPose = new Pose2d(intersection.intersection.getMeasureX(), intersection.intersection.getMeasureY(), Rotation2d.fromRadians(targetAngle.in(Units.Radians)));
-      speeds = moveToPosition(currentPose, targetPose, false);
+      targetPose = new Pose2d(intersection.intersection.getMeasureX(), intersection.intersection.getMeasureY(), Rotation2d.fromRadians(targetAngle.in(Units.Radians)));
+      speeds = moveToPosition2(currentPose, targetPose, currentHeading, false);
     }
 
-    // Return motor speeds.
     return speeds;
   }
 
@@ -643,13 +630,13 @@ public class Path extends ArrayList<Waypoint> {
   *
   * @param intersection Intersection to approach.
   * @param robotPos     Robot's current position/rotation.
-  * @return Final motor speeds.
+  * @return Target pose to drive towards
   */
-  private ChassisSpeeds handleEndIntersection(TaggedIntersection intersection, Pose2d robotPos) {
+  private ChassisSpeeds handleEndIntersection(Pose2d currentPose, Optional<Rotation2d> currentHeading, TaggedIntersection intersection) {
     /**
     * End intersections are handled the same way as interrupt intersections.
     */
-    return handleInterruptIntersection(intersection, robotPos);
+    return handleInterruptIntersection(currentPose, currentHeading, intersection);
   }
 
   /**
@@ -671,22 +658,8 @@ public class Path extends ArrayList<Waypoint> {
   * @param type Path type to be set.
   * @return This path, used for chaining methods.
   */
-  public Path setM_type(Path.Type type) {
+  public Path setType(Path.Type type) {
     m_type = type;
-    return this;
-  }
-
-  /**
-  * Sets this path's motion profile to the provided PathMotionProfile.
-  *
-  * @param profile PathMotionProfile to be set.
-  * @return This path, used for chaining methods.
-  * @throws NullPointerException If the controller is null.
-  */
-  public Path setMotionProfile(PathMotionProfile profile) {
-    if (profile == null)
-      throw new NullPointerException("The motion profile connot be null");
-    motionProfile = profile;
     return this;
   }
 
@@ -889,82 +862,55 @@ public class Path extends ArrayList<Waypoint> {
     interruptActionQueue.remove().performAction();
   }
 
-  /**
-  * Adjusts the motor speeds based on this path's motion profile.
-  *
-  * @param speeds       Speeds to be adjusted.
-  * @param intersection The tagged intersection.
-  */
-  private void adjustSpeedsWithProfile(ChassisSpeeds speeds, TaggedIntersection intersection, Pose2d currentPose) {
-    // Get closest away and to points.
-    Translation2d awayPoint = null;
-    for (int i = intersection.waypointIndex - 1; i >= 0; i--) {
-      if (get(i).getType() == Waypoint.Type.START || get(i) instanceof PointTurnWaypoint) {
-        awayPoint = get(i).getPose().getTranslation();
-        break;
-      }
+  public ChassisSpeeds moveToPosition2(Pose2d currentPose, Pose2d targetPose, Optional<Rotation2d> currentHeading, boolean rotateOnly) {
+    var MAX_VELOCITY = Units.MetersPerSecond.of(5.0);
+    var MAX_ACCELERATION = Units.MetersPerSecondPerSecond.of(2.0);
+    var MAX_ANGLE_DIFFERENCE = Units.Degrees.of(90.0);
+
+    // If turnOnly is true, only return a turn power.
+    if (rotateOnly) {
+      var rotateVelocity = Units.DegreesPerSecond.of(rotatePIDController.calculate(
+        currentPose.getRotation().getDegrees(),
+        new TrapezoidProfile.State(targetPose.getRotation().getDegrees(), 0.0)
+      ));
+      return new ChassisSpeeds(Units.MetersPerSecond.zero(), Units.MetersPerSecond.zero(), rotateVelocity);
     }
 
-    // This should never happen.
-    if (awayPoint == null)
-      throw new IllegalStateException("Path has lost integrity.");
-    Translation2d toPoint = intersection.taggedPoint.getPose().getTranslation();
-    // If the intersection is closer to the away point.
-    if (currentPose.getTranslation().getDistance(awayPoint) < currentPose.getTranslation().getDistance(toPoint)) {
-      motionProfile.processAccelerate(
-        speeds,
-        Units.Meters.of(currentPose.getTranslation().getDistance(awayPoint)),
-        ((GeneralWaypoint)intersection.taggedPoint).getMovementVelocity(),
-        ((GeneralWaypoint)intersection.taggedPoint).getRotateVelocity()
-      );
-    } else { // If the intersection is closer to the to point.
-      motionProfile.processDecelerate(
-        speeds,
-        Units.Meters.of(currentPose.getTranslation().getDistance(toPoint)),
-        ((GeneralWaypoint)intersection.taggedPoint).getMovementVelocity(),
-        ((GeneralWaypoint)intersection.taggedPoint).getRotateVelocity()
-      );
-    }
-  }
+    var absoluteDistanceX = targetPose.getMeasureX().minus(currentPose.getMeasureX());
+    var absoluteDistanceY = targetPose.getMeasureY().minus(currentPose.getMeasureY());
 
-  /**
-  * Generates and returns the default PathMotionProfile.
-  *
-  * @return the default PathMotionProfile.
-  */
-  private PathMotionProfile getDefaultMotionProfile() {
-    if (defaultMotionProfile != null)
-      return defaultMotionProfile;
+    var absoluteAngle = Units.Radians.of(Math.atan2(absoluteDistanceY.in(Units.Meters), absoluteDistanceX.in(Units.Meters)));
+    var distanceToPosition = Units.Meters.of(Math.hypot(absoluteDistanceX.in(Units.Meters), absoluteDistanceY.in(Units.Meters)));
 
-    // Use the default motion profile. This may be updated in later versions.
-    // The default profile is a messy trapezoid(ish) curve.
-    return new PathMotionProfile() {
-      @Override
-      public void decelerate(ChassisSpeeds speeds, Distance distanceToTarget, LinearVelocity speed, LinearVelocity configuredMovementSpeed, AngularVelocity configuredTurnSpeed) {
-        if (distanceToTarget.lt(Units.Meters.of(0.15))) {
-          speeds.vxMetersPerSecond *= configuredMovementSpeed.times((distanceToTarget.in(Units.Meters) * 10) + 0.1).in(Units.MetersPerSecond);
-          speeds.vyMetersPerSecond *= configuredMovementSpeed.times((distanceToTarget.in(Units.Meters) * 10) + 0.1).in(Units.MetersPerSecond);
-          speeds.omegaRadiansPerSecond *= configuredTurnSpeed.in(Units.RadiansPerSecond);
-        } else {
-          speeds.vxMetersPerSecond *= configuredMovementSpeed.in(Units.MetersPerSecond);
-          speeds.vyMetersPerSecond *= configuredMovementSpeed.in(Units.MetersPerSecond);
-          speeds.omegaRadiansPerSecond *= configuredTurnSpeed.in(Units.RadiansPerSecond);
-        }
-      }
+    var relativeAngleToPosition = Units.Radians.of(
+      MathUtil.angleModulus(absoluteAngle.plus(currentPose.getRotation().getMeasure()).in(Units.Radians))
+    );
 
-      @Override
-      public void accelerate(ChassisSpeeds speeds, Distance distanceFromTarget, LinearVelocity speed, LinearVelocity configuredMovementSpeed, AngularVelocity configuredTurnSpeed) {
-        if (distanceFromTarget.lt(Units.Meters.of(0.15))) {
-          speeds.vxMetersPerSecond *= configuredMovementSpeed.times((distanceFromTarget.in(Units.Meters) * 10) + 0.1).in(Units.MetersPerSecond);
-          speeds.vyMetersPerSecond *= configuredMovementSpeed.times((distanceFromTarget.in(Units.Meters) * 10) + 0.1).in(Units.MetersPerSecond);
-          speeds.omegaRadiansPerSecond *= configuredTurnSpeed.in(Units.RadiansPerSecond);
-        } else {
-          speeds.vxMetersPerSecond *= configuredMovementSpeed.in(Units.MetersPerSecond);
-          speeds.vyMetersPerSecond *= configuredMovementSpeed.in(Units.MetersPerSecond);
-          speeds.omegaRadiansPerSecond *= configuredTurnSpeed.in(Units.RadiansPerSecond);
-        }
-      }
-    };
+    Angle angleError;
+    if (currentHeading.isEmpty()) angleError = relativeAngleToPosition.minus(currentPose.getRotation().getMeasure());
+    else angleError = relativeAngleToPosition.minus(currentHeading.get().getMeasure());
+
+    angleError = Units.Radians.of(MathUtil.angleModulus(angleError.in(Units.Radians)));
+
+    var desiredVelocity = Units.MetersPerSecond.of(Math.min(
+      MAX_VELOCITY.in(Units.MetersPerSecond),
+      Math.sqrt(2 * MAX_ACCELERATION.in(Units.MetersPerSecondPerSecond) * distanceToPosition.in(Units.Meters))
+    ));
+
+    double curvatureFactor = Math.min(angleError.abs(Units.Radians) / MAX_ANGLE_DIFFERENCE.in(Units.Radians), 0.8);
+    //desiredVelocity = desiredVelocity.times(1 - curvatureFactor);
+
+    var relativeDistanceX = distanceToPosition.times(Math.cos(relativeAngleToPosition.in(Units.Radians)));
+    var relativeDistanceY = distanceToPosition.times(Math.sin(relativeAngleToPosition.in(Units.Radians)));
+
+    var xVelocity = desiredVelocity.times(relativeDistanceX.in(Units.Meters) / distanceToPosition.in(Units.Meters));
+    var yVelocity = desiredVelocity.times(relativeDistanceY.in(Units.Meters) / distanceToPosition.in(Units.Meters));
+    var rotateVelocity = Units.DegreesPerSecond.of(rotatePIDController.calculate(
+      currentPose.getRotation().getDegrees(),
+      new TrapezoidProfile.State(targetPose.getRotation().getDegrees(), 0.0)
+    ));
+
+    return new ChassisSpeeds(xVelocity, yVelocity, rotateVelocity);
   }
 
   /**
