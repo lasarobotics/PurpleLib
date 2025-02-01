@@ -41,6 +41,7 @@ import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Frequency;
+import edu.wpi.first.units.measure.MutCurrent;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.Timer;
@@ -120,6 +121,8 @@ public class Spark extends LoggableHardware {
     public double absoluteEncoderVelocity = 0.0;
     public boolean forwardLimitSwitch = false;
     public boolean reverseLimitSwitch = false;
+    public MutCurrent supplyCurrent = Units.Amps.zero().mutableCopy();
+    public MutCurrent statorCurrent = Units.Amps.zero().mutableCopy();
   }
 
   private static final String LOG_TAG = "Spark";
@@ -136,8 +139,6 @@ public class Spark extends LoggableHardware {
   private static final String ARB_FF_LOG_ENTRY = "/ArbitraryFF";
   private static final String ARB_FF_UNITS_LOG_ENTRY = "/ArbitraryFFUnits";
   private static final String IDLE_MODE_LOG_ENTRY = "/IdleMode";
-  private static final String INPUT_CURRENT_LOG_ENTRY = "/InputCurrent";
-  private static final String OUTPUT_CURRENT_LOG_ENTRY = "/OutputCurrent";
   private static final String HEALTH_STATUS_LOG_ENTRY = "/IsHealthy";
   private static final String TEMPERATURE_LOG_ENTRY = "/Temperature";
   private static final ClosedLoopSlot PID_SLOT = ClosedLoopSlot.kSlot0;
@@ -347,6 +348,22 @@ public class Spark extends LoggableHardware {
   }
 
   /**
+   * Spark approximate supply current
+   * @return Supply current
+   */
+  private Current getSupplyCurrent() {
+    return getStatorCurrent().times(m_spark.getAppliedOutput());
+  }
+
+  /**
+   * Spark stator  current
+   * @return stator current
+   */
+  private Current getStatorCurrent() {
+    return Units.Amps.of(m_spark.getOutputCurrent());
+  }
+
+  /**
    * Update sensor input readings
    */
   protected void updateInputs() {
@@ -359,6 +376,8 @@ public class Spark extends LoggableHardware {
       m_inputs.absoluteEncoderVelocity = getAbsoluteEncoderVelocity();
       m_inputs.forwardLimitSwitch = getForwardLimitSwitch();
       m_inputs.reverseLimitSwitch = getReverseLimitSwitch();
+      m_inputs.supplyCurrent.mut_replace(getSupplyCurrent());
+      m_inputs.statorCurrent.mut_replace(getStatorCurrent());
 
       // Get motor encoder
       if (!getMotorType().equals(MotorType.kBrushed)) {
@@ -371,9 +390,6 @@ public class Spark extends LoggableHardware {
   @Override
   protected void periodic() {
     synchronized (m_inputs) { Logger.processInputs(m_id.name, m_inputs); }
-
-    Logger.recordOutput(m_id.name + INPUT_CURRENT_LOG_ENTRY, getInputCurrent());
-    Logger.recordOutput(m_id.name + OUTPUT_CURRENT_LOG_ENTRY, getOutputCurrent());
     Logger.recordOutput(m_id.name + HEALTH_STATUS_LOG_ENTRY, isHealthy());
 
     if (getMotorType() == MotorType.kBrushed) return;
@@ -750,21 +766,6 @@ public class Spark extends LoggableHardware {
     }
   }
 
-  /**
-   * Spark approximate input current
-   * @return
-   */
-  public Current getInputCurrent() {
-    return getOutputCurrent().times(m_spark.getAppliedOutput());
-  }
-
-  /**
-   * Spark output current
-   * @return Output current
-   */
-  public Current getOutputCurrent() {
-  return Units.Amps.of(m_spark.getOutputCurrent());
-  }
 
   /**
    * Get applied output of Spark

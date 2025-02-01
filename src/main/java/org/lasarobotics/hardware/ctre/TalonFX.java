@@ -80,6 +80,7 @@ import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Frequency;
 import edu.wpi.first.units.measure.MutAngle;
 import edu.wpi.first.units.measure.MutAngularVelocity;
+import edu.wpi.first.units.measure.MutCurrent;
 
 
 /** TalonFX */
@@ -112,13 +113,13 @@ public class TalonFX extends LoggableHardware {
     public MutAngularVelocity rotorVelocity = Units.RadiansPerSecond.zero().mutableCopy();
     public MutAngle selectedSensorPosition = Units.Radians.zero().mutableCopy();
     public MutAngularVelocity selectedSensorVelocity = Units.RadiansPerSecond.zero().mutableCopy();
+    public MutCurrent supplyCurrent = Units.Amps.zero().mutableCopy();
+    public MutCurrent statorCurrent = Units.Amps.zero().mutableCopy();
   }
 
   private static final String VALUE1_LOG_ENTRY = "/OutputValue1";
   private static final String VALUE2_LOG_ENTRY = "/OutputValue2";
   private static final String MODE_LOG_ENTRY = "/OutputMode";
-  private static final String SUPPLY_CURRENT_LOG_ENTRY = "/SupplyCurrent";
-  private static final String STATOR_CURRENT_LOG_ENTRY = "/StatorCurrent";
 
   private com.ctre.phoenix6.hardware.TalonFX m_talon;
 
@@ -177,15 +178,14 @@ public class TalonFX extends LoggableHardware {
       m_inputs.rotorVelocity.mut_replace(m_talon.getRotorVelocity().getValue());
       m_inputs.selectedSensorPosition.mut_replace(m_talon.getPosition().getValue());
       m_inputs.selectedSensorVelocity.mut_replace(m_talon.getVelocity().getValue());
+      m_inputs.supplyCurrent.mut_replace(m_talon.getSupplyCurrent().getValue());
+      m_inputs.statorCurrent.mut_replace(m_talon.getStatorCurrent().getValue());
     }
   }
 
   @Override
   protected void periodic() {
     synchronized (m_inputs) { Logger.processInputs(m_id.name, m_inputs); }
-
-    Logger.recordOutput(m_id.name + SUPPLY_CURRENT_LOG_ENTRY, m_talon.getSupplyCurrent().getValueAsDouble());
-    Logger.recordOutput(m_id.name + STATOR_CURRENT_LOG_ENTRY, m_talon.getStatorCurrent().getValueAsDouble());
   }
 
   @Override
