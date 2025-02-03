@@ -42,6 +42,7 @@ import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.Frequency;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Mass;
+import edu.wpi.first.units.measure.MutDistance;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.util.sendable.Sendable;
@@ -94,7 +95,7 @@ public class REVSwerveModule extends SwerveModule implements Sendable {
   private SwerveModule.Location m_location;
   private Rotation2d m_previousRotatePosition;
 
-  private volatile double m_simDrivePosition;
+  private volatile MutDistance m_simDrivePosition;
   private volatile SwerveModulePosition m_simModulePosition;
   private volatile SwerveModuleState m_desiredState;
 
@@ -160,7 +161,7 @@ public class REVSwerveModule extends SwerveModule implements Sendable {
     this.m_driveFF = new SimpleMotorFeedforward(driveFF.kS, driveFF.kV, driveFF.kA);
     this.m_location = location;
     this.m_zeroOffset = Rotation2d.fromRadians(zeroOffset.in(Units.Radians));
-    this.m_simDrivePosition = 0.0;
+    this.m_simDrivePosition = Units.Meters.zero().mutableCopy();
     this.m_simModulePosition = new SwerveModulePosition();
     this.m_desiredState = new SwerveModuleState(Units.MetersPerSecond.of(0.0), m_zeroOffset.plus(m_location.getLockPosition()));
     this.m_autoLockTime = MathUtil.clamp(autoLockTime.in(Units.Milliseconds), 0.0, MAX_AUTO_LOCK_TIME * 1000);
@@ -270,13 +271,13 @@ public class REVSwerveModule extends SwerveModule implements Sendable {
    * Update position in simulation
    */
   void updateSimPosition() {
-    m_simDrivePosition += m_desiredState.speedMetersPerSecond * GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Seconds);
+    m_simDrivePosition.mut_plus(m_desiredState.speedMetersPerSecond * GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Seconds), Units.Meters);
     synchronized (m_driveMotor.getInputs()) {
-      m_driveMotor.getInputs().encoderPosition = m_simDrivePosition;
+      m_driveMotor.getInputs().encoderPosition = m_simDrivePosition.in(Units.Meters);
       m_driveMotor.getInputs().encoderVelocity = m_desiredState.speedMetersPerSecond;
       synchronized (m_rotateMotor.getInputs()) {
         m_rotateMotor.getInputs().absoluteEncoderPosition = m_desiredState.angle.getRadians();
-        m_simModulePosition = new SwerveModulePosition(m_simDrivePosition, m_desiredState.angle);
+        m_simModulePosition = new SwerveModulePosition(m_simDrivePosition, m_desiredState.angle.minus(m_zeroOffset));
       }
     }
   }
@@ -312,6 +313,7 @@ public class REVSwerveModule extends SwerveModule implements Sendable {
     m_rotateMotor.getSim().setMotorCurrent(m_moduleSim.getRotateMotorCurrentDraw().in(Units.Amps));
 
     updateSimPosition();
+    Logger.recordOutput(m_driveMotor.getID().name + "/DriveSimPosition", m_simModulePosition);
   }
 
   /**
@@ -454,7 +456,7 @@ public class REVSwerveModule extends SwerveModule implements Sendable {
     var oldState = m_desiredState;
 
     // Get desired state
-    m_desiredState = super.getDesiredState(state, Rotation2d.fromRadians(m_rotateMotor.getInputs().absoluteEncoderPosition));
+    m_desiredState = getDesiredState(state, Rotation2d.fromRadians(m_rotateMotor.getInputs().absoluteEncoderPosition));
 
     // Set rotate motor position
     m_rotateMotor.set(m_desiredState.angle.getRadians(), ControlType.kPosition);
@@ -464,6 +466,7 @@ public class REVSwerveModule extends SwerveModule implements Sendable {
       oldState.speedMetersPerSecond,
       m_desiredState.speedMetersPerSecond
     );
+    driveFF *= REAL_ROBOT;
 
     // Set drive motor speed
     m_driveMotor.set(
@@ -503,7 +506,7 @@ public class REVSwerveModule extends SwerveModule implements Sendable {
   @Override
   public void resetDriveEncoder() {
     m_driveMotor.resetEncoder();
-    m_simDrivePosition = 0.0;
+    m_simDrivePosition = Units.Meters.zero().mutableCopy();
     m_simModulePosition = new SwerveModulePosition(m_simDrivePosition, m_previousRotatePosition);
   }
 

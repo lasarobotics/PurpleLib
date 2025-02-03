@@ -65,8 +65,8 @@ public class SwervePoseEstimatorService {
   private Instant m_lastVisionUpdateTime;
   private Runnable m_task;
 
-  private volatile double m_currentTimestamp;
-  private volatile double m_previousTimestamp;
+  private volatile long m_currentTimestamp;
+  private volatile long m_previousTimestamp;
   private volatile List<Pose2d> m_visionEstimatedPoses;
   private volatile List<AprilTag> m_visibleTags;
   private volatile List<Pose3d> m_visibleTagPoses;
@@ -225,8 +225,8 @@ public class SwervePoseEstimatorService {
     // Register service as pose supplier with PurpleManager for simulation
     PurpleManager.setPoseSupplier(this::getPose);
 
-    // Set thread period to default
-    this.m_threadPeriod = updateRate.asPeriod();
+    // Set thread period
+    this.m_threadPeriod = (RobotBase.isSimulation()) ? GlobalConstants.ROBOT_LOOP_HZ.asPeriod() : updateRate.asPeriod();
 
     // Set last vision update time
     this.m_lastVisionUpdateTime = Instant.now();
@@ -271,7 +271,12 @@ public class SwervePoseEstimatorService {
   public void start() {
     m_running = true;
     if (Logger.hasReplaySource()) return;
-    POSE_ESTIMATION_EXECUTOR.scheduleAtFixedRate(m_task, 0, (long)m_threadPeriod.in(Units.Microseconds), java.util.concurrent.TimeUnit.MICROSECONDS);
+    POSE_ESTIMATION_EXECUTOR.scheduleAtFixedRate(
+      m_task,
+      0,
+      (long)m_threadPeriod.in(Units.Microseconds),
+      java.util.concurrent.TimeUnit.MICROSECONDS
+    );
   }
 
   /**

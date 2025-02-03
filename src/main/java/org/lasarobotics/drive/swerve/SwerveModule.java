@@ -91,7 +91,7 @@ public abstract class SwerveModule implements AutoCloseable {
   private Rotation2d m_zeroOffset;
   private Translation2d m_coordinate;
   private TractionControlController m_tractionControlController;
-  private final int COSINE_CORRECTION;
+  protected final int REAL_ROBOT;
 
   private boolean m_autoLock;
 
@@ -109,7 +109,7 @@ public abstract class SwerveModule implements AutoCloseable {
     this.m_runningOdometer = 0.0;
     this.m_driveMotorName = driveMotorName;
     this.m_autoLock = true;
-    COSINE_CORRECTION = RobotBase.isReal() ? 1 : 0;
+    REAL_ROBOT = RobotBase.isReal() ? 1 : 0;
 
     // Calculate module coordinate
     switch (location) {
@@ -267,7 +267,7 @@ public abstract class SwerveModule implements AutoCloseable {
 
     // Scale speed by cosine of angle error. This scales down movement perpendicular to the desired
     // direction of travel that can occur when modules change directions. This results in smoother driving.
-    desiredState.speedMetersPerSecond *= Math.pow(desiredState.angle.minus(currentAngle).getCos(), COSINE_CORRECTION);
+    desiredState.speedMetersPerSecond *= Math.pow(desiredState.angle.minus(currentAngle).getCos(), REAL_ROBOT);
 
     // Return corrected desired swerve module state
     return desiredState;

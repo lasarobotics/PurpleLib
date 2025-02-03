@@ -297,7 +297,7 @@ public class REVSwerveModuleTest {
     when(m_rRearRotateMotor.getInputs()).thenReturn(defaultInputs);
 
     // Set state
-    SwerveModuleState desiredState = new SwerveModuleState(2.0, Rotation2d.fromRadians(+Math.PI));
+    SwerveModuleState desiredState = new SwerveModuleState(2.0, Rotation2d.kZero);
     m_lFrontModule.set(desiredState);
     m_lFrontModule.updateSimPosition();
     m_lFrontModule.getPosition();
@@ -306,9 +306,8 @@ public class REVSwerveModuleTest {
     assertEquals(
       new SwerveModulePosition(
         desiredState.speedMetersPerSecond * GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Seconds),
-        desiredState.angle.minus(
-          Rotation2d.fromRadians(MAXSwerveModule.ZERO_OFFSET.get(SwerveModule.Location.LeftFront).in(Units.Radians)).unaryMinus()
-      )),
+        Rotation2d.kZero
+      ),
       m_lFrontModule.getPosition()
     );
   }

@@ -282,7 +282,7 @@ public class CTRESwerveModule extends SwerveModule implements Sendable {
       synchronized (m_rotateMotor.getInputs()) {
         m_rotateMotor.getInputs().selectedSensorPosition.mut_replace(m_desiredState.angle.getMeasure());
         m_canCoder.getInputs().absolutePosition.mut_replace(m_desiredState.angle.getMeasure());
-        m_simModulePosition = new SwerveModulePosition(m_simDrivePosition, m_desiredState.angle);
+        m_simModulePosition = new SwerveModulePosition(m_simDrivePosition, m_desiredState.angle.minus(m_zeroOffset));
       }
     }
   }
@@ -491,10 +491,7 @@ public class CTRESwerveModule extends SwerveModule implements Sendable {
     m_rotateMotor.setControl(m_rotateVoltageSetter.withOutput(volts));
   }
 
-  /**
-   * Set swerve module direction and speed
-   * @param state Desired swerve module state
-   */
+  @Override
   public void set(SwerveModuleState state) {
     // Auto lock modules if auto lock enabled, speed not requested, and time has elapsed
     if (super.isAutoLockEnabled() && state.speedMetersPerSecond < EPSILON) {
