@@ -11,6 +11,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -47,7 +48,17 @@ public class SwervePoseEstimatorService {
     Pose2d currentPose = new Pose2d();
   }
 
-  private static final ScheduledExecutorService POSE_ESTIMATION_EXECUTOR = Executors.newSingleThreadScheduledExecutor();
+  private static final ScheduledExecutorService POSE_ESTIMATION_EXECUTOR = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
+    private ThreadFactory defaultThreadFactory = Executors.defaultThreadFactory();
+
+    @Override
+    public Thread newThread(Runnable r) {
+        Thread t = defaultThreadFactory.newThread(r);
+        t.setPriority(Thread.MAX_PRIORITY - 1); // PurpleManager input thread is max priority
+        return t;
+    }
+  });
+
   private static final Matrix<N3,N1> VISION_STDDEV = VecBuilder.fill(1.0, 1.0, Math.toRadians(3.0));
   private static final AngularVelocity VISION_ANGULAR_VELOCITY_THRESHOLD = Units.DegreesPerSecond.of(720.0);
   private static final String NAME = "SwervePoseEstimatorService";

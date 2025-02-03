@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ThreadFactory;
 import java.util.function.Supplier;
 
 import org.lasarobotics.battery.BatteryTracker;
@@ -50,8 +51,17 @@ public class PurpleManager {
   private static List<Runnable> m_simCallbacks = new ArrayList<>();
   private static VisionSystemSim m_visionSim = new VisionSystemSim("PurpleManager");
   private static Supplier<Pose2d> m_poseSupplier = null;
-  private static ScheduledExecutorService m_inputUpdater = Executors.newSingleThreadScheduledExecutor();
   private static Timer m_garbageTimer = new Timer();
+  private static ScheduledExecutorService m_inputUpdater = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
+    private ThreadFactory defaultThreadFactory = Executors.defaultThreadFactory();
+
+    @Override
+    public Thread newThread(Runnable r) {
+        Thread t = defaultThreadFactory.newThread(r);
+        t.setPriority(Thread.MAX_PRIORITY);
+        return t;
+    }
+  });
 
   /**
    * Monitor health of components
