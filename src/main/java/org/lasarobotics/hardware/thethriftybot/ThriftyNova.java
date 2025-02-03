@@ -11,6 +11,7 @@ import org.littletonrobotics.junction.Logger;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Frequency;
+import edu.wpi.first.units.measure.Temperature;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.units.measure.Voltage;
 
@@ -517,8 +518,8 @@ public class ThriftyNova extends LoggableHardware {
    * gets temperature of motor controller
    * @return integer that specifies temperature of motor controller
    */
-  public int getTemperature() {
-    return m_thrifty.getTemperature();
+  public Temperature getTemperature() {
+    return Units.Celsius.of(m_thrifty.getTemperature());
   }
 
   /**
