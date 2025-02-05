@@ -53,7 +53,6 @@ public class LimitSwitch extends LoggableHardware {
   /**
    * Create a limit switch object with built-in logging
    * @param id Limit switch ID
-   * @param switchPolarity Switch polarity
    * @param updateRate Update rate of input from limit switch
    */
   public LimitSwitch(LimitSwitch.ID id, Frequency updateRate) {
