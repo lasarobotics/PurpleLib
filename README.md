@@ -39,6 +39,7 @@ Custom library for 418 Purple Haze
     * Compressor
     * Single and double solenoid
     * Limit switch
+      * Includes support for interrupts
     * Servo
 * Swerve module support with both REV and CTRE motor controllers
   * Supported modules:
