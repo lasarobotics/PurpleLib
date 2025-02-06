@@ -65,7 +65,7 @@ public class SparkMonitor {
 
     s_sparks.forEach((sparkMax, prevFaults) -> {
       Faults faults = sparkMax.getStickyFaults();
-      if (faults != prevFaults) {
+      if (faults.rawBits != prevFaults.rawBits) {
         Logger.tag("Spark Monitor")
             .warn(
                 "{} faults: {}",
