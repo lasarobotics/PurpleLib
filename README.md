@@ -56,6 +56,8 @@ Custom library for 418 Purple Haze
 * Swerve drive parent class
   * Field centric or robot centric drive
   * High frequency, threaded odometry
+    * 100Hz REV, 200Hz for CTRE
+    * IMU must be set to same update frequency
   * Easy PhotonVision integration
   * Robot rotation PID
   * Swerve second order kinematics correction
