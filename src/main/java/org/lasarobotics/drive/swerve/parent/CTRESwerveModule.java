@@ -193,10 +193,11 @@ public class CTRESwerveModule extends SwerveModule implements Sendable {
     m_canCoderConfig = new CANcoderConfiguration();
 
     // Set rotate encoder config
-    m_canCoder.getConfigurator()
-      .apply(m_canCoderConfig.MagnetSensor.withAbsoluteSensorDiscontinuityPoint(Units.Rotations.of(1))
-      .withSensorDirection(!encoderOrientation.equals(motorOrientation) ? SensorDirectionValue.Clockwise_Positive
-                                                                        : SensorDirectionValue.CounterClockwise_Positive));
+    m_canCoderConfig.MagnetSensor.withAbsoluteSensorDiscontinuityPoint(Units.Rotations.of(1));
+    m_canCoderConfig.MagnetSensor.withSensorDirection(!encoderOrientation.equals(motorOrientation) ? SensorDirectionValue.Clockwise_Positive
+                                                                        : SensorDirectionValue.CounterClockwise_Positive);
+    m_canCoder.applyConfigs(m_canCoderConfig);
+
 
     // Set sensor to use for closed loop control
     m_driveMotorConfig.Feedback.withFeedbackSensorSource(FeedbackSensorSourceValue.RotorSensor);

@@ -249,6 +249,7 @@ public class TalonFX extends LoggableHardware {
    * @return StatusCode of the set command
    */
   public StatusCode setPosition(Angle angle) {
+    getInputs().selectedSensorPosition.mut_replace(angle);
     return m_talon.setPosition(angle);
   }
 
@@ -261,6 +262,7 @@ public class TalonFX extends LoggableHardware {
    * @return StatusCode of the set command
    */
   public StatusCode setPosition(double value) {
+    getInputs().selectedSensorPosition.mut_replace(value, Units.Rotations);
     return m_talon.setPosition(value);
   }
 
