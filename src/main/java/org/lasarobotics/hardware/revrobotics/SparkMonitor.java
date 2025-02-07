@@ -4,13 +4,12 @@
 
 package org.lasarobotics.hardware.revrobotics;
 
-import java.util.HashMap;
+import java.util.HashSet;
 
 import org.lasarobotics.hardware.PurpleManager;
 import org.lasarobotics.utils.GlobalConstants;
 import org.tinylog.Logger;
 
-import com.revrobotics.spark.SparkBase;
 import com.revrobotics.spark.SparkBase.Faults;
 
 import edu.wpi.first.units.Units;
@@ -18,7 +17,7 @@ import edu.wpi.first.units.Units;
 /** This is a basic monitor class separate from the HealthMonitor setup. */
 public class SparkMonitor {
   private static SparkMonitor s_instance = new SparkMonitor();
-  private static HashMap<Spark, Faults> s_sparks = new HashMap<>();
+  private static HashSet<Spark> s_sparks = new HashSet<>();
   private static int s_runCount = 0;
 
   /** Creates a new SparkMonitor. */
@@ -40,9 +39,7 @@ public class SparkMonitor {
    * @return True if added successfully
    */
   public boolean add(Spark spark) {
-    if (s_sparks.containsKey(spark)) return false;
-    s_sparks.put(spark, new SparkBase.Faults(0));
-    return true;
+    return s_sparks.add(spark);
   }
 
   /**
@@ -51,10 +48,7 @@ public class SparkMonitor {
    * @return True if removed successfully
    */
   public boolean remove(Spark spark) {
-    if (s_sparks.containsKey(spark)) {
-      s_sparks.remove(spark);
-      return true;
-    } else return false;
+    return s_sparks.remove(spark);
   }
 
   public void periodic() {
@@ -63,9 +57,9 @@ public class SparkMonitor {
 
     s_runCount = 0;
 
-    s_sparks.forEach((sparkMax, prevFaults) -> {
+    s_sparks.forEach((sparkMax) -> {
       Faults faults = sparkMax.getStickyFaults();
-      if (faults != prevFaults) {
+      if (faults.rawBits != 0) {
         Logger.tag("Spark Monitor")
             .warn(
                 "{} faults: {}",
@@ -80,7 +74,6 @@ public class SparkMonitor {
                 " Firmware: " + faults.firmware
             );
       }
-      s_sparks.put(sparkMax, faults);
     });
   }
 }
