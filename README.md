@@ -145,6 +145,24 @@ PurpleManager.initialize(
 );
 ```
 4. Call `PurpleManager.update()` in the beginning of the `robotPeriodic()` method of `Robot.java`.
+5. Add the following to your `.gitignore`.
+```
+# Build Constants
+src/main/java/frc/robot/BuildConstants.java
+
+# Battery Tracker
+previous_battery.txt
+
+# Odometer
+*-odometer.txt
+
+# CTRE sim
+ctre_sim/
+
+# Local libs
+libs
+libs/
+```
 
 ## Releasing
 Create a release in GitHub. JitPack does the rest.
