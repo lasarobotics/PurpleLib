@@ -136,7 +136,7 @@ Change the file path as needed.
 ```
 PurpleManager.initialize(
   this,
-  AprilTagFieldLayout.loadField(AprilTagFields.k2024Crescendo),
+  AprilTagFieldLayout.loadField(AprilTagFields.k2025ReefscapeWelded),
   Path.of("/media/sda1"),
   BuildConstants.MAVEN_NAME,
   BuildConstants.GIT_SHA,
