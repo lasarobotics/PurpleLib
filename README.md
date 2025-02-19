@@ -56,6 +56,8 @@ Custom library for 418 Purple Haze
 * Swerve drive parent class
   * Field centric or robot centric drive
   * High frequency, threaded odometry
+    * 100Hz REV, 200Hz for CTRE
+    * IMU must be set to same update frequency
   * Easy PhotonVision integration
   * Robot rotation PID
   * Swerve second order kinematics correction
@@ -134,7 +136,7 @@ Change the file path as needed.
 ```
 PurpleManager.initialize(
   this,
-  AprilTagFieldLayout.loadField(AprilTagFields.k2024Crescendo),
+  AprilTagFieldLayout.loadField(AprilTagFields.k2025ReefscapeWelded),
   Path.of("/media/sda1"),
   BuildConstants.MAVEN_NAME,
   BuildConstants.GIT_SHA,
@@ -143,6 +145,24 @@ PurpleManager.initialize(
 );
 ```
 4. Call `PurpleManager.update()` in the beginning of the `robotPeriodic()` method of `Robot.java`.
+5. Add the following to your `.gitignore`.
+```
+# Build Constants
+src/main/java/frc/robot/BuildConstants.java
+
+# Battery Tracker
+previous_battery.txt
+
+# Odometer
+*-odometer.txt
+
+# CTRE sim
+ctre_sim/
+
+# Local libs
+libs
+libs/
+```
 
 ## Releasing
 Create a release in GitHub. JitPack does the rest.

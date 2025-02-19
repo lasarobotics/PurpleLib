@@ -68,8 +68,8 @@ public class REVSwerveModule extends SwerveModule implements Sendable {
   }
 
   private static final Frequency UPDATE_RATE = Units.Hertz.of(100.0);
-  public static final Time DEFAULT_SIGNAL_PERIOD = Units.Milliseconds.of(10.0);
-  public static final Time SLOW_SIGNAL_PERIOD = Units.Seconds.of(10.0);
+  public static final Time DEFAULT_SIGNAL_PERIOD = UPDATE_RATE.asPeriod();
+  public static final Time SLOW_SIGNAL_PERIOD = Units.Seconds.one();
   public static final double DRIVETRAIN_EFFICIENCY = 0.90;
 
   private final double EPSILON = 5e-3;

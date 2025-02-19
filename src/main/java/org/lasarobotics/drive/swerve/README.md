@@ -104,9 +104,10 @@ Rotate kA: 0.01
 ### Swerve X
 
 #### Calibration
-Module must be calibrated as per the manufacturer instructions for each respective module:
+Swerve X module must be calibrated as per the manufacturer instructions for each respective module:
  * [Swerve X/Xi](https://docs.wcproducts.com/wcp-swervex/overview-and-features/zeroing-module)
- * [Swerve X2](https://docs.wcproducts.com/wcp-swerve-x2/overview-and-features/zeroing-module)
+Swerve X2 module must be calibrated straight ahead, aligned with the chassis.
+
 
 ### SDS
 

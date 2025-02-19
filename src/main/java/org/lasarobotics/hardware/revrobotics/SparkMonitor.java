@@ -10,8 +10,6 @@ import org.lasarobotics.hardware.PurpleManager;
 import org.lasarobotics.utils.GlobalConstants;
 import org.tinylog.Logger;
 
-import com.revrobotics.spark.SparkBase.Faults;
-
 import edu.wpi.first.units.Units;
 
 /** This is a basic monitor class separate from the HealthMonitor setup. */
@@ -57,22 +55,36 @@ public class SparkMonitor {
 
     s_runCount = 0;
 
-    s_sparks.forEach((sparkMax) -> {
-      Faults faults = sparkMax.getStickyFaults();
+    s_sparks.forEach((spark) -> {
+      var faults = spark.getStickyFaults();
+      var warnings = spark.getWarnings();
       if (faults.rawBits != 0) {
-        Logger.tag("Spark Monitor")
-            .warn(
-                "{} faults: {}",
-                sparkMax.getID().name,
-                "Other: " + faults.other +
-                " Motor Type: " + faults.motorType +
-                " Sensor: " + faults.sensor +
-                " CAN: " + faults.can +
-                " Temperature: " + faults.temperature +
-                " Gate driver: " + faults.gateDriver +
-                " ESC EEprom: " + faults.escEeprom +
-                " Firmware: " + faults.firmware
-            );
+        Logger.tag("Spark Monitor").warn(
+          "{} faults: {}",
+          spark.getID().name,
+          "Other: " + faults.other +
+          " Motor Type: " + faults.motorType +
+          " Sensor: " + faults.sensor +
+          " CAN: " + faults.can +
+          " Temperature: " + faults.temperature +
+          " Gate driver: " + faults.gateDriver +
+          " ESC EEprom: " + faults.escEeprom +
+          " Firmware: " + faults.firmware
+        );
+      }
+      if (warnings.rawBits != 0) {
+        Logger.tag("Spark Monitor").warn(
+          "{} warnings: {}",
+          spark.getID().name,
+          "Brownout: " + warnings.brownout +
+          " Overcurrent: " + warnings.overcurrent +
+          " ESC EEprom: " + warnings.escEeprom +
+          " Ext EEprom: " + warnings.extEeprom +
+          " Sensor: " + warnings.sensor +
+          " Stall: " + warnings.stall +
+          " Has reset: " + warnings.hasReset +
+          " Other: " + warnings.other
+        );
       }
     });
   }
