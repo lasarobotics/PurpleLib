@@ -46,10 +46,10 @@ import edu.wpi.first.wpilibj.Timer;
 public class PurpleManager {
   private static double GARBAGE_COLLECTION_SEC = 5.0;
   private static Map<LoggableHardware, ScheduledFuture<?>> m_hardware = new HashMap<>();
-  private static List<Monitorable> m_monitored = new ArrayList<>();
-  private static List<Runnable> m_callbacks = new ArrayList<>();
-  private static List<Runnable> m_simCallbacks = new ArrayList<>();
-  private static VisionSystemSim m_visionSim = new VisionSystemSim("PurpleManager");
+  private static volatile List<Monitorable> m_monitored = new ArrayList<>();
+  private static volatile List<Runnable> m_callbacks = new ArrayList<>();
+  private static volatile List<Runnable> m_simCallbacks = new ArrayList<>();
+  private static volatile VisionSystemSim m_visionSim = new VisionSystemSim("PurpleManager");
   private static Supplier<Pose2d> m_poseSupplier = null;
   private static Timer m_garbageTimer = new Timer();
   private static ScheduledExecutorService m_inputUpdater = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
@@ -62,27 +62,39 @@ public class PurpleManager {
         return t;
     }
   });
+  private static ScheduledExecutorService m_healthMonitor = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
+    private ThreadFactory defaultThreadFactory = Executors.defaultThreadFactory();
+
+    @Override
+    public Thread newThread(Runnable r) {
+        Thread t = defaultThreadFactory.newThread(r);
+        t.setPriority(Thread.MAX_PRIORITY - 2); // Input thread and pose estimation are higher priority
+        return t;
+    }
+  });
 
   /**
    * Monitor health of components
    */
   private static void monitorHealth() {
-    for (var component : m_monitored) {
-      // If healthy, reset error count and continue...
-      if (component.isHealthy()) {
-        component.setErrorCount(0);
-        continue;
+    synchronized (m_monitored) {
+      for (var component : m_monitored) {
+        // If healthy, reset error count and continue...
+        if (component.isHealthy()) {
+          component.setErrorCount(0);
+          continue;
+        }
+        // If dead, stop monitoring...
+        if (component.isDead()) {
+          m_monitored.remove(component);
+          continue;
+        }
+        // Try to reinit
+        // If success, reset error count, else increment error count
+        boolean success = component.reinit();
+        if (success) component.setErrorCount(0);
+        else component.setErrorCount(component.getErrorCount() + 1);
       }
-      // If dead, stop monitoring...
-      if (component.isDead()) {
-        m_monitored.remove(component);
-        continue;
-      }
-      // Try to reinit
-      // If success, reset error count, else increment error count
-      boolean success = component.reinit();
-      if (success) component.setErrorCount(0);
-      else component.setErrorCount(component.getErrorCount() + 1);
     }
   }
 
@@ -200,6 +212,14 @@ public class PurpleManager {
       SignalLogger.start();
     }
 
+    // Start health monitor thread
+    m_healthMonitor.scheduleAtFixedRate(
+      PurpleManager::monitorHealth,
+      0,
+      (long)GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Microseconds),
+      java.util.concurrent.TimeUnit.MICROSECONDS
+    );
+
     // Start logging! No more data receivers, replay sources, or metadata values may be added.
     Logger.start();
   }
@@ -282,8 +302,7 @@ public class PurpleManager {
     // Run garbage collector regularly
     if (m_garbageTimer.advanceIfElapsed(GARBAGE_COLLECTION_SEC)) System.gc();
 
-    // Monitor health and run periodic logic
-    monitorHealth();
+    // Run periodic logic
     m_hardware.keySet().stream().forEach((device) -> device.periodic());
     m_callbacks.stream().forEach(Runnable::run);
 
