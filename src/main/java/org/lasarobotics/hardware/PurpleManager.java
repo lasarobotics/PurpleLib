@@ -77,22 +77,24 @@ public class PurpleManager {
    * Monitor health of components
    */
   private static void monitorHealth() {
-    for (var component : m_monitored) {
-      // If healthy, reset error count and continue...
-      if (component.isHealthy()) {
-        component.setErrorCount(0);
-        continue;
+    synchronized (m_monitored) {
+      for (var component : m_monitored) {
+        // If healthy, reset error count and continue...
+        if (component.isHealthy()) {
+          component.setErrorCount(0);
+          continue;
+        }
+        // If dead, stop monitoring...
+        if (component.isDead()) {
+          m_monitored.remove(component);
+          continue;
+        }
+        // Try to reinit
+        // If success, reset error count, else increment error count
+        boolean success = component.reinit();
+        if (success) component.setErrorCount(0);
+        else component.setErrorCount(component.getErrorCount() + 1);
       }
-      // If dead, stop monitoring...
-      if (component.isDead()) {
-        m_monitored.remove(component);
-        continue;
-      }
-      // Try to reinit
-      // If success, reset error count, else increment error count
-      boolean success = component.reinit();
-      if (success) component.setErrorCount(0);
-      else component.setErrorCount(component.getErrorCount() + 1);
     }
   }
 
@@ -211,7 +213,8 @@ public class PurpleManager {
     }
 
     // Start health monitor thread
-    m_healthMonitor.scheduleAtFixedRate(PurpleManager::monitorHealth,
+    m_healthMonitor.scheduleAtFixedRate(
+      PurpleManager::monitorHealth,
       0,
       (long)GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Microseconds),
       java.util.concurrent.TimeUnit.MICROSECONDS
