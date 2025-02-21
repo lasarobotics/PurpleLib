@@ -126,8 +126,8 @@ public class Spark extends LoggableHardware {
   }
 
   private static final String LOG_TAG = "Spark";
-  private static final int CAN_TIMEOUT_MS = 2000;
-  private static final int MAX_ATTEMPTS = 20;
+  private static final int CAN_TIMEOUT_MS = 200;
+  private static final int MAX_ATTEMPTS = 50;
   private static final int SPARK_MAX_MEASUREMENT_PERIOD = 16;
   private static final int SPARK_FLEX_MEASUREMENT_PERIOD = 32;
   private static final int SPARK_MAX_AVERAGE_DEPTH = 2;
