@@ -132,7 +132,7 @@ public class AprilTagCamera implements AutoCloseable {
      || pose.getY() < 0.0 || pose.getY() > m_fieldLayout.getFieldWidth()) return false;
 
     // Make sure pose is near the floor
-    if (pose.getZ() < 0.0 || pose.getZ() > POSE_HEIGHT_TOLERANCE.in(Units.Meters)) return false;
+    if (Math.abs(pose.getZ()) > POSE_HEIGHT_TOLERANCE.in(Units.Meters)) return false;
 
     // Make sure robot pitch angle is valid
     if (Math.abs(pose.getRotation().getX()) > POSE_PITCH_TOLERANCE.in(Units.Radians)) return false;
