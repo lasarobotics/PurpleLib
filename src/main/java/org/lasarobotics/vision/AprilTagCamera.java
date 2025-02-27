@@ -18,6 +18,7 @@ import org.photonvision.PhotonPoseEstimator;
 import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 import org.photonvision.simulation.PhotonCameraSim;
 import org.photonvision.simulation.SimCameraProperties;
+import org.photonvision.targeting.PhotonTrackedTarget;
 
 import edu.wpi.first.apriltag.AprilTag;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
@@ -196,6 +197,7 @@ public class AprilTagCamera implements AutoCloseable {
 
         // Get distance to closest tag
         var closestTagDistance = Units.Meters.of(100.0);
+        PhotonTrackedTarget closestTag = null;
         // Number of tags in range
         int numOfTagsInRange = 0;
         // Loop through all targets used for this estimate
@@ -203,15 +205,20 @@ public class AprilTagCamera implements AutoCloseable {
           // Get distance to tag
           var tagDistance = Units.Meters.of(target.getBestCameraToTarget().getTranslation().getNorm());
           // Check if tag distance is closest yet
-          if (tagDistance.lte(closestTagDistance)) closestTagDistance = tagDistance;
+          if (tagDistance.lte(closestTagDistance)) {
+            closestTagDistance = tagDistance;
+            closestTag = target;
+          }
           // Increment number of tags in range if applicable
           if (tagDistance.lte(MAX_TAG_DISTANCE)) numOfTagsInRange++;
         }
 
-        // Ignore if tags are too far
+        // Ignore if tags are too far or if the single tag within range is too ambiguous
         if (numOfTagsInRange < 2 && estimatedRobotPose.targetsUsed.size() > 1) {
-          m_latestResult.set(null);
-          return;
+          if (closestTag == null || closestTag.getPoseAmbiguity() > APRILTAG_POSE_AMBIGUITY_THRESHOLD) {
+            m_latestResult.set(null);
+            return;
+          }
         }
 
         // Calculate standard deviation
