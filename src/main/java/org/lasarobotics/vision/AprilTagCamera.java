@@ -197,7 +197,7 @@ public class AprilTagCamera implements AutoCloseable {
 
         // Get distance to closest tag
         var closestTagDistance = Units.Meters.of(100.0);
-        PhotonTrackedTarget closestTag = estimatedRobotPose.targetsUsed.get(0);
+        PhotonTrackedTarget closestTag = null;
         // Number of tags in range
         int numOfTagsInRange = 0;
         // Loop through all targets used for this estimate
@@ -213,9 +213,9 @@ public class AprilTagCamera implements AutoCloseable {
           if (tagDistance.lte(MAX_TAG_DISTANCE)) numOfTagsInRange++;
         }
 
-        // Ignore if tags are too far
+        // Ignore if tags are too far or if the single tag within range is too ambiguous
         if (numOfTagsInRange < 2 && estimatedRobotPose.targetsUsed.size() > 1) {
-          if (closestTag.getPoseAmbiguity() > APRILTAG_POSE_AMBIGUITY_THRESHOLD) {
+          if (closestTag == null || closestTag.getPoseAmbiguity() > APRILTAG_POSE_AMBIGUITY_THRESHOLD) {
             m_latestResult.set(null);
             return;
           }
