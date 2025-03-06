@@ -390,9 +390,12 @@ public class Spark extends LoggableHardware {
 
   @Override
   protected void periodic() {
+    long sTime = System.currentTimeMillis();
+    Logger.recordOutput("[SparkPeriodic] Start", sTime);
     synchronized (m_inputs) { Logger.processInputs(m_id.name, m_inputs); }
     Logger.recordOutput(m_id.name + HEALTH_STATUS_LOG_ENTRY, isHealthy());
 
+    Logger.recordOutput("[SparkPeriodic] End", System.currentTimeMillis() - sTime);
     if (getMotorType() == MotorType.kBrushed) return;
     Logger.recordOutput(m_id.name + TEMPERATURE_LOG_ENTRY, m_spark.getMotorTemperature());
   }
