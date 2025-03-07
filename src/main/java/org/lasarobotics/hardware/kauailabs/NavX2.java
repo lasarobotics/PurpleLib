@@ -273,6 +273,11 @@ public class NavX2 extends LoggableHardware implements IMU {
     m_lastUpdateTime = currentTime;
   }
 
+  @Override
+  public String getName() {
+    return this.m_name;
+  }
+
   /**
    * Closes the NavX
    */

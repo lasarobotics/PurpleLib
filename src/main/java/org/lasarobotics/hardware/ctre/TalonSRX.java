@@ -341,6 +341,11 @@ public class TalonSRX extends LoggableHardware {
     logOutputs(ControlMode.PercentOutput, 0.0);
   }
 
+  @Override
+  public String getName() {
+    return this.getID().name;
+  }
+
   /**
    * Closes the TalonSRX motor controller
    */

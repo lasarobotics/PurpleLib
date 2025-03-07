@@ -223,6 +223,11 @@ public class Pigeon2 extends LoggableHardware implements IMU {
   }
 
   @Override
+  public String getName() {
+    return this.getID().name;
+  }
+
+  @Override
   public void close() {
     PurpleManager.remove(this);
     m_pigeon.close();

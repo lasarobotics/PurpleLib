@@ -641,6 +641,11 @@ public class TalonFX extends LoggableHardware {
     m_talon.stopMotor();
   }
 
+  @Override
+  public String getName() {
+    return this.getID().name;
+  }
+
   /**
   * Closes the TalonFX motor controller
   */

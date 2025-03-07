@@ -27,6 +27,10 @@ public abstract class LoggableHardware extends Monitorable implements AutoClosea
    */
   public abstract void close();
 
+  public String getName() {
+    return "no_name";
+  }
+
   /**
    * Get update rate for device
    * <p>

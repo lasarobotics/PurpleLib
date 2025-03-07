@@ -242,6 +242,11 @@ public class CANcoder extends LoggableHardware {
   }
 
   @Override
+  public String getName() {
+    return this.getID().name;
+  }
+
+  @Override
   public void close() {
     PurpleManager.remove(this);
     m_canCoder = null;

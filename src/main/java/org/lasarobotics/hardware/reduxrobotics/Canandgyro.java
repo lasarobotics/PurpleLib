@@ -206,6 +206,11 @@ public class Canandgyro extends LoggableHardware implements IMU {
   }
 
   @Override
+  public String getName() {
+    return this.m_name;
+  }
+
+  @Override
   public void close() {
     PurpleManager.remove(this);
     m_gyro.close();

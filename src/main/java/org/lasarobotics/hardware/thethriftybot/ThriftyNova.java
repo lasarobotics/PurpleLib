@@ -594,6 +594,11 @@ public class ThriftyNova extends LoggableHardware {
     m_thrifty.setNTLogging(enable);
   }
 
+  @Override
+  public String getName() {
+    return this.m_id.name;
+  }
+
   /**
    * Closes the ThriftyNova motor controller
    */

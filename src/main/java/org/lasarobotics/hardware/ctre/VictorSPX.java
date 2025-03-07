@@ -153,6 +153,11 @@ public class VictorSPX extends LoggableHardware {
     logOutputs(ControlMode.PercentOutput, 0.0);
   }
 
+  @Override
+  public String getName() {
+    return this.getID().name;
+  }
+
   /**
    * Closes the VictorSPX motor controller
    */

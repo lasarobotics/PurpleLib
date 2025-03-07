@@ -96,6 +96,11 @@ public class Analog extends LoggableHardware {
   }
 
   @Override
+  public String getName() {
+    return this.m_id.name;
+  }
+
+  @Override
   public void close() {
     PurpleManager.remove(this);
     m_analogInput.close();

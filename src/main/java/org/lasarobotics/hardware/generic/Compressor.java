@@ -179,6 +179,11 @@ public class Compressor extends LoggableHardware {
     m_compressor.enableHybrid(minPressure, maxPressure);
   }
 
+  @Override
+  public String getName() {
+    return this.m_id.name;
+  }
+
   /** Disable the compressor. */
   public void disable() {
     m_compressor.disable();
