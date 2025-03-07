@@ -300,18 +300,23 @@ public class PurpleManager {
    */
   public static void update() {
     long sTime = System.currentTimeMillis();
-    Logger.recordOutput("[purpleLibUpdate] Start", sTime);
-
     // Run garbage collector regularly
     if (m_garbageTimer.advanceIfElapsed(GARBAGE_COLLECTION_SEC)) System.gc();
     Logger.recordOutput("[purpleLibUpdate] Garbage Collector Ran", System.currentTimeMillis() - sTime);
 
     // Run periodic logic
     sTime = System.currentTimeMillis();
-    Logger.recordOutput("[purpleLibUpdate] Periodic Logic Start", sTime);
-    m_hardware.keySet().stream().forEach((device) -> device.periodic());
-    m_callbacks.stream().forEach(Runnable::run);
+
+    m_hardware.keySet().stream().forEach((device) -> {
+        device.periodic();
+      }
+    );
+
     Logger.recordOutput("[purpleLibUpdate] Periodic Logic End", System.currentTimeMillis() - sTime);
+
+    sTime = System.currentTimeMillis();
+    m_callbacks.stream().forEach(Runnable::run);
+    Logger.recordOutput("[purpleLibUpdate] Callbacks End", System.currentTimeMillis() - sTime);
 
     // If not real robot, run simulation logic
     if (RobotBase.isReal()) return;

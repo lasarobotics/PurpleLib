@@ -50,6 +50,7 @@ public class SparkMonitor {
   }
 
   public void periodic() {
+    long sTime = System.currentTimeMillis();
     // Run at 1 second
     if (s_runCount++ < GlobalConstants.ROBOT_LOOP_HZ.in(Units.Hertz)) return;
 
@@ -87,5 +88,6 @@ public class SparkMonitor {
         );
       }
     });
+    org.littletonrobotics.junction.Logger.recordOutput("[purpleLibUpdate] Spark Monitor Periodic End", System.currentTimeMillis() - sTime);
   }
 }
