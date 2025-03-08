@@ -57,6 +57,9 @@ public class SparkMonitor {
     s_runCount = 0;
 
     s_sparks.forEach((spark) -> {
+
+      long sTime2 = System.currentTimeMillis();
+
       var faults = spark.getStickyFaults();
       var warnings = spark.getWarnings();
       if (faults.rawBits != 0) {
@@ -73,7 +76,7 @@ public class SparkMonitor {
           " Firmware: " + faults.firmware
         );
       }
-      org.littletonrobotics.junction.Logger.recordOutput("[purpleLibUpdate] Spark Monitor Periodic Checkpoint 1 [" + spark.getID().name + "]", System.currentTimeMillis() - sTime);
+      org.littletonrobotics.junction.Logger.recordOutput("[purpleLibUpdate] Spark Monitor Periodic Checkpoint 1 [" + spark.getID().name + "]", System.currentTimeMillis() - sTime2);
       if (warnings.rawBits != 0) {
         Logger.tag("Spark Monitor").warn(
           "{} warnings: {}",
@@ -88,7 +91,7 @@ public class SparkMonitor {
           " Other: " + warnings.other
         );
       }
-      org.littletonrobotics.junction.Logger.recordOutput("[purpleLibUpdate] Spark Monitor Periodic Checkpoint 2 [" + spark.getID().name + "]", System.currentTimeMillis() - sTime);
+      org.littletonrobotics.junction.Logger.recordOutput("[purpleLibUpdate] Spark Monitor Periodic Checkpoint 2 [" + spark.getID().name + "]", System.currentTimeMillis() - sTime2);
     });
     org.littletonrobotics.junction.Logger.recordOutput("[purpleLibUpdate] Spark Monitor Periodic End", System.currentTimeMillis() - sTime);
   }
