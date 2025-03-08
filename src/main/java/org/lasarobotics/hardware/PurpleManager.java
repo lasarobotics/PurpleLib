@@ -310,7 +310,8 @@ public class PurpleManager {
     m_hardware.keySet().stream().forEach((device) -> {
         long sTime2 = System.currentTimeMillis();
         device.periodic();
-        Logger.recordOutput("[purpleLibUpdate] Periodic Device End - " + device.getName(), System.currentTimeMillis() - sTime2);
+        // Logger.recordOutput("[purpleLibUpdate] Periodic Device End - " + device.getName(), System.currentTimeMillis() - sTime2);
+        Logger.recordOutput(device.getName() + "/purplelib Periodic Device End", System.currentTimeMillis() - sTime2);
       }
     );
 
