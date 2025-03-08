@@ -48,7 +48,7 @@ Custom library for 418 Purple Haze
     * WCP Swerve X/Xi/X2
     * TTB Swerve
     * Support for custom or other modules can be added easily!
-  * Module must be calibrated using calibration tool provided by module manufacturer
+  * Module must be calibrated as specified by PurpleLib documentation
   * Mixing motor controller vendors within a module is NOT supported (ex. TalonFX for drive, Spark Max for rotation)
   * Automatic module "locking"
   * Traction control
