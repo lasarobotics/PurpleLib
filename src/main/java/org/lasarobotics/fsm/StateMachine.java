@@ -4,6 +4,8 @@
 
 package org.lasarobotics.fsm;
 
+import java.util.Optional;
+
 import org.lasarobotics.hardware.Monitorable;
 import org.lasarobotics.hardware.PurpleManager;
 
@@ -17,6 +19,7 @@ import edu.wpi.first.wpilibj2.command.Subsystem;
 /** State machine subsystem */
 public abstract class StateMachine extends Monitorable implements Subsystem, Sendable {
   private SystemState m_currentState;
+  private Optional<SystemState> m_requestedState;
 
   /**
    * Create a state machine
@@ -24,6 +27,7 @@ public abstract class StateMachine extends Monitorable implements Subsystem, Sen
    */
   public StateMachine(SystemState initialState) {
     this.m_currentState = initialState;
+    m_requestedState = Optional.empty();
     var name = this.getClass().getSimpleName();
     name = name.substring(name.lastIndexOf('.') + 1);
     SendableRegistry.addLW(this, name, name);
@@ -42,12 +46,45 @@ public abstract class StateMachine extends Monitorable implements Subsystem, Sen
   }
 
   /**
+   * Get the state that has been requested of this state machine
+   * @return Requested state
+   */
+  Optional<SystemState> getStateRequest() {
+    return m_requestedState;
+  }
+
+  void resetStateRequest() {
+    m_requestedState = Optional.empty();
+  }
+
+  /**
+   * Requests a state transition.  The state machine *may* accept or reject this request.
+   * @param requestedState The desired state.
+   * @return True if the request was accepted, false otherwise.
+   */
+  public boolean requestState(SystemState requestedState) {
+    if (isValidState(requestedState)) {
+      m_requestedState = Optional.of(requestedState);
+      return true; // Request accepted
+    } else return false; // Request rejected
+  }
+
+  /**
    * Get current system state
    * @return Current system state
    */
   public SystemState getState() {
     return m_currentState;
   }
+
+  /**
+   * Checks if a given state is a valid state for this state machine.
+   * This should be overridden by concrete StateMachine subclasses.
+   *
+   * @param state The state to check.
+   * @return True if the state is valid, false otherwise.
+   */
+  protected abstract boolean isValidState(SystemState state);
 
   /**
    * Not valid for state machine

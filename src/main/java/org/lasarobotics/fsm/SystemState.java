@@ -27,4 +27,14 @@ public interface SystemState {
    * @return Next state
    */
   public SystemState nextState();
+
+  /**
+   * Indicates whether this state can be interrupted by an external request.
+   * <p>
+   * By default, states are NOT interruptible.
+   * @return True if the state can be interrupted, false otherwise.
+   */
+  public default boolean isInterruptible() {
+    return false;
+  }
 }

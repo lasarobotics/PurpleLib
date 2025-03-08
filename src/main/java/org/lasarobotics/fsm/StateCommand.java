@@ -6,6 +6,8 @@ package org.lasarobotics.fsm;
 
 import static edu.wpi.first.util.ErrorMessages.requireNonNullParam;
 
+import java.util.Optional;
+
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj2.command.Command;
 
@@ -17,6 +19,7 @@ public class StateCommand extends Command {
   private final StateMachine m_machine;
   private SystemState m_selectedState;
   private SystemState m_nextState;
+  private Optional<SystemState> m_requestedState;
 
   /**
    * Creates a new StateCommand.
@@ -43,13 +46,22 @@ public class StateCommand extends Command {
   @Override
   public void end(boolean interrupted) {
     m_selectedState.end(interrupted);
-    m_machine.setState(m_nextState);
+
+    // Transition to requested state if request is detected, if not, transition to this state's next logical state.
+    if (m_requestedState.isPresent()) {
+      m_machine.setState(m_requestedState.get());
+      m_machine.resetStateRequest();
+    } else m_machine.setState(m_nextState);
   }
 
   @Override
   public boolean isFinished() {
     m_nextState = m_selectedState.nextState();
-    return !m_nextState.equals(m_selectedState);
+    m_requestedState = m_machine.getStateRequest();
+
+    // Transition if a state request has been made and this state is interruptible,
+    // OR the current state decides it needs to transition on its own
+    return ((m_requestedState.isPresent() && m_selectedState.isInterruptible()) || !m_nextState.equals(m_selectedState));
   }
 
   @Override
