@@ -217,13 +217,13 @@ public class REVSwerveModule extends SwerveModule implements Sendable {
     // Set status frame rates
     m_driveMotorConfig.signals.primaryEncoderPositionPeriodMs((int)DEFAULT_SIGNAL_PERIOD.in(Units.Milliseconds));
     m_driveMotorConfig.signals.primaryEncoderVelocityPeriodMs((int)DEFAULT_SIGNAL_PERIOD.in(Units.Milliseconds));
-    m_driveMotorConfig.signals.absoluteEncoderPositionPeriodMs((int)SLOW_SIGNAL_PERIOD.in(Units.Seconds));
-    m_driveMotorConfig.signals.absoluteEncoderVelocityPeriodMs((int)SLOW_SIGNAL_PERIOD.in(Units.Seconds));
+    m_driveMotorConfig.signals.absoluteEncoderPositionPeriodMs((int)SLOW_SIGNAL_PERIOD.in(Units.Milliseconds));
+    m_driveMotorConfig.signals.absoluteEncoderVelocityPeriodMs((int)SLOW_SIGNAL_PERIOD.in(Units.Milliseconds));
     m_driveMotorConfig.signals.analogPositionPeriodMs((int)SLOW_SIGNAL_PERIOD.in(Units.Milliseconds));
     m_driveMotorConfig.signals.analogVelocityPeriodMs((int)SLOW_SIGNAL_PERIOD.in(Units.Milliseconds));
     m_driveMotorConfig.signals.limitsPeriodMs((int)SLOW_SIGNAL_PERIOD.in(Units.Milliseconds));
-    m_rotateMotorConfig.signals.primaryEncoderPositionPeriodMs((int)SLOW_SIGNAL_PERIOD.in(Units.Seconds));
-    m_rotateMotorConfig.signals.primaryEncoderVelocityPeriodMs((int)SLOW_SIGNAL_PERIOD.in(Units.Seconds));
+    m_rotateMotorConfig.signals.primaryEncoderPositionPeriodMs((int)SLOW_SIGNAL_PERIOD.in(Units.Milliseconds));
+    m_rotateMotorConfig.signals.primaryEncoderVelocityPeriodMs((int)SLOW_SIGNAL_PERIOD.in(Units.Milliseconds));
     m_rotateMotorConfig.signals.absoluteEncoderPositionPeriodMs((int)DEFAULT_SIGNAL_PERIOD.in(Units.Milliseconds));
     m_rotateMotorConfig.signals.absoluteEncoderVelocityPeriodMs((int)DEFAULT_SIGNAL_PERIOD.in(Units.Milliseconds));
     m_rotateMotorConfig.signals.analogPositionPeriodMs((int)SLOW_SIGNAL_PERIOD.in(Units.Milliseconds));
