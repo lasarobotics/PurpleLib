@@ -155,7 +155,7 @@ public class NavX2 extends LoggableHardware implements IMU {
 
   @Override
   public Frequency getUpdateRate() {
-    return Units.Hertz.of(1.0 / NavXUpdateRate.k200Hz.getValue());
+    return Units.Hertz.of(NavXUpdateRate.k200Hz.getValue());
   }
 
   /**
