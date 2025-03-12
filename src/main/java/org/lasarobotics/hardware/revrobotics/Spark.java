@@ -209,7 +209,7 @@ public class Spark extends LoggableHardware {
     periodic();
 
     // Register device with monitor and manager
-    SparkMonitor.getInstance().add(this);
+    // SparkMonitor.getInstance().add(this);
     PurpleManager.add(this);
   }
 
