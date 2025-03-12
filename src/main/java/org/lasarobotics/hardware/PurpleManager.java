@@ -299,27 +299,27 @@ public class PurpleManager {
    * Call this peridically, preferably in the beginning of <code>robotPeriodic()</code> every loop
    */
   public static void update() {
-    long sTime = System.currentTimeMillis();
+    // long sTime = System.currentTimeMillis();
     // Run garbage collector regularly
     if (m_garbageTimer.advanceIfElapsed(GARBAGE_COLLECTION_SEC)) System.gc();
-    Logger.recordOutput("[purpleLibUpdate] Garbage Collector Ran", System.currentTimeMillis() - sTime);
+    // Logger.recordOutput("[purpleLibUpdate] Garbage Collector Ran", System.currentTimeMillis() - sTime);
 
     // Run periodic logic
-    sTime = System.currentTimeMillis();
+    // sTime = System.currentTimeMillis();
 
     m_hardware.keySet().stream().forEach((device) -> {
-        long sTime2 = System.currentTimeMillis();
+        // long sTime2 = System.currentTimeMillis();
         device.periodic();
         // Logger.recordOutput("[purpleLibUpdate] Periodic Device End - " + device.getName(), System.currentTimeMillis() - sTime2);
-        Logger.recordOutput(device.getName() + "/purplelib Periodic Device End", System.currentTimeMillis() - sTime2);
+        // Logger.recordOutput(device.getName() + "/purplelib Periodic Device End", System.currentTimeMillis() - sTime2);
       }
     );
 
-    Logger.recordOutput("[purpleLibUpdate] Periodic Logic End", System.currentTimeMillis() - sTime);
+    // Logger.recordOutput("[purpleLibUpdate] Periodic Logic End", System.currentTimeMillis() - sTime);
 
-    sTime = System.currentTimeMillis();
+    // sTime = System.currentTimeMillis();
     m_callbacks.stream().forEach(Runnable::run);
-    Logger.recordOutput("[purpleLibUpdate] Callbacks End", System.currentTimeMillis() - sTime);
+    // Logger.recordOutput("[purpleLibUpdate] Callbacks End", System.currentTimeMillis() - sTime);
 
     // If not real robot, run simulation logic
     if (RobotBase.isReal()) return;

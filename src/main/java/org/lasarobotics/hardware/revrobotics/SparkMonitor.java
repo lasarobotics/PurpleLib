@@ -50,49 +50,42 @@ public class SparkMonitor {
   }
 
   public void periodic() {
-    long sTime = System.currentTimeMillis();
-    // Run at 1 second
-    if (s_runCount++ < GlobalConstants.ROBOT_LOOP_HZ.in(Units.Hertz)) return;
+    // // Run at 1 second
+    // if (s_runCount++ < GlobalConstants.ROBOT_LOOP_HZ.in(Units.Hertz)) return;
 
-    s_runCount = 0;
+    // s_runCount = 0;
 
-    s_sparks.forEach((spark) -> {
-
-      long sTime2 = System.currentTimeMillis();
-
-      var faults = spark.getStickyFaults();
-      var warnings = spark.getWarnings();
-      if (faults.rawBits != 0) {
-        Logger.tag("Spark Monitor").warn(
-          "{} faults: {}",
-          spark.getID().name,
-          "Other: " + faults.other +
-          " Motor Type: " + faults.motorType +
-          " Sensor: " + faults.sensor +
-          " CAN: " + faults.can +
-          " Temperature: " + faults.temperature +
-          " Gate driver: " + faults.gateDriver +
-          " ESC EEprom: " + faults.escEeprom +
-          " Firmware: " + faults.firmware
-        );
-      }
-      org.littletonrobotics.junction.Logger.recordOutput("[purpleLibUpdate] Spark Monitor Periodic Checkpoint 1 [" + spark.getID().name + "]", System.currentTimeMillis() - sTime2);
-      if (warnings.rawBits != 0) {
-        Logger.tag("Spark Monitor").warn(
-          "{} warnings: {}",
-          spark.getID().name,
-          "Brownout: " + warnings.brownout +
-          " Overcurrent: " + warnings.overcurrent +
-          " ESC EEprom: " + warnings.escEeprom +
-          " Ext EEprom: " + warnings.extEeprom +
-          " Sensor: " + warnings.sensor +
-          " Stall: " + warnings.stall +
-          " Has reset: " + warnings.hasReset +
-          " Other: " + warnings.other
-        );
-      }
-      org.littletonrobotics.junction.Logger.recordOutput("[purpleLibUpdate] Spark Monitor Periodic Checkpoint 2 [" + spark.getID().name + "]", System.currentTimeMillis() - sTime2);
-    });
-    org.littletonrobotics.junction.Logger.recordOutput("[purpleLibUpdate] Spark Monitor Periodic End", System.currentTimeMillis() - sTime);
+    // s_sparks.forEach((spark) -> {
+    //   var faults = spark.getStickyFaults();
+    //   var warnings = spark.getWarnings();
+    //   if (faults.rawBits != 0) {
+    //     Logger.tag("Spark Monitor").warn(
+    //       "{} faults: {}",
+    //       spark.getID().name,
+    //       "Other: " + faults.other +
+    //       " Motor Type: " + faults.motorType +
+    //       " Sensor: " + faults.sensor +
+    //       " CAN: " + faults.can +
+    //       " Temperature: " + faults.temperature +
+    //       " Gate driver: " + faults.gateDriver +
+    //       " ESC EEprom: " + faults.escEeprom +
+    //       " Firmware: " + faults.firmware
+    //     );
+    //   }
+    //   if (warnings.rawBits != 0) {
+    //     Logger.tag("Spark Monitor").warn(
+    //       "{} warnings: {}",
+    //       spark.getID().name,
+    //       "Brownout: " + warnings.brownout +
+    //       " Overcurrent: " + warnings.overcurrent +
+    //       " ESC EEprom: " + warnings.escEeprom +
+    //       " Ext EEprom: " + warnings.extEeprom +
+    //       " Sensor: " + warnings.sensor +
+    //       " Stall: " + warnings.stall +
+    //       " Has reset: " + warnings.hasReset +
+    //       " Other: " + warnings.other
+    //     );
+    //   }
+    // });
   }
 }

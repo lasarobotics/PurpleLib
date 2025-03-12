@@ -81,10 +81,7 @@ public class LimitSwitch extends LoggableHardware {
    */
   @Override
   protected void periodic() {
-    long sTime = System.currentTimeMillis();
-    Logger.recordOutput("[LimitSwitchPeriodic] Start", sTime);
     Logger.processInputs(m_id.name, m_inputs);
-    Logger.recordOutput("[LimitSwitchPeriodic] End", System.currentTimeMillis() - sTime);
   }
 
   @Override
