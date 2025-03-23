@@ -79,8 +79,6 @@ public abstract class StateMachine extends Monitorable implements Subsystem, Sen
 
   /**
    * Checks if a given state is a valid state for this state machine.
-   * This should be overridden by concrete StateMachine subclasses.
-   *
    * @param state The state to check.
    * @return True if the state is valid, false otherwise.
    */
