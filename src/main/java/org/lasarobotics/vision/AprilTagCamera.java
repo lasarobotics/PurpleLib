@@ -10,6 +10,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.lasarobotics.hardware.IMU;
 import org.lasarobotics.hardware.PurpleManager;
 import org.lasarobotics.utils.GlobalConstants;
 import org.photonvision.EstimatedRobotPose;
@@ -35,6 +36,8 @@ import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.RobotState;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 
 /** Create a camera */
 public class AprilTagCamera implements AutoCloseable {
@@ -76,9 +79,10 @@ public class AprilTagCamera implements AutoCloseable {
 
   private static final ScheduledExecutorService APRILTAG_CAMERA_EXECUTOR = Executors.newSingleThreadScheduledExecutor();
 
+  private volatile PhotonPoseEstimator m_poseEstimator;
+  private IMU m_imu;
   private PhotonCamera m_camera;
   private PhotonCameraSim m_cameraSim;
-  private PhotonPoseEstimator m_poseEstimator;
   private Transform3d m_transform;
   private AprilTagFieldLayout m_fieldLayout;
   private AtomicReference<AprilTagCamera.Result> m_latestResult;
@@ -91,8 +95,9 @@ public class AprilTagCamera implements AutoCloseable {
    * @param resolution Resolution used by camera
    * @param fovDiag Diagonal FOV of camera
    */
-  public AprilTagCamera(String name, Transform3d transform, Resolution resolution, Rotation2d fovDiag, AprilTagFieldLayout fieldLayout) {
+  public AprilTagCamera(String name, IMU imu, Transform3d transform, Resolution resolution, Rotation2d fovDiag, AprilTagFieldLayout fieldLayout) {
     this.m_camera = new PhotonCamera(name);
+    this.m_imu = imu;
     this.m_transform = transform;
     this.m_fieldLayout = fieldLayout;
     // PV estimates will always be blue
@@ -120,6 +125,10 @@ public class AprilTagCamera implements AutoCloseable {
       (long)GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Microseconds),
       java.util.concurrent.TimeUnit.MICROSECONDS
     );
+
+    // Change pose estimation strategy when disabled, use gyro strategy when enabled
+    RobotModeTriggers.disabled().onTrue(Commands.runOnce(() -> m_poseEstimator.setPrimaryStrategy(PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR)));
+    RobotModeTriggers.disabled().onFalse(Commands.runOnce(() -> m_poseEstimator.setPrimaryStrategy(PoseStrategy.PNP_DISTANCE_TRIG_SOLVE)));
   }
 
   /**
@@ -170,6 +179,9 @@ public class AprilTagCamera implements AutoCloseable {
 
     // Return if camera is not connected
     if (!m_camera.isConnected()) return;
+
+    // Update IMU reading
+    m_poseEstimator.addHeadingData(m_imu.getTimestamp().in(Units.Seconds), new Rotation2d(m_imu.getYaw()));
 
     // Get all unread results
     var pipelineResults = m_camera.getAllUnreadResults();

@@ -29,7 +29,9 @@ import edu.wpi.first.units.measure.MutAngle;
 import edu.wpi.first.units.measure.MutAngularVelocity;
 import edu.wpi.first.units.measure.MutLinearAcceleration;
 import edu.wpi.first.units.measure.MutLinearVelocity;
+import edu.wpi.first.units.measure.MutTime;
 import edu.wpi.first.units.measure.Time;
+import edu.wpi.first.wpilibj.RobotController;
 
 public class Canandgyro extends LoggableHardware implements IMU {
   /** Cananggyro ID */
@@ -54,6 +56,7 @@ public class Canandgyro extends LoggableHardware implements IMU {
   @AutoLog
   public static class CanandgyroInputs {
     public boolean isConnected = true;
+    public MutTime timestamp = Units.Seconds.zero().mutableCopy();
     public MutAngle pitchAngle = Units.Rotations.zero().mutableCopy();
     public MutAngle rollAngle = Units.Rotations.zero().mutableCopy();
     public MutAngle yawAngle = Units.Rotations.zero().mutableCopy();
@@ -124,6 +127,7 @@ public class Canandgyro extends LoggableHardware implements IMU {
 
   private void updateYaw(Frame<Double> dataFrame) {
     m_inputs.isConnected = m_gyro.isConnected();
+    m_inputs.timestamp.mut_replace(RobotController.getMeasureFPGATime());
     m_inputs.yawAngle.mut_replace(dataFrame.getValue(), Units.Rotations);
     m_inputs.rotation2d = Rotation2d.fromRotations(dataFrame.getValue());
   }
@@ -184,6 +188,11 @@ public class Canandgyro extends LoggableHardware implements IMU {
   @Override
   public Rotation2d getRotation2d() {
     synchronized (m_inputs) { return m_inputs.rotation2d; }
+  }
+
+  @Override
+  public Time getTimestamp() {
+    synchronized (m_inputs) { return m_inputs.timestamp; }
   }
 
   @Override

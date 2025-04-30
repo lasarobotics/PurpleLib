@@ -13,6 +13,7 @@ import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Frequency;
 import edu.wpi.first.units.measure.LinearVelocity;
+import edu.wpi.first.units.measure.Time;
 
 public interface IMU extends AutoCloseable {
 
@@ -98,6 +99,8 @@ public interface IMU extends AutoCloseable {
    * @param controlCentricity Control centricity of desired
    */
   public void updateSim(Rotation2d orientation, ChassisSpeeds desiredSpeeds, ControlCentricity controlCentricity);
+
+  public Time getTimestamp();
 
   public void close();
 }

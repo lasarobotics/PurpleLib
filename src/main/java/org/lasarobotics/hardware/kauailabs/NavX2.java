@@ -31,8 +31,9 @@ import edu.wpi.first.units.measure.MutAngle;
 import edu.wpi.first.units.measure.MutAngularVelocity;
 import edu.wpi.first.units.measure.MutLinearAcceleration;
 import edu.wpi.first.units.measure.MutLinearVelocity;
-import edu.wpi.first.wpilibj.Notifier;
-import edu.wpi.first.wpilibj.RobotBase;
+import edu.wpi.first.units.measure.MutTime;
+import edu.wpi.first.units.measure.Time;
+import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.simulation.SimDeviceSim;
 
 /** NavX2 */
@@ -57,6 +58,7 @@ public class NavX2 extends LoggableHardware implements IMU {
   @AutoLog
   public static class NavX2Inputs {
     public boolean isConnected = false;
+    public MutTime timestamp = Units.Seconds.zero().mutableCopy();
     public MutAngle rollAngle = Units.Radians.zero().mutableCopy();
     public MutAngle pitchAngle = Units.Radians.zero().mutableCopy();
     public MutAngle yawAngle = Units.Radians.zero().mutableCopy();
@@ -131,6 +133,7 @@ public class NavX2 extends LoggableHardware implements IMU {
   protected void updateInputs() {
     synchronized (m_inputs) {
       m_inputs.isConnected = m_navx.isConnected();
+      m_inputs.timestamp.mut_replace(RobotController.getMeasureFPGATime());
       m_inputs.rollAngle.mut_replace(m_navx.getRoll(), Units.Degrees);
       m_inputs.pitchAngle.mut_replace(m_navx.getPitch(), Units.Degrees);
       m_inputs.yawAngle.mut_replace(m_navx.getAngle(), Units.Degrees);
@@ -247,6 +250,11 @@ public class NavX2 extends LoggableHardware implements IMU {
   @Override
   public LinearVelocity getVelocityY() {
     synchronized (m_inputs) { return m_inputs.velocityY; }
+  }
+
+  @Override
+  public Time getTimestamp() {
+    synchronized (m_inputs) { return m_inputs.timestamp; }
   }
 
   @Override

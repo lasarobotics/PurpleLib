@@ -27,6 +27,9 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Frequency;
 import edu.wpi.first.units.measure.MutAngle;
 import edu.wpi.first.units.measure.MutAngularVelocity;
+import edu.wpi.first.units.measure.MutTime;
+import edu.wpi.first.units.measure.Time;
+import edu.wpi.first.wpilibj.RobotController;
 
 /** CTRE Pigeon 2.0 */
 public class Pigeon2 extends LoggableHardware implements IMU {
@@ -54,6 +57,7 @@ public class Pigeon2 extends LoggableHardware implements IMU {
    */
   @AutoLog
   public static class Pigeon2Inputs {
+    public MutTime timestamp = Units.Seconds.zero().mutableCopy();
     public MutAngle pitchAngle = Units.Radians.of(0.0).mutableCopy();
     public MutAngle yawAngle = Units.Radians.of(0.0).mutableCopy();
     public MutAngle rollAngle = Units.Radians.of(0.0).mutableCopy();
@@ -112,7 +116,8 @@ public class Pigeon2 extends LoggableHardware implements IMU {
    */
   protected void updateInputs() {
     synchronized (m_inputs) {
-      m_inputs.pitchAngle.mut_replace(m_pigeon.getPitch().getValue());
+      m_inputs.timestamp =
+      m_inputs.timestamp.mut_replace(RobotController.getMeasureFPGATime());
       m_inputs.yawAngle.mut_replace(m_pigeon.getYaw().getValue());
       m_inputs.rollAngle.mut_replace(m_pigeon.getRoll().getValue());
       m_inputs.yawRate.mut_replace(m_pigeon.getAngularVelocityZWorld().getValue());
@@ -203,6 +208,11 @@ public class Pigeon2 extends LoggableHardware implements IMU {
   @Override
   public Rotation2d getRotation2d() {
     synchronized (m_inputs) { return m_inputs.rotation2d; }
+  }
+
+  @Override
+  public Time getTimestamp() {
+    synchronized (m_inputs) { return m_inputs.timestamp; }
   }
 
   @Override
