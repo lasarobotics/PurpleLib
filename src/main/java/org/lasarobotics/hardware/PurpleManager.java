@@ -216,7 +216,7 @@ public class PurpleManager {
     m_healthMonitor.scheduleAtFixedRate(
       PurpleManager::monitorHealth,
       0,
-      (long)GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Microseconds),
+      (long)GlobalConstants.ROBOT_LOOP_FREQUENCY.asPeriod().in(Units.Microseconds),
       java.util.concurrent.TimeUnit.MICROSECONDS
     );
 
@@ -236,7 +236,7 @@ public class PurpleManager {
         device::updateInputs,
         0,
         RobotBase.isSimulation()
-          ? (long)GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Microseconds)
+          ? (long)GlobalConstants.ROBOT_LOOP_FREQUENCY.asPeriod().in(Units.Microseconds)
           : (long)device.getUpdateRate().asPeriod().in(Units.Microseconds),
         java.util.concurrent.TimeUnit.MICROSECONDS
       );

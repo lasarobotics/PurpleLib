@@ -14,7 +14,7 @@ import edu.wpi.first.units.measure.Frequency;
  */
 public class GlobalConstants {
   /** Robot loop frequency */
-  public static final Frequency ROBOT_LOOP_HZ = Units.Hertz.of(50);
+  public static final Frequency ROBOT_LOOP_FREQUENCY = Units.Hertz.of(50);
 
   /** Max RPM of NEO */
   public static final int NEO_MAX_RPM = 5676;

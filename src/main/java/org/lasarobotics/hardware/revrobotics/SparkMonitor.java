@@ -51,7 +51,7 @@ public class SparkMonitor {
 
   public void periodic() {
     // Run at 1 second
-    if (s_runCount++ < GlobalConstants.ROBOT_LOOP_HZ.in(Units.Hertz)) return;
+    if (s_runCount++ < GlobalConstants.ROBOT_LOOP_FREQUENCY.in(Units.Hertz)) return;
 
     s_runCount = 0;
 

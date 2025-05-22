@@ -223,7 +223,7 @@ public class SwervePoseEstimatorService {
       m_pose.currentPose = m_poseEstimator.updateWithTime(m_currentTimestamp / 1e6, m_yawAngle, m_swerveModulePositionSupplier.get());
 
       // Clear vision logging variables if its been a while since last update
-      if (Duration.between(m_lastVisionUpdateTime, Instant.now()).toMillis() / 1000.0 > GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Seconds)) {
+      if (Duration.between(m_lastVisionUpdateTime, Instant.now()).toMillis() / 1000.0 > GlobalConstants.ROBOT_LOOP_FREQUENCY.asPeriod().in(Units.Seconds)) {
         m_visibleTags = new ArrayList<AprilTag>();
         m_visibleTagPoses = new ArrayList<Pose3d>();
         m_visionEstimatedPoses = new ArrayList<Pose2d>();
@@ -237,13 +237,13 @@ public class SwervePoseEstimatorService {
     PurpleManager.setPoseSupplier(this::getPose);
 
     // Set thread period
-    this.m_threadPeriod = (RobotBase.isSimulation()) ? GlobalConstants.ROBOT_LOOP_HZ.asPeriod() : updateRate.asPeriod();
+    this.m_threadPeriod = (RobotBase.isSimulation()) ? GlobalConstants.ROBOT_LOOP_FREQUENCY.asPeriod() : updateRate.asPeriod();
 
     // Set last vision update time
     this.m_lastVisionUpdateTime = Instant.now();
 
     // Set period if sim
-    if (RobotBase.isSimulation()) setPeriod(GlobalConstants.ROBOT_LOOP_HZ.asPeriod());
+    if (RobotBase.isSimulation()) setPeriod(GlobalConstants.ROBOT_LOOP_FREQUENCY.asPeriod());
   }
 
   /**

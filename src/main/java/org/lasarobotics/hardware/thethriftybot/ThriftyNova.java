@@ -73,11 +73,11 @@ public class ThriftyNova extends LoggableHardware {
   /**
    * Create a ThriftyNova object with built-in logging
    * <p>
-   * Update rate is set to {@link GlobalConstants#ROBOT_LOOP_HZ}
+   * Update rate is set to {@link GlobalConstants#ROBOT_LOOP_FREQUENCY}
    * @param id ThriftyNova ID
    */
   public ThriftyNova(ID id) {
-    this(id, GlobalConstants.ROBOT_LOOP_HZ);
+    this(id, GlobalConstants.ROBOT_LOOP_FREQUENCY);
   }
 
   /**

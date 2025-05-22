@@ -262,7 +262,7 @@ public class CTRESwerveModule extends SwerveModule implements Sendable {
   public static Hardware initializeHardware(TalonFX.ID driveMotorID,
                                             TalonFX.ID rotateMotorID,
                                             CANcoder.ID canCoderID) {
-    var updateRate = RobotBase.isReal() ? DEFAULT_SIGNAL_HZ : GlobalConstants.ROBOT_LOOP_HZ;
+    var updateRate = RobotBase.isReal() ? DEFAULT_SIGNAL_HZ : GlobalConstants.ROBOT_LOOP_FREQUENCY;
     Hardware swerveModuleHardware = new Hardware(
       new TalonFX(driveMotorID, updateRate),
       new TalonFX(rotateMotorID, updateRate),
@@ -276,7 +276,7 @@ public class CTRESwerveModule extends SwerveModule implements Sendable {
    * Update position in simulation
    */
   void updateSimPosition() {
-    m_simDrivePosition.mut_plus(m_desiredState.speedMetersPerSecond * GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Seconds), Units.Meters);
+    m_simDrivePosition.mut_plus(m_desiredState.speedMetersPerSecond * GlobalConstants.ROBOT_LOOP_FREQUENCY.asPeriod().in(Units.Seconds), Units.Meters);
     synchronized (m_driveMotor.getInputs()) {
       m_driveMotor.getInputs().selectedSensorPosition.mut_replace(distanceToAngle(m_simDrivePosition));
       m_driveMotor.getInputs().selectedSensorVelocity.mut_replace(linearToAngularVelocity(Units.MetersPerSecond.of(m_desiredState.speedMetersPerSecond)));
@@ -522,7 +522,7 @@ public class CTRESwerveModule extends SwerveModule implements Sendable {
     m_previousRotatePosition = m_desiredState.angle;
 
     // Increment odometer
-    super.incrementOdometer(Math.abs(m_desiredState.speedMetersPerSecond) * GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Seconds));
+    super.incrementOdometer(Math.abs(m_desiredState.speedMetersPerSecond) * GlobalConstants.ROBOT_LOOP_FREQUENCY.asPeriod().in(Units.Seconds));
   }
 
   @Override

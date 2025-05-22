@@ -122,7 +122,7 @@ public class AprilTagCamera implements AutoCloseable {
     m_taskHandle = APRILTAG_CAMERA_EXECUTOR.scheduleAtFixedRate(
       this::run,
       0,
-      (long)GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Microseconds),
+      (long)GlobalConstants.ROBOT_LOOP_FREQUENCY.asPeriod().in(Units.Microseconds),
       java.util.concurrent.TimeUnit.MICROSECONDS
     );
 

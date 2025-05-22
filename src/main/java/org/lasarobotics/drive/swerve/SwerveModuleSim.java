@@ -38,8 +38,8 @@ public class SwerveModuleSim {
   public void update(Voltage driveVoltage, Voltage rotateVoltage) {
     m_driveSim.setInputVoltage(driveVoltage.in(Units.Volts));
     m_rotateSim.setInputVoltage(rotateVoltage.in(Units.Volts));
-    m_driveSim.update(GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Seconds));
-    m_rotateSim.update(GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Seconds));
+    m_driveSim.update(GlobalConstants.ROBOT_LOOP_FREQUENCY.asPeriod().in(Units.Seconds));
+    m_rotateSim.update(GlobalConstants.ROBOT_LOOP_FREQUENCY.asPeriod().in(Units.Seconds));
   }
 
   /**

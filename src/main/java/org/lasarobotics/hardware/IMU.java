@@ -67,6 +67,14 @@ public interface IMU extends AutoCloseable {
   public Rotation2d getRotation2d();
 
   /**
+   * Does this IMU support velocity readings
+   * @return True if IMU can report velocity
+   */
+  public default boolean isVelocitySupported() {
+    return false;
+  }
+
+  /**
    * Get X axis velocity
    * @return X velocity
    */

@@ -243,6 +243,11 @@ public class NavX2 extends LoggableHardware implements IMU {
   }
 
   @Override
+  public boolean isVelocitySupported() {
+    return true;
+  }
+
+  @Override
   public LinearVelocity getVelocityX() {
     synchronized (m_inputs) { return m_inputs.velocityX; }
   }
@@ -259,26 +264,28 @@ public class NavX2 extends LoggableHardware implements IMU {
 
   @Override
   public void updateSim(Rotation2d orientation, ChassisSpeeds desiredSpeeds, ControlCentricity controlCentricity) {
-    var currentTime = Instant.now();
-    double randomNoise = ThreadLocalRandom.current().nextDouble(0.9, 1.0);
-    double dt = Duration.between(currentTime, m_lastUpdateTime).toMillis() / 1000.0;
+    synchronized (m_inputs) {
+      var currentTime = Instant.now();
+      double randomNoise = ThreadLocalRandom.current().nextDouble(0.9, 1.0);
+      double dt = Duration.between(currentTime, m_lastUpdateTime).toMillis() / 1000.0;
 
-    if (controlCentricity.equals(ControlCentricity.FIELD_CENTRIC))
-      desiredSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(desiredSpeeds, orientation);
+      if (controlCentricity.equals(ControlCentricity.FIELD_CENTRIC))
+        desiredSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(desiredSpeeds, orientation);
 
-    m_inputs.velocityX.mut_replace(desiredSpeeds.vxMetersPerSecond, Units.MetersPerSecond);
-    m_inputs.velocityY.mut_replace(desiredSpeeds.vyMetersPerSecond, Units.MetersPerSecond);
+      m_inputs.velocityX.mut_replace(desiredSpeeds.vxMetersPerSecond, Units.MetersPerSecond);
+      m_inputs.velocityY.mut_replace(desiredSpeeds.vyMetersPerSecond, Units.MetersPerSecond);
 
-    int yawDriftDirection = ThreadLocalRandom.current().nextDouble(1.0) < 0.5 ? -1 : +1;
-    double angle = m_simYaw.get() + Math.toDegrees(desiredSpeeds.omegaRadiansPerSecond * randomNoise) * dt
-                   + (NAVX2_YAW_DRIFT_RATE.in(Units.DegreesPerSecond) * dt * yawDriftDirection);
-    m_simYaw.set(angle);
+      int yawDriftDirection = ThreadLocalRandom.current().nextDouble(1.0) < 0.5 ? -1 : +1;
+      double angle = m_simYaw.get() + Math.toDegrees(desiredSpeeds.omegaRadiansPerSecond * randomNoise) * dt
+                     + (NAVX2_YAW_DRIFT_RATE.in(Units.DegreesPerSecond) * dt * yawDriftDirection);
+      m_simYaw.set(angle);
 
-    m_simAccelX.set((desiredSpeeds.vxMetersPerSecond - m_previousSpeeds.vxMetersPerSecond) / dt);
-    m_simAccelY.set((desiredSpeeds.vyMetersPerSecond - m_previousSpeeds.vyMetersPerSecond) / dt);
+      m_simAccelX.set((desiredSpeeds.vxMetersPerSecond - m_previousSpeeds.vxMetersPerSecond) / dt);
+      m_simAccelY.set((desiredSpeeds.vyMetersPerSecond - m_previousSpeeds.vyMetersPerSecond) / dt);
 
-    m_previousSpeeds = desiredSpeeds;
-    m_lastUpdateTime = currentTime;
+      m_previousSpeeds = desiredSpeeds;
+      m_lastUpdateTime = currentTime;
+    }
   }
 
   /**

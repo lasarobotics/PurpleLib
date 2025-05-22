@@ -30,10 +30,10 @@ public abstract class LoggableHardware extends Monitorable implements AutoClosea
   /**
    * Get update rate for device
    * <p>
-   * Defaults to {@link GlobalConstants#ROBOT_LOOP_HZ}
+   * Defaults to {@link GlobalConstants#ROBOT_LOOP_FREQUENCY}
    * @return Desired update rate for this device
    */
   public Frequency getUpdateRate() {
-    return GlobalConstants.ROBOT_LOOP_HZ;
+    return GlobalConstants.ROBOT_LOOP_FREQUENCY;
   }
 }

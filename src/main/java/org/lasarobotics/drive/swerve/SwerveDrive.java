@@ -20,6 +20,8 @@ import org.lasarobotics.drive.swerve.AdvancedSwerveKinematics.ControlCentricity;
 import org.lasarobotics.drive.swerve.parent.CTRESwerveModule;
 import org.lasarobotics.drive.swerve.parent.REVSwerveModule;
 import org.lasarobotics.hardware.IMU;
+import org.lasarobotics.purepursuit.Path;
+import org.lasarobotics.purepursuit.PurePursuitController;
 import org.lasarobotics.utils.CommonTriggers;
 import org.lasarobotics.utils.PIDConstants;
 import org.lasarobotics.vision.AprilTagCamera;
@@ -94,6 +96,7 @@ public class SwerveDrive extends SubsystemBase implements AutoCloseable {
   private static final String ACTUAL_SWERVE_STATE_LOG_ENTRY = "/ActualSwerveState";
   private static final String DESIRED_SWERVE_STATE_LOG_ENTRY = "/DesiredSwerveState";
   private static final String IS_AIMED_LOG_ENTRY = "/IsAimed";
+  private static final String HEADING_LOG_ENTRY = "/Heading";
 
   private final Command SET_ALLIANCE_COMMAND = Commands.runOnce(() -> {
     // Try to get alliance
@@ -389,6 +392,7 @@ public class SwerveDrive extends SubsystemBase implements AutoCloseable {
     Logger.recordOutput(getName() + POSE_LOG_ENTRY, getPose());
     Logger.recordOutput(getName() + ACTUAL_SWERVE_STATE_LOG_ENTRY, getModuleStates());
     Logger.recordOutput(getName() + IS_AIMED_LOG_ENTRY, isAimed());
+    Logger.recordOutput(getName() + HEADING_LOG_ENTRY, getCurrentHeading().orElseGet(() -> Rotation2d.kZero));
   }
 
   /**
@@ -654,6 +658,13 @@ public class SwerveDrive extends SubsystemBase implements AutoCloseable {
    */
   public void disableAntiTip() {
     m_tippingTrigger.whileTrue(Commands.none());
+  }
+
+  public Command getPathFollowingCommand(Path path, double lookaheadDistance, double maxVelocity, double acceleration) {
+    var ppController = new PurePursuitController(path, lookaheadDistance, maxVelocity, acceleration);
+    return run(() -> {
+      autoDrive(ppController.calculate(getPose(), getCurrentHeading()));
+    });
   }
 
   /**
@@ -1038,10 +1049,14 @@ public class SwerveDrive extends SubsystemBase implements AutoCloseable {
 
   /**
    * Get inertial velocity of robot
+   * <p>
+   * In sim, this will return velocity based desired chassis speeds
    * @return Inertial chassis speeds of robot from IMU
    */
   public ChassisSpeeds getInertialSpeeds() {
-    return new ChassisSpeeds(getInertialVelocityX(), getInertialVelocityY(), getRotateRate());
+    if (RobotBase.isReal() && m_imu.isVelocitySupported())
+      return new ChassisSpeeds(getInertialVelocityX(), getInertialVelocityY(), getRotateRate());
+    else return getDesiredChassisSpeeds();
   }
 
   @Override

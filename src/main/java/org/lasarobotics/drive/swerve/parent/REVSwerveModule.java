@@ -258,7 +258,7 @@ public class REVSwerveModule extends SwerveModule implements Sendable {
       throw new IllegalArgumentException("Drive motor MUST be a NEO or a NEO Vortex!");
     if (rotateMotorKind != MotorKind.NEO && rotateMotorKind != MotorKind.NEO_VORTEX && rotateMotorKind != MotorKind.NEO_550)
       throw new IllegalArgumentException("Rotate motor MUST be a NEO 550, NEO, or NEO Vortex!");
-    var frequency = RobotBase.isReal() ? DEFAULT_SIGNAL_PERIOD.asFrequency() : GlobalConstants.ROBOT_LOOP_HZ;
+    var frequency = RobotBase.isReal() ? DEFAULT_SIGNAL_PERIOD.asFrequency() : GlobalConstants.ROBOT_LOOP_FREQUENCY;
     Hardware swerveModuleHardware = new Hardware(
       new Spark(driveMotorID, driveMotorKind, frequency),
       new Spark(rotateMotorID, rotateMotorKind, frequency)
@@ -271,7 +271,7 @@ public class REVSwerveModule extends SwerveModule implements Sendable {
    * Update position in simulation
    */
   void updateSimPosition() {
-    m_simDrivePosition.mut_plus(m_desiredState.speedMetersPerSecond * GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Seconds), Units.Meters);
+    m_simDrivePosition.mut_plus(m_desiredState.speedMetersPerSecond * GlobalConstants.ROBOT_LOOP_FREQUENCY.asPeriod().in(Units.Seconds), Units.Meters);
     synchronized (m_driveMotor.getInputs()) {
       m_driveMotor.getInputs().encoderPosition = m_simDrivePosition.in(Units.Meters);
       m_driveMotor.getInputs().encoderVelocity = m_desiredState.speedMetersPerSecond;
@@ -298,8 +298,8 @@ public class REVSwerveModule extends SwerveModule implements Sendable {
     m_driveMotor.getSim().enable();
     m_rotateMotor.getSim().enable();
 
-    m_driveMotor.getSim().iterate(m_moduleSim.getDriveMotorVelocity().in(Units.RPM), vbus.in(Units.Volts), GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Seconds));
-    m_rotateMotor.getSim().iterate(m_moduleSim.getRotateMotorVelocity().in(Units.RPM), vbus.in(Units.Volts), GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Seconds));
+    m_driveMotor.getSim().iterate(m_moduleSim.getDriveMotorVelocity().in(Units.RPM), vbus.in(Units.Volts), GlobalConstants.ROBOT_LOOP_FREQUENCY.asPeriod().in(Units.Seconds));
+    m_rotateMotor.getSim().iterate(m_moduleSim.getRotateMotorVelocity().in(Units.RPM), vbus.in(Units.Volts), GlobalConstants.ROBOT_LOOP_FREQUENCY.asPeriod().in(Units.Seconds));
 
     m_moduleSim.update(
       vbus.times(m_driveMotor.getSim().getAppliedOutput()),
@@ -478,7 +478,7 @@ public class REVSwerveModule extends SwerveModule implements Sendable {
     m_previousRotatePosition = m_desiredState.angle;
 
     // Increment odometer
-    super.incrementOdometer(Math.abs(m_desiredState.speedMetersPerSecond) * GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Seconds));
+    super.incrementOdometer(Math.abs(m_desiredState.speedMetersPerSecond) * GlobalConstants.ROBOT_LOOP_FREQUENCY.asPeriod().in(Units.Seconds));
   }
 
   @Override

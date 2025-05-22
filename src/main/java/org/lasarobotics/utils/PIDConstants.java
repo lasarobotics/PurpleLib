@@ -34,7 +34,7 @@ public class PIDConstants {
   }
 
   private PIDConstants(double kP, double kI, double kD, double kF, double kIZone) {
-    this(kP, kI, kD, kF, kIZone, GlobalConstants.ROBOT_LOOP_HZ.asPeriod());
+    this(kP, kI, kD, kF, kIZone, GlobalConstants.ROBOT_LOOP_FREQUENCY.asPeriod());
   }
 
   /**

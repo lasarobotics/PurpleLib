@@ -221,7 +221,7 @@ public class Spark extends LoggableHardware {
    * @param kind The kind of motor connected to the controller
    */
   public Spark(ID id, MotorKind kind) {
-    this(id, kind, GlobalConstants.ROBOT_LOOP_HZ);
+    this(id, kind, GlobalConstants.ROBOT_LOOP_FREQUENCY);
   }
 
   /**

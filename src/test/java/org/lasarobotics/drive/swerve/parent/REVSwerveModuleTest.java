@@ -305,7 +305,7 @@ public class REVSwerveModuleTest {
     // Verify module reports expected position
     assertEquals(
       new SwerveModulePosition(
-        desiredState.speedMetersPerSecond * GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Seconds),
+        desiredState.speedMetersPerSecond * GlobalConstants.ROBOT_LOOP_FREQUENCY.asPeriod().in(Units.Seconds),
         Rotation2d.kZero
       ),
       m_lFrontModule.getPosition()
