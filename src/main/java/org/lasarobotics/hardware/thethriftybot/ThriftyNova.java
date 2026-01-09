@@ -43,7 +43,7 @@ public class ThriftyNova extends LoggableHardware {
     public double velocity = 0.0;
   }
 
-  private com.thethriftybot.ThriftyNova m_thrifty;
+  private com.thethriftybot.devices.ThriftyNova m_thrifty;
   private static final String VALUE_LOG_ENTRY = "/OutputValue";
   private static final String MODE_LOG_ENTRY = "/OutputMode";
   private static final String CURRENT_LOG_ENTRY = "/Current";
@@ -59,7 +59,7 @@ public class ThriftyNova extends LoggableHardware {
    */
   public ThriftyNova(ID id, Frequency updateRate) {
     this.m_id = id;
-    this.m_thrifty = new com.thethriftybot.ThriftyNova(id.deviceID);
+    this.m_thrifty = new com.thethriftybot.devices.ThriftyNova(id.deviceID);
     this.m_inputs = new ThriftyNovaInputsAutoLogged();
     this.m_updateRate = updateRate;
 
@@ -129,7 +129,7 @@ public class ThriftyNova extends LoggableHardware {
    * Updates the network tables for all ThriftyNova motors.
    */
   public static void updateStatusNTGlobal() {
-    com.thethriftybot.ThriftyNova.updateStatusNTGlobal();
+    com.thethriftybot.devices.ThriftyNova.updateStatusNTGlobal();
   }
 
   /**
@@ -271,7 +271,7 @@ public class ThriftyNova extends LoggableHardware {
    * @param encoderType encoder type to use
    *                consult Thriftybot documentation for additional information on encoder types
    */
-  public void useEncoderType(com.thethriftybot.ThriftyNova.EncoderType encoderType) {
+  public void useEncoderType(com.thethriftybot.devices.ThriftyNova.EncoderType encoderType) {
     m_thrifty.useEncoderType(encoderType);
   }
 
@@ -294,7 +294,7 @@ public class ThriftyNova extends LoggableHardware {
   /**
    * @param pidSlot Sets the pidslot to use for feedback control
    */
-  public void usePidSlot(com.thethriftybot.ThriftyNova.PIDSlot pidSlot) {
+  public void usePidSlot(com.thethriftybot.devices.ThriftyNova.PIDSlot pidSlot) {
     m_thrifty.usePIDSlot(pidSlot);
   }
 
@@ -335,14 +335,14 @@ public class ThriftyNova extends LoggableHardware {
    * @param value
    *            value to limit.
    */
-  public void configPeakCurrentLimit(com.thethriftybot.ThriftyNova.CurrentType currentType, Current value) {
+  public void configPeakCurrentLimit(com.thethriftybot.devices.ThriftyNova.CurrentType currentType, Current value) {
     m_thrifty.setMaxCurrent(currentType, value.in(Units.Amps));
   }
 
   /**
    * @return arraylist of errors stored in error buffer
    */
-  public List<com.thethriftybot.ThriftyNova.Error> getErrors() {
+  public List<com.thethriftybot.devices.ThriftyNova.Error> getErrors() {
     return m_thrifty.getErrors();
   }
 
@@ -352,7 +352,7 @@ public class ThriftyNova extends LoggableHardware {
    * @return a boolean denoting if motor controller has incurred an error of specified type
    *        True = Error, False = No Error
    */
-  public boolean hasErrors(com.thethriftybot.ThriftyNova.Error errorType) {
+  public boolean hasErrors(com.thethriftybot.devices.ThriftyNova.Error errorType) {
     return m_thrifty.hasError(errorType);
   }
 
@@ -442,7 +442,7 @@ public class ThriftyNova extends LoggableHardware {
   /**
    * gets current type being used for limiting
    */
-  public com.thethriftybot.ThriftyNova.CurrentType getCurrentType() {
+  public com.thethriftybot.devices.ThriftyNova.CurrentType getCurrentType() {
     return m_thrifty.getCurrentType();
   }
 
@@ -526,7 +526,7 @@ public class ThriftyNova extends LoggableHardware {
    * sets motor type
    * @param motorType specifies the motor type to be used
    */
-  public void setMotorType(com.thethriftybot.ThriftyNova.MotorType motorType) {
+  public void setMotorType(com.thethriftybot.devices.ThriftyNova.MotorType motorType) {
     m_thrifty.setMotorType(motorType);
   }
 
@@ -541,7 +541,7 @@ public class ThriftyNova extends LoggableHardware {
   /**
    * gets motor type
    */
-  public com.thethriftybot.ThriftyNova.MotorType getMotorType() {
+  public com.thethriftybot.devices.ThriftyNova.MotorType getMotorType() {
     return m_thrifty.getMotorType();
   }
 
@@ -565,7 +565,7 @@ public class ThriftyNova extends LoggableHardware {
    * sets external encoder
    * @param external is the external encoder to use
    */
-  public void setExternalEncoder(com.thethriftybot.ThriftyNova.ExternalEncoder external) {
+  public void setExternalEncoder(com.thethriftybot.devices.ThriftyNova.ExternalEncoder external) {
     m_thrifty.setExternalEncoder(external);
   }
 
