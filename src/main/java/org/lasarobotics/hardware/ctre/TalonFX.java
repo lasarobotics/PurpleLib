@@ -13,21 +13,10 @@ import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.CoastOut;
 import com.ctre.phoenix6.controls.ControlRequest;
-import com.ctre.phoenix6.controls.DifferentialDutyCycle;
-import com.ctre.phoenix6.controls.DifferentialFollower;
-import com.ctre.phoenix6.controls.DifferentialMotionMagicDutyCycle;
-import com.ctre.phoenix6.controls.DifferentialMotionMagicVoltage;
-import com.ctre.phoenix6.controls.DifferentialPositionDutyCycle;
-import com.ctre.phoenix6.controls.DifferentialPositionVoltage;
-import com.ctre.phoenix6.controls.DifferentialStrictFollower;
-import com.ctre.phoenix6.controls.DifferentialVelocityDutyCycle;
-import com.ctre.phoenix6.controls.DifferentialVelocityVoltage;
-import com.ctre.phoenix6.controls.DifferentialVoltage;
 import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.controls.DynamicMotionMagicDutyCycle;
 import com.ctre.phoenix6.controls.DynamicMotionMagicTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.DynamicMotionMagicVoltage;
-import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.MotionMagicDutyCycle;
 import com.ctre.phoenix6.controls.MotionMagicExpoDutyCycle;
 import com.ctre.phoenix6.controls.MotionMagicExpoTorqueCurrentFOC;
@@ -43,7 +32,6 @@ import com.ctre.phoenix6.controls.PositionDutyCycle;
 import com.ctre.phoenix6.controls.PositionTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.StaticBrake;
-import com.ctre.phoenix6.controls.StrictFollower;
 import com.ctre.phoenix6.controls.TorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VelocityDutyCycle;
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
@@ -337,54 +325,6 @@ public class TalonFX extends LoggableHardware {
     if (request instanceof MotionMagicTorqueCurrentFOC) {
       logOutputs(request, ((MotionMagicTorqueCurrentFOC)request).Position, 0.0);
       return m_talon.setControl((MotionMagicTorqueCurrentFOC)request);
-    }
-    if (request instanceof DifferentialDutyCycle) {
-      logOutputs(request, ((DifferentialDutyCycle)request).TargetOutput, 0.0);
-      return m_talon.setControl((DifferentialDutyCycle)request);
-    }
-    if (request instanceof DifferentialVoltage) {
-      logOutputs(request, ((DifferentialVoltage)request).TargetOutput, 0.0);
-      return m_talon.setControl((DifferentialVoltage)request);
-    }
-    if (request instanceof DifferentialPositionDutyCycle) {
-      logOutputs(request, ((DifferentialPositionDutyCycle)request).TargetPosition, 0.0);
-      return m_talon.setControl((DifferentialPositionDutyCycle)request);
-    }
-    if (request instanceof DifferentialPositionVoltage) {
-      logOutputs(request, ((DifferentialPositionVoltage)request).TargetPosition, 0.0);
-      return m_talon.setControl((DifferentialPositionVoltage)request);
-    }
-    if (request instanceof DifferentialVelocityDutyCycle) {
-      logOutputs(request, ((DifferentialVelocityDutyCycle)request).TargetVelocity, 0.0);
-      return m_talon.setControl((DifferentialVelocityDutyCycle)request);
-    }
-    if (request instanceof DifferentialVelocityVoltage) {
-      logOutputs(request, ((DifferentialVelocityVoltage)request).TargetVelocity, 0.0);
-      return m_talon.setControl((DifferentialVelocityVoltage)request);
-    }
-    if (request instanceof DifferentialMotionMagicDutyCycle) {
-      logOutputs(request, ((DifferentialMotionMagicDutyCycle)request).TargetPosition, 0.0);
-      return m_talon.setControl((DifferentialMotionMagicDutyCycle)request);
-    }
-    if (request instanceof DifferentialMotionMagicVoltage) {
-      logOutputs(request, ((DifferentialMotionMagicVoltage)request).TargetPosition, 0.0);
-      return m_talon.setControl((DifferentialMotionMagicVoltage)request);
-    }
-    if (request instanceof Follower) {
-      logOutputs(request, ((Follower)request).MasterID, 0.0);
-      return m_talon.setControl((Follower)request);
-    }
-    if (request instanceof StrictFollower) {
-      logOutputs(request, ((StrictFollower)request).MasterID, 0.0);
-      return m_talon.setControl((StrictFollower)request);
-    }
-    if (request instanceof DifferentialFollower) {
-      logOutputs(request, ((DifferentialFollower)request).MasterID, 0.0);
-      return m_talon.setControl((DifferentialFollower)request);
-    }
-    if (request instanceof DifferentialStrictFollower) {
-      logOutputs(request, ((DifferentialStrictFollower)request).MasterID, 0.0);
-      return m_talon.setControl((DifferentialStrictFollower)request);
     }
     if (request instanceof NeutralOut) {
       logOutputs(request, 0.0, 0.0);
