@@ -34,6 +34,7 @@ import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Distance;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.RobotState;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -127,8 +128,10 @@ public class AprilTagCamera implements AutoCloseable {
     );
 
     // Change pose estimation strategy when disabled, use gyro strategy when enabled
-    RobotModeTriggers.disabled().onTrue(Commands.runOnce(() -> m_poseEstimator.setPrimaryStrategy(PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR)));
-    RobotModeTriggers.disabled().onFalse(Commands.runOnce(() -> m_poseEstimator.setPrimaryStrategy(PoseStrategy.PNP_DISTANCE_TRIG_SOLVE)));
+    RobotModeTriggers.disabled().onTrue(Commands.runOnce(() -> m_poseEstimator.setPrimaryStrategy(PoseStrategy.CONSTRAINED_SOLVEPNP)));
+    RobotModeTriggers.disabled().onFalse(Commands.runOnce(() -> { 
+      if (RobotBase.isReal()) m_poseEstimator.setPrimaryStrategy(PoseStrategy.PNP_DISTANCE_TRIG_SOLVE); 
+    }));
   }
 
   /**
