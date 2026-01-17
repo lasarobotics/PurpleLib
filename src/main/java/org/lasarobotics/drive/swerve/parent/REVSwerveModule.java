@@ -19,11 +19,12 @@ import org.lasarobotics.utils.GlobalConstants;
 import org.lasarobotics.utils.PIDConstants;
 import org.littletonrobotics.junction.Logger;
 
+import com.revrobotics.PersistMode;
+import com.revrobotics.ResetMode;
 import com.revrobotics.spark.FeedbackSensor;
 import com.revrobotics.spark.SparkBase.ControlType;
-import com.revrobotics.spark.SparkBase.PersistMode;
-import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkClosedLoopController.ArbFFUnits;
+import com.revrobotics.spark.config.FeedForwardConfig;
 import com.revrobotics.spark.config.SparkBaseConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkFlexConfig;
@@ -192,11 +193,11 @@ public class REVSwerveModule extends SwerveModule implements Sendable {
     m_rotateMotorConfig.closedLoop.feedbackSensor(FeedbackSensor.kAbsoluteEncoder);
 
     // Set gains for drive PID
-    m_driveMotorConfig.closedLoop.pidf(
-      drivePID.kP,
-      drivePID.kI,
-      drivePID.kD,
-      drivePID.kF
+    m_driveMotorConfig.closedLoop.pid(drivePID.kP, drivePID.kI, drivePID.kD);
+    m_driveMotorConfig.closedLoop.feedForward.apply(new FeedForwardConfig()
+      .kS(driveFF.kS)
+      .kV(driveFF.kV)
+      .kA(driveFF.kA)
     );
 
     // Set gains for rotate PID and enable wrapping

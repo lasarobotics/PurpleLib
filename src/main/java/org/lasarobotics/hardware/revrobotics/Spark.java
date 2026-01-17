@@ -13,13 +13,13 @@ import org.lasarobotics.utils.GlobalConstants;
 import org.littletonrobotics.junction.AutoLog;
 import org.littletonrobotics.junction.Logger;
 
+import com.revrobotics.PersistMode;
 import com.revrobotics.REVLibError;
+import com.revrobotics.ResetMode;
 import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.SparkBase;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkBase.Faults;
-import com.revrobotics.spark.SparkBase.PersistMode;
-import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkBase.Warnings;
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkClosedLoopController.ArbFFUnits;
@@ -45,8 +45,6 @@ import edu.wpi.first.units.measure.MutCurrent;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
 
 /** REV Spark */
 public class Spark extends LoggableHardware {
@@ -154,11 +152,6 @@ public class Spark extends LoggableHardware {
   private LinkedHashSet<Supplier<REVLibError>> m_configChain;
   private Runnable m_invertedRunner;
 
-  private Trigger m_forwardLimitSwitchTrigger;
-  private Trigger m_reverseLimitSwitchTrigger;
-  private double m_forwardLimitSwitchResetValue = 1;
-  private double m_reverseLimitSwitchResetValue = 0;
-
   private volatile SparkOutput m_output;
   private volatile SparkInputsAutoLogged m_inputs;
 
@@ -184,8 +177,6 @@ public class Spark extends LoggableHardware {
     this.m_inputs = new SparkInputsAutoLogged();
     this.m_configChain = new LinkedHashSet<>();
     this.m_invertedRunner = () -> {};
-    this.m_forwardLimitSwitchTrigger = new Trigger(() -> getInputs().forwardLimitSwitch);
-    this.m_reverseLimitSwitchTrigger = new Trigger(() -> getInputs().reverseLimitSwitch);
 
     // Set CAN timeout
     m_spark.setCANTimeout(CAN_TIMEOUT_MS);
@@ -445,7 +436,7 @@ public class Spark extends LoggableHardware {
    * @param persistMode Whether to persist the parameters after setting the configuration
    * @return {@link REVLibError#kOk} if successful
    */
-  public REVLibError configure(SparkBaseConfig config, SparkBase.ResetMode resetMode, SparkBase.PersistMode persistMode) {
+  public REVLibError configure(SparkBaseConfig config, ResetMode resetMode, PersistMode persistMode) {
     if (SparkHelpers.getSparkModel(m_spark).equals(SparkHelpers.SparkModel.SparkFlex)) {
       config.encoder.quadratureAverageDepth(SPARK_FLEX_AVERAGE_DEPTH);
       config.encoder.quadratureMeasurementPeriod(SPARK_FLEX_MEASUREMENT_PERIOD);
@@ -483,7 +474,7 @@ public class Spark extends LoggableHardware {
     } else config = new SparkMaxConfig();
 
     status = applyConfig(
-      () -> m_spark.configure(config, SparkBase.ResetMode.kResetSafeParameters, SparkBase.PersistMode.kNoPersistParameters)
+      () -> m_spark.configure(config, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters)
     );
 
     return status;
@@ -546,7 +537,7 @@ public class Spark extends LoggableHardware {
    * @param arbFFUnits Feed forward units
    */
   public void set(double value, ControlType ctrl, double arbFeedforward, SparkClosedLoopController.ArbFFUnits arbFFUnits) {
-    m_spark.getClosedLoopController().setReference(value, ctrl, PID_SLOT, arbFeedforward, arbFFUnits);
+    m_spark.getClosedLoopController().setSetpoint(value, ctrl, PID_SLOT, arbFeedforward, arbFFUnits);
     logOutputs(value, ctrl, arbFeedforward, arbFFUnits);
   }
 
@@ -573,123 +564,69 @@ public class Spark extends LoggableHardware {
   }
 
   /**
-   * Sets whether the NEO encoder should be reset when the forward limit switch is hit
-   * The value to set it to can be configured using {@link Spark#setForwardLimitSwitchResetValue(double)}
-   * @param shouldReset Whether the encoder should be reset
-   */
-  public void setForwardLimitSwitchShouldReset(boolean shouldReset) {
-    m_forwardLimitSwitchTrigger.onTrue(shouldReset ?
-      Commands.runOnce(() -> resetEncoder(m_forwardLimitSwitchResetValue)) :
-      Commands.none()
-    );
-  }
-
-  /**
-   * Change what value the encoder should be reset to once the forward limit switch is hit
-   * @param value Desired encoder value
-   */
-  public void setForwardLimitSwitchResetValue(double value) {
-    m_forwardLimitSwitchResetValue = value;
-  }
-
-  /**
-   * Sets whether the NEO encoder should be reset when the reverse limit switch is hit
-   * The value to set it to can be configured using {@link Spark#setReverseLimitSwitchResetValue(double)}
-   * @param shouldReset Whether the encoder should be reset
-   */
-  public void setReverseLimitSwitchShouldReset(boolean shouldReset) {
-    m_reverseLimitSwitchTrigger.onTrue(shouldReset ?
-      Commands.runOnce(() -> resetEncoder(m_reverseLimitSwitchResetValue)) :
-      Commands.none()
-    );
-  }
-
-  /**
-   * Change what value the encoder should be reset to once the reverse limit switch is hit
-   * @param value Desired encoder value
-   */
-  public void setReverseLimitSwitchResetValue(double value) {
-    m_reverseLimitSwitchResetValue = value;
-  }
-
-  /**
-   * Disable forward limit switch
+   * Set behavior of forward limit switch
+   * @param behavior Desired behavior of forward limit switch
+   * @param position position value to reset encoder to when using a switch behavior that sets position
    * @return {@link REVLibError#kOk} if successful
    */
-  public REVLibError disableForwardLimitSwitch() {
+  public REVLibError setForwardLimitSwitchBehavior(LimitSwitchConfig.Behavior behavior, double position) {
     if (getKind().equals(MotorKind.NEO_VORTEX)) {
       return configure(
-        new SparkFlexConfig().apply(new LimitSwitchConfig().forwardLimitSwitchEnabled(false)),
-        SparkBase.ResetMode.kNoResetSafeParameters,
-        SparkBase.PersistMode.kNoPersistParameters
+        new SparkFlexConfig().apply(
+          new LimitSwitchConfig().forwardLimitSwitchTriggerBehavior(behavior).forwardLimitSwitchPosition(position)),
+        ResetMode.kNoResetSafeParameters,
+        PersistMode.kNoPersistParameters
       );
     } else {
       return configure(
-        new SparkMaxConfig().apply(new LimitSwitchConfig().forwardLimitSwitchEnabled(false)),
-        SparkBase.ResetMode.kNoResetSafeParameters,
-        SparkBase.PersistMode.kNoPersistParameters
+        new SparkMaxConfig().apply(
+          new LimitSwitchConfig().forwardLimitSwitchTriggerBehavior(behavior).forwardLimitSwitchPosition(position)),
+        ResetMode.kNoResetSafeParameters,
+        PersistMode.kNoPersistParameters
       );
     }
   }
 
   /**
-   * Enable forward limit switch
+   * Set behavior of forward limit switch
+   * @param behavior Desired behavior of forward limit switch
    * @return {@link REVLibError#kOk} if successful
    */
-  public REVLibError enableForwardLimitSwitch() {
+  public REVLibError setForwardLimitSwitchBehavior(LimitSwitchConfig.Behavior behavior) {
+    return setForwardLimitSwitchBehavior(behavior, 0.0);
+  }
+
+  /**
+   * Set behavior of reverse limit switch
+   * @param behavior Desired behavior of forward limit switch
+   * @param position position value to reset encoder to when using a switch behavior that sets position
+   * @return {@link REVLibError#kOk} if successful
+   */
+  public REVLibError setReverseLimitSwitchBehavior(LimitSwitchConfig.Behavior behavior, double position) {
     if (getKind().equals(MotorKind.NEO_VORTEX)) {
       return configure(
-        new SparkFlexConfig().apply(new LimitSwitchConfig().forwardLimitSwitchEnabled(true)),
-        SparkBase.ResetMode.kNoResetSafeParameters,
-        SparkBase.PersistMode.kNoPersistParameters
+        new SparkFlexConfig().apply(
+          new LimitSwitchConfig().forwardLimitSwitchTriggerBehavior(behavior).forwardLimitSwitchPosition(position)),
+        ResetMode.kNoResetSafeParameters,
+        PersistMode.kNoPersistParameters
       );
     } else {
       return configure(
-        new SparkMaxConfig().apply(new LimitSwitchConfig().forwardLimitSwitchEnabled(true)),
-        SparkBase.ResetMode.kNoResetSafeParameters,
-        SparkBase.PersistMode.kNoPersistParameters
+        new SparkMaxConfig().apply(
+          new LimitSwitchConfig().forwardLimitSwitchTriggerBehavior(behavior).forwardLimitSwitchPosition(position)),
+        ResetMode.kNoResetSafeParameters,
+        PersistMode.kNoPersistParameters
       );
     }
   }
 
   /**
-   * Disable reverse limit switch
+   * Set behavior of reverse limit switch
+   * @param behavior Desired behavior of forward limit switch
    * @return {@link REVLibError#kOk} if successful
    */
-  public REVLibError disableReverseLimitSwitch() {
-    if (getKind().equals(MotorKind.NEO_VORTEX)) {
-      return configure(
-        new SparkFlexConfig().apply(new LimitSwitchConfig().reverseLimitSwitchEnabled(false)),
-        SparkBase.ResetMode.kNoResetSafeParameters,
-        SparkBase.PersistMode.kNoPersistParameters
-      );
-    } else {
-      return configure(
-        new SparkMaxConfig().apply(new LimitSwitchConfig().reverseLimitSwitchEnabled(false)),
-        SparkBase.ResetMode.kNoResetSafeParameters,
-        SparkBase.PersistMode.kNoPersistParameters
-      );
-    }
-  }
-
-  /**
-   * Enable reverse limit switch
-   * @return {@link REVLibError#kOk} if successful
-   */
-  public REVLibError enableReverseLimitSwitch() {
-    if (getKind().equals(MotorKind.NEO_VORTEX)) {
-      return configure(
-        new SparkFlexConfig().apply(new LimitSwitchConfig().reverseLimitSwitchEnabled(true)),
-        SparkBase.ResetMode.kNoResetSafeParameters,
-        SparkBase.PersistMode.kNoPersistParameters
-      );
-    } else {
-      return configure(
-        new SparkMaxConfig().apply(new LimitSwitchConfig().reverseLimitSwitchEnabled(true)),
-        SparkBase.ResetMode.kNoResetSafeParameters,
-        SparkBase.PersistMode.kNoPersistParameters
-      );
-    }
+  public REVLibError setReverseLimitSwitchBehavior(LimitSwitchConfig.Behavior behavior) {
+    return setReverseLimitSwitchBehavior(behavior, 0.0);
   }
 
   /**
@@ -701,14 +638,14 @@ public class Spark extends LoggableHardware {
     if (getKind().equals(MotorKind.NEO_VORTEX)) {
       return configure(
         new SparkFlexConfig().idleMode(mode),
-        SparkBase.ResetMode.kNoResetSafeParameters,
-        SparkBase.PersistMode.kNoPersistParameters
+        ResetMode.kNoResetSafeParameters,
+        PersistMode.kNoPersistParameters
       );
     } else {
       return configure(
         new SparkMaxConfig().idleMode(mode),
-        SparkBase.ResetMode.kNoResetSafeParameters,
-        SparkBase.PersistMode.kNoPersistParameters
+        ResetMode.kNoResetSafeParameters,
+        PersistMode.kNoPersistParameters
       );
     }
   }
@@ -726,14 +663,14 @@ public class Spark extends LoggableHardware {
     if (getKind().equals(MotorKind.NEO_VORTEX)) {
       return configure(
         new SparkFlexConfig().inverted(inverted),
-        SparkBase.ResetMode.kNoResetSafeParameters,
-        SparkBase.PersistMode.kNoPersistParameters
+        ResetMode.kNoResetSafeParameters,
+        PersistMode.kNoPersistParameters
       );
     } else {
       return configure(
         new SparkMaxConfig().inverted(inverted),
-        SparkBase.ResetMode.kNoResetSafeParameters,
-        SparkBase.PersistMode.kNoPersistParameters
+        ResetMode.kNoResetSafeParameters,
+        PersistMode.kNoPersistParameters
       );
     }
   }
@@ -755,14 +692,14 @@ public class Spark extends LoggableHardware {
     if (getKind().equals(MotorKind.NEO_VORTEX)) {
       return configure(
         new SparkFlexConfig().follow(leader.getID().deviceID),
-        SparkBase.ResetMode.kNoResetSafeParameters,
-        SparkBase.PersistMode.kNoPersistParameters
+        ResetMode.kNoResetSafeParameters,
+        PersistMode.kNoPersistParameters
       );
     } else {
       return configure(
         new SparkMaxConfig().follow(leader.getID().deviceID),
-        SparkBase.ResetMode.kNoResetSafeParameters,
-        SparkBase.PersistMode.kNoPersistParameters
+        ResetMode.kNoResetSafeParameters,
+        PersistMode.kNoPersistParameters
       );
     }
   }
