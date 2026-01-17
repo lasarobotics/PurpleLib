@@ -26,8 +26,6 @@ Custom library for 418 Purple Haze
       * X/Y axis swapping
       * X/Y axis inversion
       * Field centric and robot centric velocity readings
-  * Redux Robotics
-    * Canandgyro
   * ThriftyBot
     * ThriftyNova
   * PhotonVision
