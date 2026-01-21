@@ -78,7 +78,7 @@ Custom library for 418 Purple Haze
 ### Required dependencies
 * AdvantageKit - https://github.com/Mechanical-Advantage/AdvantageKit/blob/main/docs/INSTALLATION.md
 * URCL - https://raw.githubusercontent.com/Mechanical-Advantage/URCL/main/URCL.json
-* NavX - https://dev.studica.com/maven/release/2026/json/Studica-2026.0.0-beta.json
+* NavX - https://dev.studica.com/maven/release/2026/json/Studica-2026.0.0.json
 * REVLib - https://software-metadata.revrobotics.com/REVLib-2026.json
 * ThriftyLib - https://docs.home.thethriftybot.com/ThriftyLib-2026.json
 * CTRE Phoenix5 - https://maven.ctr-electronics.com/release/com/ctre/phoenix/Phoenix5-frc2026-latest.json
