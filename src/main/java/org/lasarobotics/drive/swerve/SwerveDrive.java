@@ -6,6 +6,7 @@ package org.lasarobotics.drive.swerve;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
@@ -19,6 +20,7 @@ import org.lasarobotics.drive.swerve.AdvancedSwerveKinematics.ControlCentricity;
 import org.lasarobotics.drive.swerve.parent.CTRESwerveModule;
 import org.lasarobotics.drive.swerve.parent.REVSwerveModule;
 import org.lasarobotics.hardware.IMU;
+import org.lasarobotics.utils.AimAssist;
 import org.lasarobotics.utils.CommonTriggers;
 import org.lasarobotics.utils.PIDConstants;
 import org.lasarobotics.vision.AprilTagCamera;
@@ -27,6 +29,7 @@ import org.littletonrobotics.junction.Logger;
 import com.ctre.phoenix6.SignalLogger;
 
 import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.Pair;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -42,8 +45,10 @@ import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Dimensionless;
+import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearAcceleration;
 import edu.wpi.first.units.measure.LinearVelocity;
+import edu.wpi.first.units.measure.MutDistance;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
@@ -79,7 +84,6 @@ public class SwerveDrive extends SubsystemBase implements AutoCloseable {
   // Other settings
   private static final Angle DEFAULT_TIP_THRESHOLD = Units.Degrees.of(30.0);
   private static final double DEFAULT_BALANCED_THRESHOLD = 10.0;
-  private static final double DEFAULT_AIM_VELOCITY_COMPENSATION_FUDGE_FACTOR = 0.1;
   private static final double MIN_HEADING_TRANSLATION_DELTA = 1e-5;
   private static final Matrix<N3, N1> ODOMETRY_STDDEV = VecBuilder.fill(0.1, 0.1, Math.toRadians(1.0));
   private static final TrapezoidProfile.Constraints AIM_PID_CONSTRAINT = new TrapezoidProfile.Constraints(2160.0, 4320.0);
@@ -143,11 +147,11 @@ public class SwerveDrive extends SubsystemBase implements AutoCloseable {
   private Consumer<SysIdRoutineLog.State> m_driveSysIDLogConsumer;
   private Consumer<SysIdRoutineLog.State> m_rotateSysIDLogConsumer;
 
+  private MutDistance m_apparentTargetDistance = Units.Meters.mutable(0);
 
   private boolean m_isTractionControlEnabled = true;
   private boolean m_autoAimFront = false;
   private boolean m_autoAimBack = false;
-  private double m_aimVelocityFudgeFactor;
 
   /**
    * Create an instance of SwerveDrive
@@ -181,7 +185,6 @@ public class SwerveDrive extends SubsystemBase implements AutoCloseable {
     this.m_tippingTrigger = new Trigger(this::isTipping);
     this.m_tipThreshold = DEFAULT_TIP_THRESHOLD;
     this.m_simCallbacks = new ArrayList<>();
-    this.m_aimVelocityFudgeFactor = DEFAULT_AIM_VELOCITY_COMPENSATION_FUDGE_FACTOR;
     s_currentAlliance = Alliance.Blue;
 
     if (m_lFrontModule instanceof CTRESwerveModule) {
@@ -420,19 +423,30 @@ public class SwerveDrive extends SubsystemBase implements AutoCloseable {
    * Aim robot at a desired point on the field
    * @param xRequest Desired X axis (forward) speed [-1.0, +1.0]
    * @param yRequest Desired Y axis (sideways) speed [-1.0, +1.0]
-   * @param rotateRequest Desired rotate speed (ONLY USED IF POINT IS NULL) [-1.0, +1.0]
-   * @param point Target point, pass in null to signify invalid point
+   * @param rotateRequest Desired rotate speed (ONLY USED IF POINT IS EMPTY) [-1.0, +1.0]
+   * @param targetPoint Target point, pass in empty to signify invalid point
+   * @param entryAngle Trajectory entry angle of projectile into target
+   * @param heightDelta Height delta between shooter height and target goal height (Positive is above)
    * @param reversed True to point back of robot to target
    * @param velocityCorrection True to compensate for robot's own velocity
    */
-  protected void aimAtPoint(ControlCentricity controlCentricity, double xRequest, double yRequest, double rotateRequest, Translation2d point, boolean reversed, boolean velocityCorrection) {
+  protected void aimAtPoint(ControlCentricity controlCentricity,
+                            double xRequest,
+                            double yRequest,
+                            double rotateRequest,
+                            Optional<Translation2d> targetPoint,
+                            Optional<Angle> entryAngle,
+                            Optional<Distance> heightDelta,
+                            boolean reversed,
+                            boolean velocityCorrection) {
+
     // Calculate desired robot velocity
     double moveRequest = Math.hypot(xRequest, yRequest);
     double moveDirection = Math.atan2(yRequest, xRequest);
     var velocityOutput = m_throttleMap.throttleLookup(moveRequest).unaryMinus();
 
     // Drive normally and return if invalid point
-    if (point == null) {
+    if (targetPoint.isEmpty() || entryAngle.isEmpty() || heightDelta.isEmpty()) {
       var rotateOutput = m_rotatePIDController.calculate(getAngle(), getRotateRate(), rotateRequest).unaryMinus();
       drive(
         m_controlCentricity,
@@ -455,20 +469,30 @@ public class SwerveDrive extends SubsystemBase implements AutoCloseable {
 
     // Get current pose
     Pose2d currentPose = getPose();
-    // Angle to target point
-    Rotation2d targetAngle = new Rotation2d(point.getX() - currentPose.getX(), point.getY() - currentPose.getY());
+    // Get distance to desired target
+    Distance targetDistance = Units.Meters.of(currentPose.getTranslation().getDistance(targetPoint.get()));
+    // Calculate shooter values
+    Pair<Angle, LinearVelocity> shooterValues = AimAssist.getShooterValues(targetDistance, heightDelta.get(), entryAngle.get());
+    // Calculate projectile flight time
+    Time flightTime = Units.Seconds.of(targetDistance.in(Units.Meters) / (shooterValues.getSecond().in(Units.MetersPerSecond) * Math.cos(shooterValues.getFirst().in(Units.Radians))));
     // Movement vector of robot
     Vector2D robotVector = new Vector2D(velocityOutput.times(m_currentHeading.getCos()).in(Units.MetersPerSecond), velocityOutput.times(m_currentHeading.getSin()).in(Units.MetersPerSecond));
-    // Aim point
-    Translation2d aimPoint = point.minus(new Translation2d(robotVector.getX(), robotVector.getY()));
-    // Vector from robot to target
-    Vector2D targetVector = new Vector2D(currentPose.getTranslation().getDistance(point) * targetAngle.getCos(), currentPose.getTranslation().getDistance(point) * targetAngle.getSin());
-    // Parallel component of robot's motion to target vector
-    Vector2D parallelRobotVector = targetVector.scalarMultiply(robotVector.dotProduct(targetVector) / targetVector.getNormSq());
-    // Perpendicular component of robot's motion to target vector
-    Vector2D perpendicularRobotVector = robotVector.subtract(parallelRobotVector).scalarMultiply(velocityCorrection ? m_aimVelocityFudgeFactor : 0.0);
-    // Adjust aim point using calculated vector
-    Translation2d adjustedPoint = point.minus(new Translation2d(perpendicularRobotVector.getX(), perpendicularRobotVector.getY()));
+    // Adjustment vector
+    Vector2D adjustmentVector = robotVector.scalarMultiply(flightTime.in(Units.Seconds));
+    // Calculate adjusted aim point (same as target if velocity correction is disabled)
+    Translation2d adjustedPoint = velocityCorrection ? targetPoint.get().plus(new Translation2d(adjustmentVector.getX(), adjustmentVector.getY())) : targetPoint.get();
+
+    // Iterate again using adjusted point
+    Distance apparentDistance = Units.Meters.of(currentPose.getTranslation().getDistance(adjustedPoint));
+    // Get adjusted shooter values
+    Pair<Angle, LinearVelocity> adjustedShooterValues = AimAssist.getShooterValues(apparentDistance, heightDelta.get(), entryAngle.get());
+    // Get flight time to adjusted point
+    Time apparentFlightTime = Units.Seconds.of(apparentDistance.in(Units.Meters) / (adjustedShooterValues.getSecond().in(Units.MetersPerSecond) * Math.cos(adjustedShooterValues.getFirst().in(Units.Radians))));
+    // Update adjustment vector
+    adjustmentVector = robotVector.scalarMultiply(apparentFlightTime.in(Units.Seconds));
+    // Update adjusted point
+    adjustedPoint = velocityCorrection ? targetPoint.get().plus(new Translation2d(adjustmentVector.getX(), adjustmentVector.getY())) : targetPoint.get();
+
     // Calculate new angle using adjusted point
     Rotation2d adjustedAngle = new Rotation2d(adjustedPoint.getX() - currentPose.getX(), adjustedPoint.getY() - currentPose.getY());
     // Calculate necessary rotate rate
@@ -478,8 +502,11 @@ public class SwerveDrive extends SubsystemBase implements AutoCloseable {
 
     // Log aim point
     double aimError = currentPose.getRotation().getDegrees() - adjustedAngle.getDegrees();
-    Logger.recordOutput(getName() + "/AimPoint", new Pose2d(aimPoint, new Rotation2d()));
-    Logger.recordOutput(getName() + "/AimError", Math.copySign(((180 - Math.abs(aimError)) % 180), (aimError)));
+    Logger.recordOutput(getName() + "/AimPoint", new Pose2d(adjustedPoint, new Rotation2d()));
+    Logger.recordOutput(getName() + "/AimError", Math.abs(aimError));
+
+    // Save adjusted apparent target distance
+    m_apparentTargetDistance.mut_replace(currentPose.getTranslation().getDistance(adjustedPoint), Units.Meters);
 
     // Drive robot accordingly
      drive(
@@ -618,16 +645,6 @@ public class SwerveDrive extends SubsystemBase implements AutoCloseable {
   }
 
   /**
-   * Set auto-aim velocity compensation fudge factor
-   * <p>
-   * This adjusts how aggressively the robot will compensate for its own velocity perpendicular to the aim vector
-   * @param value Desired value, smaller is less aggressive
-   */
-  public void setAimVelocityCompensationFudgeFactor(double value) {
-    m_aimVelocityFudgeFactor = value;
-  }
-
-  /**
    * Set tip threshold to desired angle
    * <p>
    * When the robot is tipped more than this angle in either the pitch or roll directions,
@@ -754,12 +771,20 @@ public class SwerveDrive extends SubsystemBase implements AutoCloseable {
    * @param yRequestSupplier Y axis speed supplier [-1.0, +1.0]
    * @param rotateRequestSupplier Rotate speed supplier (ONLY USED IF POINT IS NULL) [-1.0, +1.0]
    * @param pointSupplier Desired point supplier
+   * @param entryAngle Trajectory entry angle of projectile into target
+   * @param heightDelta Height delta between shooter height and target goal height (Positive is above)
    * @param reversed True to point rear of robot toward point
    * @param velocityCorrection True to compensate for robot's own velocity
    * @return Command that will aim at point while strafing
    */
-  public Command aimAtPointCommand(DoubleSupplier xRequestSupplier, DoubleSupplier yRequestSupplier, DoubleSupplier rotateRequestSupplier,
-                                   Supplier<Translation2d> pointSupplier, boolean reversed, boolean velocityCorrection) {
+  public Command aimAtPointCommand(DoubleSupplier xRequestSupplier,
+                                   DoubleSupplier yRequestSupplier,
+                                   DoubleSupplier rotateRequestSupplier,
+                                   Supplier<Optional<Translation2d>> pointSupplier,
+                                   Supplier<Optional<Angle>> entryAngle,
+                                   Supplier<Optional<Distance>> heightDelta,
+                                   boolean reversed,
+                                   boolean velocityCorrection) {
     return runEnd(
       () -> aimAtPoint(
         m_controlCentricity,
@@ -767,6 +792,8 @@ public class SwerveDrive extends SubsystemBase implements AutoCloseable {
         yRequestSupplier.getAsDouble(),
         rotateRequestSupplier.getAsDouble(),
         pointSupplier.get(),
+        entryAngle.get(),
+        heightDelta.get(),
         reversed,
         velocityCorrection
       ),
@@ -784,9 +811,20 @@ public class SwerveDrive extends SubsystemBase implements AutoCloseable {
    * @param velocityCorrection True to compensate for robot's own velocity
    * @return Command that will aim at point while strafing
    */
-  public Command aimAtPointCommand(DoubleSupplier xRequestSupplier, DoubleSupplier yRequestSupplier, DoubleSupplier rotateRequestSupplier,
-                                   Translation2d point, boolean reversed, boolean velocityCorrection) {
-    return aimAtPointCommand(xRequestSupplier, yRequestSupplier, rotateRequestSupplier, () -> point, reversed, velocityCorrection);
+  public Command aimAtPointCommand(DoubleSupplier xRequestSupplier,
+                                   DoubleSupplier yRequestSupplier,
+                                   DoubleSupplier rotateRequestSupplier,
+                                   Translation2d point,
+                                   boolean reversed,
+                                   boolean velocityCorrection) {
+    return aimAtPointCommand(xRequestSupplier,
+                             yRequestSupplier,
+                             rotateRequestSupplier,
+                             () -> Optional.of(point),
+                             () -> Optional.empty(),
+                             () -> Optional.empty(),
+                             reversed,
+                             velocityCorrection);
   }
 
   /**
@@ -797,7 +835,14 @@ public class SwerveDrive extends SubsystemBase implements AutoCloseable {
    * @return Command that will aim robot at point while strafing
    */
   public Command aimAtPointCommand(Translation2d point, boolean reversed, boolean velocityCorrection) {
-    return aimAtPointCommand(() -> 0.0, () -> 0.0, () -> 0.0, () -> point, reversed, velocityCorrection);
+    return aimAtPointCommand(() -> 0.0,
+                             () -> 0.0,
+                             () -> 0.0,
+                             () -> Optional.of(point),
+                             () -> Optional.empty(),
+                             () -> Optional.empty(),
+                             reversed,
+                             velocityCorrection);
   }
 
   /**
@@ -874,8 +919,14 @@ public class SwerveDrive extends SubsystemBase implements AutoCloseable {
   /**
    * @return Command to aim a point on the field in robot centric mode
    */
-  public Command aimAtPointRobotCentric(DoubleSupplier xRequestSupplier, DoubleSupplier yRequestSupplier, DoubleSupplier rotateRequestSupplier,
-                                        Supplier<Translation2d> pointSupplier, boolean reversed, boolean velocityCorrection) {
+  public Command aimAtPointRobotCentric(DoubleSupplier xRequestSupplier,
+                                        DoubleSupplier yRequestSupplier,
+                                        DoubleSupplier rotateRequestSupplier,
+                                        Supplier<Optional<Translation2d>> pointSupplier,
+                                        Supplier<Optional<Angle>> entryAngle,
+                                        Optional<Distance> heightDelta,
+                                        boolean reversed,
+                                        boolean velocityCorrection) {
     return runEnd(() ->
       aimAtPoint(
         ControlCentricity.ROBOT_CENTRIC,
@@ -883,6 +934,8 @@ public class SwerveDrive extends SubsystemBase implements AutoCloseable {
         yRequestSupplier.getAsDouble(),
         rotateRequestSupplier.getAsDouble(),
         pointSupplier.get(),
+        entryAngle.get(),
+        heightDelta,
         reversed,
         velocityCorrection
       ),
@@ -897,6 +950,7 @@ public class SwerveDrive extends SubsystemBase implements AutoCloseable {
   public void resetRotatePID() {
     m_rotatePIDController.setSetpoint(getAngle());
     m_rotatePIDController.reset();
+    m_apparentTargetDistance.mut_replace(0, Units.Meters);
   }
 
   /**
@@ -913,6 +967,16 @@ public class SwerveDrive extends SubsystemBase implements AutoCloseable {
    */
   public Pose2d getPose() {
     return m_swervePoseEstimatorService.getPose();
+  }
+
+  /**
+   * Get apparent target distance
+   * <p>
+   * Must set {@code velocityCorrection} to {@code true} in {@link SwerveDrive#aimAtPointCommand(DoubleSupplier, DoubleSupplier, DoubleSupplier, Supplier, Supplier, Supplier, boolean, boolean)}
+   * @return Distance to apparent adjusted target while aiming, 0m when not aiming
+   */
+  public Distance getApparentTargetDistance() {
+    return m_apparentTargetDistance;
   }
 
   /**

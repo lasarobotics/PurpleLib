@@ -224,9 +224,9 @@ public class SwervePoseEstimatorService {
 
       // Clear vision logging variables if its been a while since last update
       if (Duration.between(m_lastVisionUpdateTime, Instant.now()).toMillis() / 1000.0 > GlobalConstants.ROBOT_LOOP_HZ.asPeriod().in(Units.Seconds)) {
-        m_visibleTags = new ArrayList<AprilTag>();
-        m_visibleTagPoses = new ArrayList<Pose3d>();
-        m_visionEstimatedPoses = new ArrayList<Pose2d>();
+        m_visibleTags.clear();
+        m_visibleTagPoses.clear();
+        m_visionEstimatedPoses.clear();
       }
     };
 
