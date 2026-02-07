@@ -106,7 +106,7 @@ Add the following to your project `build.gradle`
 ```
 dependencies {
   implementation 'org.apache.commons:commons-math3:3.+'
-  implementation files('libs/PurpleLib.jar')
+  implementation fileTree(dir: 'libs', include: '*.jar')
 }
 ```
 Change the file path as needed.
