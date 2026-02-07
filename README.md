@@ -86,7 +86,7 @@ Custom library for 418 Purple Haze
 * PhotonLib - https://maven.photonvision.org/repository/internal/org/photonvision/photonlib-json/1.0/photonlib-json-1.0.json
 
 ### Online installation
-Add the following to your project `build.gradle` where VERSION is the release version, e.g. v2025.0.8 (the "v" is required)
+Add the following to your project `build.gradle` where VERSION is the release version, e.g. 2025.0.8
 ```
 repositories {
   maven { url "https://jitpack.io" }
