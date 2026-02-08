@@ -92,9 +92,11 @@ public class AprilTagCamera implements AutoCloseable {
   /**
    * Create VisionCamera
    * @param name Name of device
+   * @param imu IMU on robot
    * @param transform Location on robot in meters
    * @param resolution Resolution used by camera
    * @param fovDiag Diagonal FOV of camera
+   * @param fieldLayout AprilTag field layout used
    */
   public AprilTagCamera(String name, IMU imu, Transform3d transform, Resolution resolution, Rotation2d fovDiag, AprilTagFieldLayout fieldLayout) {
     this.m_camera = new PhotonCamera(name);
