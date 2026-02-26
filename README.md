@@ -52,12 +52,14 @@ Custom library for 418 Purple Haze
   * Traction control
   * More info [here](src/main/java/org/lasarobotics/drive/swerve/README.md)
 * Swerve drive parent class
+  * REQUIRES ROBOT TO BE INITIALISED WITH IMU AT 0 ON BOOTUP!
   * Field centric or robot centric drive
   * High frequency, threaded odometry
     * 100Hz REV, 200Hz for CTRE
     * IMU must be set to same update frequency
   * Easy PhotonVision integration
   * Robot rotation PID
+  * Auto-aim at point, with velocity correction for shooting projectiles
   * Swerve second order kinematics correction
   * More info [here](src/main/java/org/lasarobotics/drive/swerve/README.md)
 * State Machine Structure
@@ -65,6 +67,9 @@ Custom library for 418 Purple Haze
   * Improved accessibility over solely command-based infrastucture
   * Implemented StateMachine class for additional compatability
   * More info [here](src/main/java/org/lasarobotics/fsm/README.md)
+* Auto aim helpers
+  * Automatically calculate optimal shooter angle and projectile velocity given desired projectile entry angle
+  * Couple this with "aimAtPoint" in the swerve class to automatically shoot at FRC goals on the move!
 * Health monitoring and automatic recovery
   * Available in the hardware wrappers and for subsystems
 * Configurable input maps
